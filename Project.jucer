@@ -22,6 +22,7 @@
         <FILE id="on3opn" name="RealTimePtr.h" compile="0" resource="0" file="Source/RealTimePtr.h"/>
       </GROUP>
       <GROUP id="{DA435779-5001-4379-F809-3E7C21D55DC0}" name="gui">
+        <FILE id="CWx4m5" name="Shader.h" compile="0" resource="0" file="Source/Shader.h"/>
         <FILE id="B6fZ8G" name="Parametr.h" compile="0" resource="0" file="Source/Parametr.h"/>
         <FILE id="J9mhwQ" name="ValueBubble.h" compile="0" resource="0" file="Source/ValueBubble.h"/>
         <FILE id="qZsO69" name="Layout.h" compile="0" resource="0" file="Source/Layout.h"/>

@@ -40,8 +40,9 @@ namespace param
 #endif
 		StereoConfig,
 		// neither high- nor lowlevel param(s)
-		Bypass,
+		Power,
 		PatchSelect,
+		PatchMode,
 
 		// low level parameters
 		DefaultParameter,
@@ -49,7 +50,7 @@ namespace param
 		NumParams
 	};
 	static constexpr int NumParams = static_cast<int>(PID::NumParams);
-	static constexpr int MinLowLevelIdx = static_cast<int>(PID::Bypass) + 1;
+	static constexpr int MinLowLevelIdx = static_cast<int>(PID::Power) + 1;
 	static constexpr int NumLowLevelParams = NumParams - MinLowLevelIdx;
 	static constexpr int NumHighLevelParams = NumParams - NumLowLevelParams;
 	static constexpr int MinHighLevelButton = static_cast<int>(PID::Polarity);
@@ -73,6 +74,7 @@ namespace param
 		{
 		case PID::Macro: return "Macro";
 		case PID::PatchSelect: return "Patch Select";
+		case PID::PatchMode: return "Patch Mode";
 #if PPDHasGainIn
 		case PID::GainIn: return "Gain In";
 #endif
@@ -90,7 +92,7 @@ namespace param
 #endif
 		case PID::StereoConfig: return "StereoConfig";
 
-		case PID::Bypass: return "Bypass";
+		case PID::Power: return "Power";
 
 		// LOW LEVEL PARAMS:
 		case PID::DefaultParameter: return "Default Parameter";
@@ -105,6 +107,7 @@ namespace param
 		{
 		case PID::Macro: return "Interpolate between the two patches X and Y.";
 		case PID::PatchSelect: return "Solo one of the patches tweak it in isolation.";
+		case PID::PatchMode: return "The macro can interpolate between two patch-states or two parallel-processed patches.";
 #if PPDHasGainIn
 		case PID::GainIn: return "Apply input gain to the wet signal.";
 #endif
@@ -122,7 +125,7 @@ namespace param
 #endif
 		case PID::StereoConfig: return "Define the stereo-configuration. L/R or M/S.";
 
-		case PID::Bypass: return "Bypass the plugin with this parameter.";
+		case PID::Power: return "Bypass the plugin with this parameter.";
 
 		case PID::DefaultParameter: return "Default Parameter Tooltip Txt";
 
@@ -132,8 +135,9 @@ namespace param
 
 	enum class Unit
 	{
+		PatchMode,
 		PatchSelect,
-		Bypass,
+		Power,
 		Solo,
 		Mute,
 		Percent,
@@ -157,8 +161,9 @@ namespace param
 	{
 		switch (pID)
 		{
+		case Unit::PatchMode: return "";
 		case Unit::PatchSelect: return "";
-		case Unit::Bypass: return "";
+		case Unit::Power: return "";
 		case Unit::Solo: return "S";
 		case Unit::Mute: return "M";
 		case Unit::Percent: return "%";
@@ -321,18 +326,25 @@ namespace param
 			};
 		}
 
+		inline StrToValFunc patchMode()
+		{
+			return[](const String& txt)
+			{
+				return txt.trimCharactersAtEnd(toString(Unit::PatchMode)).getFloatValue() > .5f ? 1.f : 0.f;
+			};
+		}
 		inline StrToValFunc patchSelect()
 		{
 			return[](const String& txt)
 			{
-				return std::floor(txt.trimCharactersAtEnd(toString(Unit::PatchSelect)).getFloatValue());
+				return std::rint(txt.trimCharactersAtEnd(toString(Unit::PatchSelect)).getFloatValue());
 			};
 		}
-		inline StrToValFunc bypass()
+		inline StrToValFunc power()
 		{
 			return[](const String& txt)
 			{
-				return txt.trimCharactersAtEnd(toString(Unit::Bypass)).getFloatValue() > .5f ? 1.f : 0.f;
+				return txt.trimCharactersAtEnd(toString(Unit::Power)).getFloatValue() > .5f ? 1.f : 0.f;
 			};
 		}
 		inline StrToValFunc solo()
@@ -417,6 +429,10 @@ namespace param
 
 	namespace valToStr
 	{
+		inline ValToStrFunc patchMode()
+		{
+			return [](float v) { return v > .5f ? "parallel-processing" : "parameters"; };
+		}
 		inline ValToStrFunc patchSelect()
 		{
 			return [](float v) { return v < .5f ? "Play All" : v < 1.5f ? "Solo A" : "Solo B"; };
@@ -429,9 +445,9 @@ namespace param
 		{
 			return [](float v) { return v > .5f ? "solo" : "not solo"; };
 		}
-		inline ValToStrFunc bypass()
+		inline ValToStrFunc power()
 		{
-			return [](float v) { return v > .5f ? "bypassed" : "not bypassed"; };
+			return [](float v) { return v > .5f ? "enabled" : "disabled"; };
 		}
 		inline ValToStrFunc percent()
 		{
@@ -512,9 +528,9 @@ namespace param
 			valToStrFunc = valToStr::patchSelect();
 			strToValFunc = strToVal::patchSelect();
 			break;
-		case Unit::Bypass:
-			valToStrFunc = valToStr::bypass();
-			strToValFunc = strToVal::bypass();
+		case Unit::Power:
+			valToStrFunc = valToStr::power();
+			strToValFunc = strToVal::power();
 			break;
 		case Unit::Solo:
 			valToStrFunc = valToStr::solo();
@@ -587,8 +603,9 @@ namespace param
 #endif
 			params.push_back(makeParam(PID::StereoConfig, state, 1.f, makeRange::toggle(), Unit::StereoConfig));
 
-			params.push_back(makeParam(PID::Bypass, state, 0.f, makeRange::toggle(), Unit::Bypass));
+			params.push_back(makeParam(PID::Power, state, 0.f, makeRange::toggle(), Unit::Power));
 			params.push_back(makeParam(PID::PatchSelect, state, 0.f, {0.f, 2.f}, Unit::PatchSelect));
+			params.push_back(makeParam(PID::PatchMode, state, 0.f, makeRange::toggle(), Unit::PatchMode));
 
 			// LOW LEVEL PARAMS:
 			params.push_back(makeParam(PID::DefaultParameter, state));

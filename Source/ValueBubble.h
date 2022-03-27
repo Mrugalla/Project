@@ -37,7 +37,7 @@ namespace gui
 	public:
 		ValueBubble(Utils& u) :
 			Label(u, "", makeNotify(*this)),
-			pID(PID::Bypass),
+			pID(PID::Power),
 			freezeIdx(0)
 		{
 			font = getFontNEL();

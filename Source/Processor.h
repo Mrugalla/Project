@@ -89,11 +89,6 @@ namespace audio
             return layouts.getMainOutputChannelSet() == layouts.getMainInputChannelSet();
         }
         AppProps* getProps() noexcept { return &props; }
-        juce::AudioProcessorParameter* getBypassParameter() const override
-        {
-            const auto& processorParams = getParameters();
-            return processorParams[static_cast<int>(PID::Bypass)];
-        }
 
         void savePatch()
         {
@@ -176,7 +171,7 @@ namespace audio
             const auto constSamples = buffer.getArrayOfReadPointers();
             auto samples = buffer.getArrayOfWritePointers();
 
-            if (params[PID::Bypass]->getValue() > .5f)
+            if (params[PID::Power]->getValue() < .5f)
             {
                 processBlockBypassed(buffer, midi);
                 return nullptr;
@@ -291,7 +286,7 @@ private:
         
         void processBlockCustom(float** samples, int numChannels, int numSamples) noexcept
         {
-            // actual code goes here
+            rectify(samples, numChannels, numSamples);
         }
 
         void releaseResources() override {}

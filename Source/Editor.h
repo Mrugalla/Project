@@ -6,6 +6,8 @@
 #include "Layout.h"
 #include "Utils.h"
 
+#include "Shader.h"
+
 #include "Knob.h"
 #include "HighLevel.h"
 #include "Tooltip.h"
@@ -23,7 +25,8 @@ namespace gui
     using MouseWheel = juce::MouseWheelDetails;
 
     struct Editor :
-        public juce::AudioProcessorEditor
+        public juce::AudioProcessorEditor,
+        public Timer
     {
         static constexpr int MinWidth = 100, MinHeight = 100;
 
@@ -37,12 +40,17 @@ namespace gui
 
             tooltip(utils, "The tooltips bar leads you to wisdom."),
 
-            valueBubble(utils)
+            valueBubble(utils),
+            
+            bypassed(false),
+            shadr(bypassed)
         {
+            setComponentEffect(&shadr);
+
             setMouseCursor(makeCursor(CursorType::Default));
             
             layout.init(
-                { 50, 80 },
+                { 50, 130 },
                 { 150, 10 }
             );
 
@@ -52,6 +60,7 @@ namespace gui
 
             addChildComponent(valueBubble);
 
+            startTimerHz(12);
             setOpaque(true);
             setResizable(true, true);
             {
@@ -66,12 +75,15 @@ namespace gui
                 setSize(w, h);
             }
         }
+
+        ~Editor()
+        {
+            setComponentEffect(nullptr);
+        }
         
         void paint(Graphics& g) override
         {
             g.fillAll(Colours::c(gui::ColourID::Bg));
-            //g.setColour(juce::Colours::red);
-            //layout.paint(g);
         }
         
         void resized() override
@@ -123,6 +135,9 @@ namespace gui
 
         ValueBubble valueBubble;
 
+        bool bypassed;
+        Shader shadr;
+
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Editor)
 
     private:
@@ -132,6 +147,16 @@ namespace gui
             const auto h = getHeight();
             audioProcessor.state.set("gui", "width", w, false);
             audioProcessor.state.set("gui", "height", h, false);
+        }
+
+        void timerCallback() override
+        {
+            auto b = utils.getParam(PID::Power)->getValue() < .5f;
+            if (bypassed != b)
+            {
+                bypassed = b;
+                repaintWithChildren(this);
+            }
         }
     };
 }

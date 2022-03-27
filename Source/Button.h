@@ -69,12 +69,10 @@ namespace gui
 
 			onClick = [param = utils.getParam(pID)]()
 			{
-				const auto ts = param->getValue() > .5f ? 0 : 1;
-				param->setValueWithGesture(static_cast<float>(ts));
+				const auto ts = param->getValue() > .5f ? 0.f : 1.f;
+				param->setValueWithGesture(ts);
 			};
 			
-			utils.getParam(pID);
-
 			onTimer = [this, pID]()
 			{
 				const auto param = utils.getParam(pID);
@@ -84,6 +82,35 @@ namespace gui
 					toggleState = nTs;
 
 					if(toggleTexts.size() > toggleState)
+						label.setText(toggleTexts[toggleState]);
+					repaintWithChildren(this);
+				}
+			};
+
+			startTimerHz(24);
+		}
+
+		void enableParameter(PID pID, int val)
+		{
+			stopTimer();
+
+			onClick = [param = utils.getParam(pID), v = static_cast<float>(val)]()
+			{
+				const auto pVal = std::rint(param->getValueDenorm());
+				const auto ts = pVal == v ? 0.f : v;
+				param->setValueWithGesture(param->range.convertTo0to1(ts));
+			};
+
+			onTimer = [this, pID, val]()
+			{
+				const auto param = utils.getParam(pID);
+				const auto pVal = std::rint(param->getValueDenorm());
+				const auto nTs = static_cast<int>(pVal);
+				if (toggleState != nTs)
+				{
+					toggleState = nTs;
+
+					if (toggleTexts.size() > toggleState)
 						label.setText(toggleTexts[toggleState]);
 					repaintWithChildren(this);
 				}
@@ -174,12 +201,12 @@ namespace gui
 		};
 	}
 
-	inline void makeTextButton(Button& b, String&& txt, bool withToggle = false, bool onlyText = false)
+	inline void makeTextButton(Button& b, String&& txt, bool withToggle = false, bool onlyText = false, int targetToggleState = 1)
 	{
 		b.enableLabel(std::move(txt));
 
 		if (onlyText)
-			b.onPaint = [withToggle](Graphics& g, Button& button)
+			b.onPaint = [withToggle, targetToggleState](Graphics& g, Button& button)
 			{
 				const auto& utils = button.getUtils();
 				const auto& blinkyBoy = button.blinkyBoy;
@@ -195,7 +222,7 @@ namespace gui
 				g.setColour(col);
 				g.fillRoundedRectangle(area, thicc);
 
-				if (withToggle && button.toggleState == 1)
+				if (withToggle && button.toggleState == targetToggleState)
 				{
 					g.setColour(Colours::c(ColourID::Hover));
 					g.fillRoundedRectangle(area, thicc);
@@ -210,7 +237,7 @@ namespace gui
 				}
 			};
 		else
-			b.onPaint = [withToggle](Graphics& g, Button& button)
+			b.onPaint = [withToggle, targetToggleState](Graphics& g, Button& button)
 			{
 				const auto& utils = button.getUtils();
 				const auto& blinkyBoy = button.blinkyBoy;
@@ -227,7 +254,7 @@ namespace gui
 				g.setColour(col);
 				g.fillRoundedRectangle(area, thicc);
 
-				if (withToggle && button.toggleState == 1)
+				if (withToggle && button.toggleState == targetToggleState)
 				{
 					g.setColour(Colours::c(ColourID::Hover));
 					g.fillRoundedRectangle(area, thicc);
@@ -250,13 +277,17 @@ namespace gui
 		Polarity,
 		StereoConfig,
 		UnityGain,
-		Bypass,
+		Power,
+		PatchMode,
 		NumSymbols
 	};
 
-	inline void makeSymbolButton(Button& b, ButtonSymbol symbol, bool withToggle = false)
+	inline void makeSymbolButton(Button& b, ButtonSymbol symbol)
 	{
-		if (symbol == ButtonSymbol::StereoConfig)
+		bool withToggle = true;
+		if (symbol == ButtonSymbol::PatchMode)
+			withToggle = false;
+		else if (symbol == ButtonSymbol::StereoConfig)
 		{
 			withToggle = false;
 			b.enableLabel({ "L/R", "M/S" });
@@ -296,7 +327,7 @@ namespace gui
 
 			if (symbol == ButtonSymbol::Polarity)
 			{
-				const auto thicc3 = thicc * 2.f;
+				const auto thicc3 = thicc * 3.f;
 
 				bounds = maxQuadIn(bounds).reduced(thicc3);
 				g.drawEllipse(bounds, thicc);
@@ -306,7 +337,7 @@ namespace gui
 			}
 			else if (symbol == ButtonSymbol::UnityGain)
 			{
-				const auto thicc3 = thicc * 2.f;
+				const auto thicc3 = thicc * 3.f;
 
 				bounds = bounds.reduced(thicc3);
 
@@ -322,16 +353,12 @@ namespace gui
 				g.drawEllipse({ x0, y0, w, h }, thicc);
 				g.drawEllipse({ x1, y1, w, h }, thicc);
 			}
-			else if (symbol == ButtonSymbol::Bypass)
+			else if (symbol == ButtonSymbol::Power)
 			{
-				const auto thicc3 = thicc * 2.f;
-
-				//const auto y0 = bounds.getY();
+				const auto thicc3 = thicc * 3.f;
 
 				bounds = bounds.reduced(thicc3);
 
-				//g.drawEllipse(bounds, thicc);
-				
 				const auto x = bounds.getX();
 				const auto y = bounds.getY();
 				const auto rad = bounds.getWidth() * .5f;
@@ -362,10 +389,50 @@ namespace gui
 
 				const LineF line(centre, centre.withY(y));
 
-				//g.setColour(Colours::c(ColourID::Bg));
-				//g.drawLine(line.withShortenedEnd(-thicc), thicc3);
 				g.setColour(Colours::c(ColourID::Interact));
 				g.drawLine(line, thicc);
+			}
+			else if (symbol == ButtonSymbol::PatchMode)
+			{
+				if (button.toggleState == 0)
+				{
+					const auto thicc3 = thicc * 3.f;
+					bounds = maxQuadIn(bounds).reduced(thicc3);
+
+					g.drawEllipse(bounds, thicc);
+					const auto rad = bounds.getWidth() * .5f;
+					PointF centre(
+						bounds.getX() + rad,
+						bounds.getY() + rad
+					);
+					const auto tick = LineF::fromStartAndAngle(centre, rad, PiQuart);
+					g.drawLine(tick, thicc);
+				}
+				else
+				{
+					const auto thicc3 = thicc * 2.f;
+					bounds = maxQuadIn(bounds).reduced(thicc3);
+
+					const auto x0 = bounds.getX();
+					const auto y0 = bounds.getY() + bounds.getHeight() * .5f;
+					const auto x1 = x0 + bounds.getWidth() * .2f;
+					const auto y1 = y0;
+					g.drawLine(x0, y0, x1, y1, thicc);
+					const auto x2 = x0 + bounds.getWidth() * .3f;
+					const auto yA = bounds.getY() + bounds.getHeight() * .2f;
+					const auto yB = bounds.getBottom() - bounds.getHeight() * .2f;
+					g.drawLine(x1, y1, x2, yA, thicc);
+					g.drawLine(x1, y1, x2, yB, thicc);
+					const auto x3 = x0 + bounds.getWidth() * .7f;
+					g.drawLine(x2, yA, x3, yA, thicc);
+					g.drawLine(x2, yB, x3, yB, thicc);
+					const auto x4 = x0 + bounds.getWidth() * .8f;
+					const auto y4 = y0;
+					g.drawLine(x3, yA, x4, y4, thicc);
+					g.drawLine(x3, yB, x4, y4, thicc);
+					const auto x5 = bounds.getRight();
+					g.drawLine(x4, y4, x5, y4, thicc);
+				}
 			}
 		};
 	}
@@ -378,8 +445,23 @@ namespace gui
 
 	inline void makeParameterSwitchButton(Button& b, PID pID, ButtonSymbol symbol)
 	{
-		makeSymbolButton(b, symbol, true);
+		makeSymbolButton(b, symbol);
 		b.enableParameterSwitch(pID);
+	}
+
+	template<size_t NumButtons>
+	inline void makeParameterButtonsGroup(std::array<Button, NumButtons>& btns, PID pID, const char* txt)
+	{
+		for (auto i = 0; i < NumButtons; ++i)
+		{
+			auto& btn = btns[i];
+
+			const auto ts = i + 1;
+
+			makeTextButton(btn, String::charToString(txt[i]), true, true, ts);
+			btn.enableParameter(pID, ts);
+		}
+			
 	}
 }
 

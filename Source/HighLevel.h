@@ -30,12 +30,17 @@ namespace gui
 			hq(u, param::toTooltip(PID::HQ)),
 #endif
 			stereoConfig(u, param::toTooltip(PID::StereoConfig)),
-			bypass(u, param::toTooltip(PID::Bypass)),
-			polarity(u, param::toTooltip(PID::Polarity))
+			power(u, param::toTooltip(PID::Power)),
+			polarity(u, param::toTooltip(PID::Polarity)),
+			patchSelect{
+				Button(u, param::toTooltip(PID::PatchSelect)),
+				Button(u, param::toTooltip(PID::PatchSelect))
+			},
+			patchMode(u, param::toTooltip(PID::PatchMode))
 		{
 			layout.init(
 				{ 5, 30, 30, 30, 5, 5 },
-				{ 5, 20, 30, 30, 30, 5, 15, 5, 15, 5, 15 }
+				{ 5, 20, 30, 20, 30, 5, 15, 5, 15, 5, 15 }
 			);
 
 			pluginTitle.bgCID = ColourID::Transp;
@@ -60,11 +65,18 @@ namespace gui
 			makeParameterSwitchButton(stereoConfig, PID::StereoConfig, ButtonSymbol::StereoConfig);
 			addAndMakeVisible(stereoConfig);
 
-			makeParameterSwitchButton(bypass, PID::Bypass, ButtonSymbol::Bypass);
-			addAndMakeVisible(bypass);
+			makeParameterSwitchButton(power, PID::Power, ButtonSymbol::Power);
+			addAndMakeVisible(power);
 
 			makeParameterSwitchButton(polarity, PID::Polarity, ButtonSymbol::Polarity);
 			addAndMakeVisible(polarity);
+
+			makeParameterButtonsGroup(patchSelect, PID::PatchSelect, "AB");
+			for (auto& ab: patchSelect)
+				addAndMakeVisible(ab);
+
+			makeParameterSwitchButton(patchMode, PID::PatchMode, ButtonSymbol::PatchMode);
+			addAndMakeVisible(patchMode);
 
 			setInterceptsMouseClicks(false, true);
 		}
@@ -73,19 +85,27 @@ namespace gui
 		{
 			g.setColour(Colours::c(ColourID::Hover));
 			layout.label(g, "delta", 3.f, 1.25f, .5f, .75f, true);
-			layout.label(g, "A", 1.75f, 4.5f, .25f, .5f, true);
-			layout.label(g, "B", 3.f, 4.5f, .25f, .5f, true);
-			layout.label(g, "mode", 1.25f, 4.5f, .5f, .5f, true);
-			layout.label(g, "preset browser", 1.25f, 6, 2.5f, 1, false);
+			//layout.label(g, "mode", 1.5f, 4.25f, .5f, .5f, true);
+			layout.label(g, "<", 1.25f, 6, .25f, 1, false);
+			layout.label(g, "preset browser", 1.5f, 6, 1.5f, 1, false);
+			layout.label(g, ">", 3.f, 6, .25f, 1, false);
+			layout.label(g, "save", 3.25f, 6, .5f, 1, false);
 			layout.label(g, "optns", 1.f, 8, 1.f, 1, true);
 			layout.label(g, "<\n<\n<", 5, 0, 1, 11, false);
-
-#if PPDHasUnityGain
+			
 			const auto thicc = utils.thicc();
 			auto thiccI = static_cast<int>(thicc) / 2;
 			if (thiccI == 0)
 				thiccI = 1;
 			g.setColour(Colours::c(ColourID::Txt));
+			{
+				const auto y = static_cast<int>(layout.getY(4.5f));
+				const auto left = layout.getX(1.75f);
+				const auto right = layout.getX(2.125f);
+				for (auto i = -thiccI; i < thiccI; ++i)
+					g.drawHorizontalLine(y + i, left, right);
+			}
+#if PPDHasUnityGain
 			{
 				const auto y = static_cast<int>(layout.getY(3.5f));
 				{
@@ -123,8 +143,11 @@ namespace gui
 			layout.place(hq, 2.f, 8, 1.f, 1, true);
 #endif
 			layout.place(stereoConfig, 3.f, 8, 1.f, 1, true);
-			layout.place(bypass, 2.25f, 1.f, .5f, .75f, true);
+			layout.place(power, 2.25f, 1.f, .5f, .75f, true);
 			layout.place(polarity, 1.5f, 1.25f, .5f, .75f, true);
+			layout.place(patchSelect[0], 1.75f, 4.5f, .5f, .5f, true);
+			layout.place(patchSelect[1], 2.75f, 4.5f, .5f, .5f, true);
+			layout.place(patchMode, 1.25f, 4.25f, .5f, .5f, true);
 		}
 
 	protected:
@@ -144,8 +167,10 @@ namespace gui
 		Button hq;
 #endif
 		Button stereoConfig;
-		Button bypass;
+		Button power;
 		Button polarity;
+		std::array<Button, 2> patchSelect;
+		Button patchMode;
 	};
 }
 
