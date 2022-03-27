@@ -1,0 +1,319 @@
+
+
+
+HIGH LEVEL CONTROLS
+
+
+namespace gui
+{
+	struct HighLevelKnobsGroup :
+		public Comp
+	{
+		HighLevelKnobsGroup(Utils& u) :
+			Comp(u, "", CursorType::Default),
+			knobs
+			{
+#if PPDHasGainIn
+				Knob(u, "> Gain", PID::GainIn),
+#endif
+				Knob(u, "Mix", PID::Mix),
+#if PPDHasLookahead
+				Knob(u, "Lookahead", PID::Lookahead),
+#endif
+				Knob(u, "Gain >", PID::Gain)
+			},
+			meters
+			{
+#if PPDHasGainIn
+				KnobMeter(knobs.front(), u.getMeter(audio::Meters::Type::In)),
+#endif
+				KnobMeter(knobs.back(), u.getMeter(audio::Meters::Type::Out))
+			}
+		{
+			for (auto& k : knobs)
+				addAndMakeVisible(k);
+		}
+	protected:
+		std::array<Knob, param::NumHighLevelKnobs> knobs;
+		std::array<KnobMeter, param::NumHighLevelGainKnobs> meters;
+
+		void paint(Graphics&) override {}
+
+		void resized() override
+		{
+			auto x = 0.f;
+			auto y = 0.f;
+			auto w = static_cast<float>(getWidth()) / static_cast<float>(knobs.size());
+			auto h = static_cast<float>(getHeight());
+
+			for (auto& knob : knobs)
+			{
+				knob.setBounds(maxQuadIn({ x,y,w,h }).toNearestInt());
+				x += w;
+			}
+		}
+	};
+
+	struct HighLevelButtonsGroup :
+		public Comp
+	{
+		static constexpr int NumButtons = param::NumHighLevelParams - param::NumHighLevelKnobs - 1;
+
+		HighLevelButtonsGroup(Utils& u) :
+			Comp(u, "", CursorType::Default),
+			buttons
+			{
+#if PPDHasUnityGain
+				Button(u, param::toTooltip(PID::UnityGain)),
+#endif
+#if PPDHasHQ
+				Button(u, param::toTooltip(PID::HQ)),
+#endif
+				Button(u, param::toTooltip(PID::Polarity)),
+				Button(u, param::toTooltip(PID::StereoConfig)),
+				Button(u, param::toTooltip(PID::Bypass))
+			}
+		{
+			auto idx = NumButtons - 1;
+			makeParameterSwitchButton(buttons[idx], PID::Bypass, ButtonSymbol::Bypass);
+			--idx;
+			makeParameterSwitchButton(buttons[idx], PID::StereoConfig, ButtonSymbol::StereoConfig);
+			--idx;
+			makeParameterSwitchButton(buttons[idx], PID::Polarity, ButtonSymbol::Polarity);
+#if PPDHasHQ
+			--idx;
+			makeParameterSwitchButton(buttons[idx], PID::HQ, "HQ");
+#endif
+#if PPDHasUnityGain
+			--idx;
+			makeParameterSwitchButton(buttons[idx], PID::UnityGain, ButtonSymbol::UnityGain);
+#endif
+			
+			for (auto& b : buttons)
+				addAndMakeVisible(b);
+		}
+	protected:
+		std::array<Button, NumButtons> buttons;
+
+		void paint(Graphics&) override {}
+
+		void resized() override
+		{
+			auto x = 0.f;
+			auto y = 0.f;
+			auto w = static_cast<float>(getWidth()) / static_cast<float>(buttons.size());
+			auto h = static_cast<float>(getHeight());
+
+			for (auto& button : buttons)
+			{
+				button.setBounds(maxQuadIn({ x,y,w,h }).toNearestInt());
+				x += w;
+			}
+		}
+	};
+
+	struct HighLevel :
+		public Comp
+	{
+		HighLevel(Utils& u) :
+			Comp(u, "", CursorType::Default),
+			layout(*this),
+			pluginTitle(u, static_cast<String>(JucePlugin_Name)),
+			options(u, "you can find additional plugin options here."),
+			knobsGroup(u),
+			buttonsGroup(u),
+			patchXSelect(u, "Select Patch X to modify its parameter values."),
+			patchYSelect(u, "Select Patch Y to modify its parameter values."),
+			patchXSolo(u, param::toTooltip(PID::PatchXSolo)),
+			patchYSolo(u, param::toTooltip(PID::PatchYSolo)),
+			macro(u, "", "Interpolate between Patch X and Y.", PID::Macro)
+		{
+			setInterceptsMouseClicks(false, true);
+
+			pluginTitle.outlineCID = ColourID::Transp;
+
+			makeTextButton(options, "opt", true);
+
+			patchXSelect.setHitBoxType(HitBox::Type::ConvexClockwise);
+			patchYSelect.setHitBoxType(HitBox::Type::ConvexClockwise);
+			makeTextButton(patchXSelect, "X", true, true);
+			makeTextButton(patchYSelect, "Y", true, true);
+
+			makeParameterSwitchButton(patchXSolo, PID::PatchXSolo, "S");
+			makeParameterSwitchButton(patchYSolo, PID::PatchYSolo, "S");
+
+			addAndMakeVisible(pluginTitle);
+			addAndMakeVisible(options);
+			addAndMakeVisible(knobsGroup);
+			addAndMakeVisible(buttonsGroup);
+			addAndMakeVisible(patchXSelect);
+			addAndMakeVisible(patchYSelect);
+			addAndMakeVisible(patchXSolo);
+			addAndMakeVisible(patchYSolo);
+			addAndMakeVisible(macro);
+
+			layout.init(
+				{ 8, 12, 10, 50, 10, 12, 8 },
+				{ 5, 10, 20, 8, 8, 70 }
+			);
+		}
+
+	protected:
+		Layout layout;
+		Label pluginTitle;
+		Button options;
+		HighLevelKnobsGroup knobsGroup;
+		HighLevelButtonsGroup buttonsGroup;
+		Button patchXSelect, patchYSelect, patchXSolo, patchYSolo;
+		Dial macro;
+
+		void paint(Graphics& g) override
+		{
+			const auto thicc = utils.thicc();
+
+			//Comp::paint(g);
+			//layout.paint(g);
+
+			g.setColour(Colours::c(ColourID::Txt));
+			Path path;
+			make(path, layout, { {0,2}, {2,2}, {3,4}, {4,4}, {5,2}, {7,2} });
+			g.strokePath(path, juce::PathStrokeType(thicc));
+		}
+
+		void resized() override
+		{
+			layout.resized();
+
+			const auto thicc = utils.thicc();
+			const auto thicc3 = thicc * 3.f;
+
+			pluginTitle.setBounds(layout(3, 0, 1, 2, false).reduced(thicc3).toNearestInt());
+			options.setBounds(layout(0, 0, 1, 2, true).reduced(thicc).toNearestInt());
+			layout.place(knobsGroup, 3, 2, 1, 1, false);
+			layout.place(buttonsGroup, 3, 3, 1, 1, false);
+			layout.place(macro, 3, 4, 1, 1, false);
+
+			layout.place(patchXSelect, 0, 2, 3, 2, false);
+			layout.place(patchYSelect, 4, 2, 3, 2, false);
+
+			{
+				const auto off = PointF(0.f, 0.f) - layout(4, 2);
+				{
+					Path path;
+					make(path, layout, { { 0,2 }, { 2,2 }, { 3,4 }, { 0,4 } });
+					path.applyTransform(Affine::translation(0.f, off.y));
+					path.closeSubPath();
+
+					patchXSelect.updateHitBox(path);
+				}
+				{
+					Path path;
+					make(path, layout, { { 4,4 }, { 5,2 }, { 7,2 }, { 7,4 } });
+					path.applyTransform(Affine::translation(off));
+					path.closeSubPath();
+
+					patchYSelect.updateHitBox(path);
+				}
+			}
+
+			layout.place(patchXSolo, 2, 4, 1, 1, true);
+			layout.place(patchYSolo, 4, 4, 1, 1, true);
+		}
+	};
+}
+
+
+
+
+
+
+
+
+
+
+
+HITBOX
+
+
+struct HitBox
+	{
+		enum class Type { Rect, ConvexClockwise, NumTypes };
+
+		HitBox(const Component& _comp) :
+			comp(_comp),
+			points(),
+			area(),
+			type(Type::Rect)
+		{}
+
+		void setType(Type t) noexcept { type = t; }
+
+		void update(const Path& _area)
+		{
+			const auto w = comp.getWidth();
+			const auto h = comp.getHeight();
+
+			points.resize(w);
+			for (auto& pt : points)
+				pt.resize(h, true);
+
+			if (type == Type::ConvexClockwise) // right hand turn
+			{
+				area = _area;
+
+				for (auto x = 0; x < w; ++x)
+				{
+					for (auto y = 0; y < h; ++y)
+					{
+						bool inShape = true;
+
+						juce::PathFlatteningIterator it(area);
+						while (it.next())
+						{
+							Point a(it.x1, it.y1);
+							Point b(it.x2, it.y2);
+							Point c(x, y);
+
+							const auto cp = ((b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x));
+
+							if (cp == 0.f) // colinear
+							{
+								inShape = true;
+								break;
+							}
+							else if (cp < 0.f) // left-hand turn
+							{
+								inShape = false;
+								break;
+							}
+						}
+
+						points[x][y] = inShape;
+					}
+				}
+			}
+		}
+
+		bool operator()(int x, int y) noexcept
+		{
+			if (type == Type::Rect)
+				return true;
+			return points[x][y];
+		}
+
+		const Path& getArea() noexcept
+		{
+			if (type == Type::Rect)
+			{
+				area.clear();
+				area.addRectangle(comp.getLocalBounds().toFloat());
+			}
+			return area;
+		}
+
+	protected:
+		const Component& comp;
+		std::vector<std::vector<bool>> points;
+		Path area;
+		Type type;
+	};

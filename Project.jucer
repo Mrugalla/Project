@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<JUCERPROJECT id="j9fiOT" name="Project" projectType="audioplug" useAppConfig="0"
+              addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1" companyName="Mrugalla"
+              companyWebsite="https://github.com/Mrugalla" pluginFormats="buildStandalone,buildVST3"
+              pluginCharacteristicsValue="pluginWantsMidiIn" pluginDesc="XYXYXY"
+              pluginManufacturer="Mrugalla" pluginManufacturerCode="Mrug" pluginCode="ID01"
+              pluginVSTNumMidiInputs="1" pluginVST3Category="Fx" cppLanguageStandard="latest"
+              pluginName="Project">
+  <MAINGROUP id="c82PPq" name="Project">
+    <FILE id="oha5Fi" name="outtakes.txt" compile="0" resource="1" file="Source/outtakes.txt"/>
+    <FILE id="bEUJ6d" name="info.h" compile="0" resource="0" file="Source/info.h"/>
+    <FILE id="TMwdaE" name="config.h" compile="0" resource="0" file="Source/config.h"/>
+    <FILE id="DA5beK" name="configEnd.h" compile="0" resource="0" file="Source/configEnd.h"/>
+    <GROUP id="{329F0704-CF49-5A90-357A-72806BBA6C7A}" name="Source">
+      <GROUP id="{D379AB76-3EAE-A37D-31CD-FC91511F3FC1}" name="arch">
+        <FILE id="L39r3C" name="State.h" compile="0" resource="0" file="Source/State.h"/>
+        <FILE id="bzDhpf" name="Smooth.h" compile="0" resource="0" file="Source/Smooth.h"/>
+        <FILE id="zBYPEZ" name="Range.h" compile="0" resource="0" file="Source/Range.h"/>
+        <FILE id="LyunGe" name="Processor.cpp" compile="1" resource="0" file="Source/Processor.cpp"/>
+        <FILE id="RknCji" name="RealTimePtr.cpp" compile="1" resource="0" file="Source/RealTimePtr.cpp"/>
+        <FILE id="on3opn" name="RealTimePtr.h" compile="0" resource="0" file="Source/RealTimePtr.h"/>
+      </GROUP>
+      <GROUP id="{DA435779-5001-4379-F809-3E7C21D55DC0}" name="gui">
+        <FILE id="B6fZ8G" name="Parametr.h" compile="0" resource="0" file="Source/Parametr.h"/>
+        <FILE id="J9mhwQ" name="ValueBubble.h" compile="0" resource="0" file="Source/ValueBubble.h"/>
+        <FILE id="qZsO69" name="Layout.h" compile="0" resource="0" file="Source/Layout.h"/>
+        <FILE id="JQwbSV" name="nel19.ttf" compile="0" resource="1" file="Source/nel19.ttf"/>
+        <FILE id="LuE3Ws" name="Shared.cpp" compile="1" resource="0" file="Source/Shared.cpp"/>
+        <FILE id="VKP98V" name="Shared.h" compile="0" resource="0" file="Source/Shared.h"/>
+        <FILE id="Wxr0h5" name="Button.h" compile="0" resource="0" file="Source/Button.h"/>
+        <FILE id="ZWUUOo" name="Comp.h" compile="0" resource="0" file="Source/Comp.h"/>
+        <FILE id="yuGpdF" name="Events.h" compile="0" resource="0" file="Source/Events.h"/>
+        <FILE id="b2nBhJ" name="Tooltip.h" compile="0" resource="0" file="Source/Tooltip.h"/>
+        <FILE id="e6exEJ" name="Utils.h" compile="0" resource="0" file="Source/Utils.h"/>
+        <FILE id="FgBOrB" name="cursor.png" compile="0" resource="1" file="Source/cursor.png"/>
+        <FILE id="EwDWLA" name="cursorCross.png" compile="0" resource="1" file="Source/cursorCross.png"/>
+        <FILE id="CZ78Bk" name="GUIParams.h" compile="0" resource="0" file="Source/GUIParams.h"/>
+        <FILE id="zPYoPu" name="Label.h" compile="0" resource="0" file="Source/Label.h"/>
+        <FILE id="rS6nW8" name="HighLevel.h" compile="0" resource="0" file="Source/HighLevel.h"/>
+        <FILE id="qFymEs" name="Knob.h" compile="0" resource="0" file="Source/Knob.h"/>
+        <FILE id="WEGEgZ" name="Dial.h" compile="0" resource="0" file="Source/Dial.h"/>
+      </GROUP>
+      <GROUP id="{6A8CB2D6-E6E3-8D1E-1148-21BD24558A7A}" name="audio">
+        <FILE id="x0oUmr" name="EnvelopeFollower.h" compile="0" resource="0"
+              file="Source/EnvelopeFollower.h"/>
+        <FILE id="gTSoWy" name="Meter.h" compile="0" resource="0" file="Source/Meter.h"/>
+        <FILE id="PrzFwa" name="Oversampling.h" compile="0" resource="0" file="Source/Oversampling.h"/>
+        <FILE id="E27l0C" name="MidSide.h" compile="0" resource="0" file="Source/MidSide.h"/>
+        <FILE id="jjxWW5" name="DryWetMix.h" compile="0" resource="0" file="Source/DryWetMix.h"/>
+        <FILE id="LuUACE" name="WHead.h" compile="0" resource="0" file="Source/WHead.h"/>
+        <FILE id="V7S854" name="Rectifier.h" compile="0" resource="0" file="Source/Rectifier.h"/>
+      </GROUP>
+      <FILE id="y2PbSz" name="Param.h" compile="0" resource="0" file="Source/Param.h"/>
+      <FILE id="NTRJ33" name="Editor.h" compile="0" resource="0" file="Source/Editor.h"/>
+      <FILE id="OqTIYY" name="Processor.h" compile="0" resource="0" file="Source/Processor.h"/>
+    </GROUP>
+  </MAINGROUP>
+  <JUCEOPTIONS JUCE_STRICT_REFCOUNTEDPOINTER="1" JUCE_VST3_CAN_REPLACE_VST2="0"
+               JUCE_ENABLE_REPAINT_DEBUGGING="0"/>
+  <EXPORTFORMATS>
+    <VS2022 targetFolder="Builds/VisualStudio2022">
+      <CONFIGURATIONS>
+        <CONFIGURATION isDebug="1" name="Debug" enablePluginBinaryCopyStep="1"/>
+        <CONFIGURATION isDebug="0" name="Release" enablePluginBinaryCopyStep="1" useRuntimeLibDLL="0"
+                       winArchitecture="x64"/>
+      </CONFIGURATIONS>
+      <MODULEPATHS>
+        <MODULEPATH id="juce_audio_basics" path="../../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_devices" path="../../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_formats" path="../../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_plugin_client" path="../../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_processors" path="../../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_utils" path="../../JUCE/modules"/>
+        <MODULEPATH id="juce_core" path="../../JUCE/modules"/>
+        <MODULEPATH id="juce_data_structures" path="../../JUCE/modules"/>
+        <MODULEPATH id="juce_events" path="../../JUCE/modules"/>
+        <MODULEPATH id="juce_graphics" path="../../JUCE/modules"/>
+        <MODULEPATH id="juce_gui_basics" path="../../JUCE/modules"/>
+        <MODULEPATH id="juce_gui_extra" path="../../JUCE/modules"/>
+      </MODULEPATHS>
+    </VS2022>
+  </EXPORTFORMATS>
+  <MODULES>
+    <MODULE id="juce_audio_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_devices" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_formats" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_plugin_client" showAllCode="1" useLocalCopy="0"
+            useGlobalPath="1"/>
+    <MODULE id="juce_audio_processors" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_audio_utils" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_core" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_data_structures" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_events" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_graphics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_gui_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+    <MODULE id="juce_gui_extra" showAllCode="1" useLocalCopy="0" useGlobalPath="1"/>
+  </MODULES>
+</JUCERPROJECT>
