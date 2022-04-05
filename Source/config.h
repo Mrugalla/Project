@@ -22,5 +22,3 @@
 #define PPD_GainOut_Min -60.f
 #define PPD_GainOut_Max 6.f
 #define PPD_UnityGainDefault true
-
-#define ValueBubbleSizePercentage 12

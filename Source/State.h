@@ -102,15 +102,15 @@ namespace sta
 
 		const Var* get(String&& key, String&& id) const
 		{
-			return getProperty(key, id, state);
+			return getProperty(key, toID(id), state);
 		}
 		const Var* get(String&& key, const String& id) const
 		{
-			return getProperty(key, id, state);
+			return getProperty(key, toID(id), state);
 		}
 		const Var* get(const String& key, const String& id) const
 		{
-			return getProperty(key, id, state);
+			return getProperty(key, toID(id), state);
 		}
 
 		void undo()

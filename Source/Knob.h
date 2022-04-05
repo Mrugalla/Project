@@ -1,10 +1,10 @@
 #pragma once
 #include "Layout.h"
 #include "Param.h"
-#include "Comp.h"
 #include "Label.h"
-#include "Shared.h"
+#include "PopUp.h"
 #include "GUIParams.h"
+#include <functional>
 
 #include "config.h"
 
@@ -17,21 +17,21 @@ namespace gui
         static constexpr float AngleWidth = PiQuart * 3.f;
         static constexpr float AngleRange = AngleWidth * 2.f;
 
-        Knob(Utils& u, String&& _name, PID _pID) :
-            Parametr(u, _pID),
+        Knob(Utils& u, String&& _name, PID _pID, bool _modulatable = true) :
+            Parametr(u, _pID, _modulatable),
             Timer(),
+            knobBounds(0.f, 0.f, 0.f, 0.f),
             label(u, std::move(_name)),
+            //popUp(u),
             dragY(0.f),
             valMeter(0.f),
-            knobBounds(0.f, 0.f, 0.f, 0.f)
+            cID(ColourID::Interact)
         {
             layout.init(
-                { 1 },
-                { 80, 20 }
+                { 40, 40, 40 },
+                { 100, 40, 40 }
             );
 
-            label.bgCID = ColourID::Transp;
-            label.outlineCID = ColourID::Transp;
             label.textCID = ColourID::Interact;
             label.just = Just::centredTop;
 
@@ -46,30 +46,36 @@ namespace gui
             repaint();
         }
 
+        void setCID(ColourID c)
+        {
+            cID = c;
+            label.textCID = cID;
+        }
     protected:
+        BoundsF knobBounds;
         Label label;
         float dragY, valMeter;
-        BoundsF knobBounds;
+        ColourID cID;
 
         void timerCallback() override
         {
-            const auto vn = param.getValue();
             const auto lckd = param.isLocked();
-
             bool needsRepaint = false;
 
             if (locked != lckd)
-            {
-                locked = lckd;
-                label.textCID = lckd ? ColourID::Inactive : ColourID::Interact;
-                setCursorType(lckd ? CursorType::Inactive : CursorType::Interact);
-                label.repaint();
-                needsRepaint = true;
-            }
+                setLocked(lckd);
+
+            const auto vn = param.getValue();
+            const auto mmd = param.getMaxModDepth();
+            const auto vm = param.getValMod();
+            const auto mb = param.getModBias();
             
-            if (valNorm != vn)
+            if (valNorm != vn || maxModDepth != mmd || valMod != vm || modBias != mb)
             {
                 valNorm = vn;
+                maxModDepth = mmd;
+                valMod = vm;
+                modBias = mb;
                 needsRepaint = true;
             }
 
@@ -82,18 +88,17 @@ namespace gui
             const auto thicc = utils.thicc();
             const auto thicc2 = thicc * 2.f;
             const auto thicc3 = thicc * 3.f;
-            const auto bounds = knobBounds;
             juce::PathStrokeType strokeType(thicc, juce::PathStrokeType::JointStyle::curved, juce::PathStrokeType::EndCapStyle::rounded);
-            const auto radius = bounds.getWidth() * .5f;
+            const auto radius = knobBounds.getWidth() * .5f;
             const auto radiusBetween = radius - thicc;
             const auto radiusInner = radius - thicc2;
             PointF centre(
-                radius + bounds.getX(),
-                radius + bounds.getY()
+                radius + knobBounds.getX(),
+                radius + knobBounds.getY()
             );
 
-            auto col = locked ? Colours::c(ColourID::Inactive) : Colours::c(ColourID::Interact);
-
+            const auto col = Colours::c(ColourID::Interact);
+            
             if (valMeter != 0.f)
             {
                 g.setColour(Colours::c(ColourID::Txt));
@@ -141,6 +146,46 @@ namespace gui
             const auto valAngle = -AngleWidth + valNormAngle;
             const auto radiusExt = radius + thicc;
 
+            // draw modulation
+            if(modulatable)
+            {
+                const auto valModAngle = valMod * AngleRange;
+                const auto modAngle = -AngleWidth + valModAngle;
+                const auto modTick = juce::Line<float>::fromStartAndAngle(centre, radiusExt, modAngle);
+
+                g.setColour(Colours::c(ColourID::Bg));
+                g.drawLine(modTick, thicc * 4.f);
+                
+                const auto maxModDepthAngle = juce::jlimit(-AngleWidth, AngleWidth, valNormAngle + maxModDepth * AngleRange - AngleWidth);
+                const auto biasAngle = AngleRange * modBias - AngleWidth;
+
+                g.setColour(Colours::c(ColourID::Bias));
+                {
+                    Path biasPath;
+                    biasPath.addCentredArc(
+                        centre.x, centre.y,
+                        radiusInner, radiusInner,
+                        0.f,
+                        0.f, biasAngle,
+                        true
+                    );
+                    g.strokePath(biasPath, strokeType);
+                }
+
+                g.setColour(Colours::c(ColourID::Mod));
+                g.drawLine(modTick.withShortenedStart(radiusInner), thicc2);
+                {
+                    Path modPath;
+                    modPath.addCentredArc(
+                        centre.x, centre.y,
+                        radius, radius,
+                        0.f,
+                        maxModDepthAngle, valAngle,
+                        true
+                    );
+                    g.strokePath(modPath, strokeType);
+                }
+            }
             // draw tick
             {
                 const auto tickLine = juce::Line<float>::fromStartAndAngle(centre, radiusExt, valAngle);
@@ -157,8 +202,9 @@ namespace gui
             
             layout.resized();
 
-            knobBounds = layout(0, 0, 1, 1, true).reduced(thicc);
-            layout.place(label, 0, 1, 1, 1, false);
+            knobBounds = layout(0, 0, 3, 2, true).reduced(thicc);
+            layout.place(modDial, 1, 1, 1, 1, true);
+            layout.place(label, 0, 2, 3, 1, false);
         }
 
         void mouseEnter(const Mouse& mouse) override
@@ -199,6 +245,7 @@ namespace gui
                     label.setText(param.getCurrentValueAsText());
                     label.repaint();
                 }
+                notify(EvtType::ParametrDragged, this);
             }
         }
         void mouseUp(const Mouse& mouse) override
@@ -228,6 +275,8 @@ namespace gui
                 if (!mouse.mouseWasDraggedSinceMouseDown())
                     if (mouse.mods.isCtrlDown())
                         param.setValueWithGesture(param.getDefaultValue());
+                    else
+                        notify(EvtType::ParametrRightClicked, this);
             {
                 label.setText(param.getCurrentValueAsText());
                 label.repaint();
@@ -255,7 +304,6 @@ namespace gui
                 label.repaint();
             }
         }
-
     };
 
     class KnobMeter :
@@ -278,7 +326,8 @@ namespace gui
 
         void timerCallback() override
         {
-            const auto e = val.load();
+            auto e = val.load();
+            e = std::floor(e * 128.f) * .0078125f;
             if (env == e)
                 return;
             env = e;

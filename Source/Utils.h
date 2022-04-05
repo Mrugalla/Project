@@ -28,8 +28,6 @@ namespace gui
 	using Point = juce::Point<int>;
 	using PointF = juce::Point<float>;
 	using String = juce::String;
-	using Bounds = juce::Rectangle<int>;
-	using BoundsF = juce::Rectangle<float>;
 	using LineF = juce::Line<float>;
 
 	enum class CursorType
@@ -37,6 +35,7 @@ namespace gui
 		Default,
 		Interact,
 		Inactive,
+		Mod,
 		NumTypes
 	};
 
@@ -57,6 +56,8 @@ namespace gui
 			col = Colours::c(ColourID::Interact);
 		else if (c == CursorType::Inactive)
 			col = Colours::c(ColourID::Inactive);
+		else if (c == CursorType::Mod)
+			col = Colours::c(ColourID::Mod);
 
 		for (auto y = 0; y < h; ++y)
 			for (auto x = 0; x < w; ++x)
@@ -97,16 +98,15 @@ namespace gui
 
 		using Params = param::Params;
 		using EventSystem = evt::System;
-		using Bounds = juce::Rectangle<int>;
 		using AppProps = juce::ApplicationProperties;
 	public:
 
 		Utils(Component& _pluginTop, Processor& _audioProcessor) :
+			pluginTop(_pluginTop),
 			audioProcessor(_audioProcessor),
 			params(audioProcessor.params),
 			eventSystem(),
-			evt(eventSystem, makeNotify(this)),
-			pluginTop(_pluginTop)
+			evt(eventSystem, makeNotify(this))
 		{
 			Colours::c.init(audioProcessor.props.getUserSettings());
 		}
@@ -146,11 +146,12 @@ namespace gui
 		}
 
 		Point getScreenPosition() const noexcept { return pluginTop.getScreenPosition(); }
+
+		Component& pluginTop;
 	protected:
 		Processor& audioProcessor;
 		Params& params;
 		EventSystem eventSystem;
 		Evt evt;
-		Component& pluginTop;
 	};
 }

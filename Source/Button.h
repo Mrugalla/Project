@@ -1,5 +1,5 @@
 #pragma once
-#include "Comp.h"
+#include "Label.h"
 
 namespace gui
 {
@@ -47,8 +47,6 @@ namespace gui
 		void enableLabel(String&& txt)
 		{
 			label.setText(txt);
-			label.bgCID = ColourID::Transp;
-			label.outlineCID = ColourID::Transp;
 			label.textCID = ColourID::Interact;
 			addAndMakeVisible(label);
 		}
@@ -57,8 +55,6 @@ namespace gui
 		{
 			toggleTexts = txt;
 			label.setText("");
-			label.bgCID = ColourID::Transp;
-			label.outlineCID = ColourID::Transp;
 			label.textCID = ColourID::Interact;
 			addAndMakeVisible(label);
 		}
@@ -67,13 +63,13 @@ namespace gui
 		{
 			stopTimer();
 
-			onClick = [param = utils.getParam(pID)]()
+			onClick.push_back([param = utils.getParam(pID)]()
 			{
 				const auto ts = param->getValue() > .5f ? 0.f : 1.f;
 				param->setValueWithGesture(ts);
-			};
+			});
 			
-			onTimer = [this, pID]()
+			onTimer.push_back([this, pID]()
 			{
 				const auto param = utils.getParam(pID);
 				const auto nTs = param->getValue() > .5f ? 1 : 0;
@@ -85,7 +81,7 @@ namespace gui
 						label.setText(toggleTexts[toggleState]);
 					repaintWithChildren(this);
 				}
-			};
+			});
 
 			startTimerHz(24);
 		}
@@ -94,14 +90,14 @@ namespace gui
 		{
 			stopTimer();
 
-			onClick = [param = utils.getParam(pID), v = static_cast<float>(val)]()
+			onClick.push_back([param = utils.getParam(pID), v = static_cast<float>(val)]()
 			{
 				const auto pVal = std::rint(param->getValueDenorm());
 				const auto ts = pVal == v ? 0.f : v;
 				param->setValueWithGesture(param->range.convertTo0to1(ts));
-			};
+			});
 
-			onTimer = [this, pID, val]()
+			onTimer.push_back([this, pID, val]()
 			{
 				const auto param = utils.getParam(pID);
 				const auto pVal = std::rint(param->getValueDenorm());
@@ -114,16 +110,16 @@ namespace gui
 						label.setText(toggleTexts[toggleState]);
 					repaintWithChildren(this);
 				}
-			};
+			});
 
 			startTimerHz(24);
 		}
 
 		Button(Utils& _utils, String&& _tooltip) :
 			Comp(_utils, _tooltip, makeNotify(this)),
-			onClick([]() {}),
-			onTimer([]() {}),
-			onPaint([](Graphics&, Button&) {}),
+			onClick(),
+			onTimer(),
+			onPaint(),
 			blinkyBoy(),
 			toggleState(-1),
 			label(utils, ""),
@@ -134,8 +130,8 @@ namespace gui
 
 		Label& getLabel() noexcept { return label; }
 
-		OnClick onClick, onTimer;
-		OnPaint onPaint;
+		std::vector<OnClick> onClick, onTimer;
+		std::vector<OnPaint> onPaint;
 		BlinkyBoy blinkyBoy;
 		int toggleState;
 	protected:
@@ -156,7 +152,8 @@ namespace gui
 
 		void paint(Graphics& g) override
 		{
-			onPaint(g, *this);
+			for(auto& op: onPaint)
+				op(g, *this);
 		}
 
 		void mouseEnter(const Mouse& mouse) override
@@ -173,13 +170,15 @@ namespace gui
 			if (mouse.mouseWasDraggedSinceMouseDown())
 				return;
 			blinkyBoy.init(this, .25f);
-			onClick();
+			for(auto& oc: onClick)
+				oc();
 			notify(EvtType::ButtonClicked, this);
 		}
 
 		void timerCallback() override
 		{
-			onTimer();
+			for(auto& ot: onTimer)
+				ot();
 		}
 
 	private:
@@ -206,7 +205,7 @@ namespace gui
 		b.enableLabel(std::move(txt));
 
 		if (onlyText)
-			b.onPaint = [withToggle, targetToggleState](Graphics& g, Button& button)
+			b.onPaint.push_back([withToggle, targetToggleState](Graphics& g, Button& button)
 			{
 				const auto& utils = button.getUtils();
 				const auto& blinkyBoy = button.blinkyBoy;
@@ -216,7 +215,7 @@ namespace gui
 				const bool isDown = button.isMouseButtonDown();
 				thicc *= (isOver ? 1.1f : 1.f);
 
-				auto area = button.getLocalBounds().toFloat().reduced(thicc);
+				auto area = button.getLocalBounds().toFloat().reduced(thicc * .5f);
 				const auto col = blinkyBoy.getInterpolated(Colours::c(ColourID::Transp), juce::Colours::white);
 
 				g.setColour(col);
@@ -235,20 +234,21 @@ namespace gui
 					if (isDown)
 						g.fillRoundedRectangle(area, thicc);
 				}
-			};
+			});
 		else
-			b.onPaint = [withToggle, targetToggleState](Graphics& g, Button& button)
+			b.onPaint.push_back([withToggle, targetToggleState](Graphics& g, Button& button)
 			{
 				const auto& utils = button.getUtils();
 				const auto& blinkyBoy = button.blinkyBoy;
 
 				auto thicc = utils.thicc();
+				const auto thiccHalf = thicc * .5f;
 				const bool isOver = button.isMouseOver();
 				const bool isDown = button.isMouseButtonDown();
 				thicc *= (isOver ? 1.1f : 1.f);
 
-				auto area = button.getLocalBounds().toFloat().reduced(thicc);
-
+				const auto area = button.getLocalBounds().toFloat().reduced(thiccHalf);
+				
 				const auto col = blinkyBoy.getInterpolated(Colours::c(ColourID::Bg), juce::Colours::white);
 
 				g.setColour(col);
@@ -269,7 +269,7 @@ namespace gui
 				}
 				g.setColour(Colours::c(ColourID::Interact));
 				g.drawRoundedRectangle(area, thicc, thicc);
-			};
+			});
 	}
 
 	enum class ButtonSymbol
@@ -279,6 +279,7 @@ namespace gui
 		UnityGain,
 		Power,
 		PatchMode,
+		Settings,
 		NumSymbols
 	};
 
@@ -293,7 +294,7 @@ namespace gui
 			b.enableLabel({ "L/R", "M/S" });
 		}
 		
-		b.onPaint = [symbol, withToggle](Graphics& g, Button& button)
+		b.onPaint.push_back([symbol, withToggle](Graphics& g, Button& button)
 		{
 			const auto& utils = button.getUtils();
 			const auto& blinkyBoy = button.blinkyBoy;
@@ -304,7 +305,7 @@ namespace gui
 			thicc *= (isOver ? 1.1f : 1.f);
 
 			auto bounds = button.getLocalBounds().toFloat().reduced(thicc);
-			const auto col = blinkyBoy.getInterpolated(Colours::c(ColourID::Bg), juce::Colours::white);
+			auto col = blinkyBoy.getInterpolated(Colours::c(ColourID::Bg), juce::Colours::white);
 
 			g.setColour(col);
 			g.fillRoundedRectangle(bounds, thicc);
@@ -322,7 +323,13 @@ namespace gui
 				if (isDown)
 					g.fillRoundedRectangle(bounds, thicc);
 			}
-			g.setColour(Colours::c(ColourID::Interact));
+
+			bool abortable = symbol == ButtonSymbol::Settings;
+			if (abortable && button.toggleState == 1)
+				col = Colours::c(ColourID::Abort);
+			else
+				col = Colours::c(ColourID::Interact);
+			g.setColour(col);
 			g.drawRoundedRectangle(bounds, thicc, thicc);
 
 			if (symbol == ButtonSymbol::Polarity)
@@ -434,7 +441,78 @@ namespace gui
 					g.drawLine(x4, y4, x5, y4, thicc);
 				}
 			}
-		};
+			else if (symbol == ButtonSymbol::Settings)
+			{
+				const auto thicc3 = thicc * 4.f;
+				bounds = maxQuadIn(bounds).reduced(thicc3);
+
+				if (button.toggleState == 1)
+				{
+					g.setFont(getFontNEL());
+					g.drawFittedText("X", bounds.toNearestInt(), Just::centred, 1);
+				}
+				else
+				{
+					const auto x = bounds.getX();
+					const auto y = bounds.getY();
+					const auto w = bounds.getWidth();
+					const auto h = bounds.getHeight();
+					const auto btm = y + h;
+					const auto rght = x + w;
+
+					juce::PathStrokeType stroke(
+						thicc,
+						juce::PathStrokeType::JointStyle::curved,
+						juce::PathStrokeType::EndCapStyle::rounded
+					);
+
+					const auto tickWidth = .2f;
+					const auto rad = w * tickWidth;
+					const auto angle0 = 0.f - PiQuart;
+					const auto angle1 = PiHalf + PiQuart;
+					
+					{
+						const auto centreX = x;
+						const auto centreY = btm;
+
+						Path path;
+						path.addCentredArc(
+							centreX, centreY,
+							rad, rad,
+							0.f, angle0, angle1,
+							true
+						);
+
+						g.strokePath(path, stroke);
+					}
+
+					{
+						const auto centreX = rght;
+						const auto centreY = y;
+						Path path;
+						path.addCentredArc(
+							centreX, centreY,
+							rad, rad,
+							Pi, angle0, angle1,
+							true
+						);
+
+						g.strokePath(path, stroke);
+					}
+
+					{
+						const auto padding = rad;
+
+						const auto x0 = x + padding;
+						const auto y0 = btm - padding;
+						const auto x1 = rght - padding;
+						const auto y1 = y + padding;
+
+						g.drawLine(x0, y0, x1, y1, thicc);
+					}
+				}
+			}
+		});
 	}
 
 	inline void makeParameterSwitchButton(Button& b, PID pID, String&& txt)
@@ -450,7 +528,7 @@ namespace gui
 	}
 
 	template<size_t NumButtons>
-	inline void makeParameterButtonsGroup(std::array<Button, NumButtons>& btns, PID pID, const char* txt)
+	inline void makeParameterButtonsGroup(std::array<Button, NumButtons>& btns, PID pID, const char* txt, bool onlyText)
 	{
 		for (auto i = 0; i < NumButtons; ++i)
 		{
@@ -458,10 +536,33 @@ namespace gui
 
 			const auto ts = i + 1;
 
-			makeTextButton(btn, String::charToString(txt[i]), true, true, ts);
+			makeTextButton(btn, String::charToString(txt[i]), true, onlyText, ts);
 			btn.enableParameter(pID, ts);
 		}
 			
+	}
+
+	inline void makeButtonsGroup(std::vector<std::unique_ptr<Button>>& btns, int defaultToggleStateIndex = 0)
+	{
+		for (auto& btn : btns)
+			btn->toggleState = 0;
+		btns[defaultToggleStateIndex]->toggleState = 1;
+
+		for (auto i = 0; i < btns.size(); ++i)
+		{
+			auto& btn = *btns[i];
+
+			btn.onClick.push_back([&buttons = btns, i]()
+			{
+				for (auto& btn : buttons)
+				{
+					btn->toggleState = 0;
+					repaintWithChildren(btn.get());
+				}
+					
+				buttons[i]->toggleState = 1;
+			});
+		}
 	}
 }
 

@@ -8,13 +8,16 @@
 
 #include "Shader.h"
 
+#include "PopUp.h"
 #include "Knob.h"
 #include "HighLevel.h"
+#include "LowLevel.h"
+
 #include "Tooltip.h"
 
-#include "ValueBubble.h"
-
 #include <juce_gui_basics/juce_gui_basics.h>
+
+#include <array>
 
 #include "config.h"
 
@@ -36,12 +39,12 @@ namespace gui
             layout(*this),
             utils(*this, p),
 
-            highLevel(utils),
+            lowLevel(utils),
+            highLevel(utils, &lowLevel),
 
             tooltip(utils, "The tooltips bar leads you to wisdom."),
+            popUp(utils),
 
-            valueBubble(utils),
-            
             bypassed(false),
             shadr(bypassed)
         {
@@ -54,24 +57,19 @@ namespace gui
                 { 150, 10 }
             );
 
+            addAndMakeVisible(lowLevel);
             addAndMakeVisible(highLevel);
 
             addAndMakeVisible(tooltip);
-
-            addChildComponent(valueBubble);
+            addAndMakeVisible(popUp);
 
             startTimerHz(12);
             setOpaque(true);
             setResizable(true, true);
             {
-                auto w = 620;
-                auto h = 420;
-                auto var = p.state.get("gui", "width");
-                if (var)
-                    w = static_cast<int>(*var);
-                var = p.state.get("gui", "height");
-                if (var)
-                    h = static_cast<int>(*var);
+                auto user = audioProcessor.props.getUserSettings();
+                const auto w = user->getIntValue("gui/width", 620);
+                const auto h = user->getIntValue("gui/height", 420);
                 setSize(w, h);
             }
         }
@@ -95,15 +93,10 @@ namespace gui
 
             layout.resized();
 
+            layout.place(lowLevel, 1, 0, 1, 1, false);
             layout.place(highLevel, 0, 0, 1, 1, false);
 
             tooltip.setBounds(layout.bottom().toNearestInt());
-
-            {
-                const auto w = ValueBubbleSizePercentage * getWidth() / 100;
-                const auto h = ValueBubbleSizePercentage * getHeight() / 100;
-                valueBubble.setSize(w, h);
-            }
 
             saveBounds();
         }
@@ -120,7 +113,9 @@ namespace gui
         void mouseDrag(const Mouse&) override
         {}
         void mouseUp(const Mouse&) override
-        {}
+        {
+            utils.getEventSystem().notify(EvtType::ClickedEmpty, this);
+        }
         void mouseWheelMove(const Mouse&, const MouseWheel&) override
         {}
 
@@ -129,11 +124,11 @@ namespace gui
         Layout layout;
         Utils utils;
 
+        LowLevel lowLevel;
         HighLevel highLevel;
 
         Tooltip tooltip;
-
-        ValueBubble valueBubble;
+        PopUp<6> popUp;
 
         bool bypassed;
         Shader shadr;
@@ -145,8 +140,9 @@ namespace gui
         {
             const auto w = getWidth();
             const auto h = getHeight();
-            audioProcessor.state.set("gui", "width", w, false);
-            audioProcessor.state.set("gui", "height", h, false);
+            auto user = audioProcessor.props.getUserSettings();
+            user->setValue("gui/width", w);
+            user->setValue("gui/height", h);
         }
 
         void timerCallback() override

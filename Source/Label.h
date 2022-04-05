@@ -9,8 +9,6 @@ namespace gui
 	{
 		Label(Utils& u, String&& _name, Notify&& _notify = [](EvtType, const void*){}) :
 			Comp(u, "", std::move(_notify), gui::CursorType::Default),
-			bgCID(ColourID::Bg),
-			outlineCID(ColourID::Txt),
 			textCID(ColourID::Txt),
 			just(Just::centred),
 			font(getFontNEL())
@@ -34,7 +32,7 @@ namespace gui
 
 		bool empty() const noexcept { return getName().isEmpty(); }
 
-		ColourID bgCID, outlineCID, textCID;
+		ColourID textCID;
 		Just just;
 		Font font;
 	protected:
@@ -42,13 +40,13 @@ namespace gui
 		{
 			const auto thicc = utils.thicc();
 			const auto bounds = getLocalBounds().toFloat().reduced(thicc);
-			g.setColour(Colours::c(bgCID));
-			g.fillRoundedRectangle(bounds, thicc);
-			g.setColour(Colours::c(outlineCID));
-			g.drawRoundedRectangle(bounds, thicc, thicc);
+			const auto y = bounds.getY();
+			const auto h = bounds.getHeight();
+			const auto fontH = font.getHeight();
+			const auto nH = y + (h - fontH) * .5f;
 			g.setColour(Colours::c(textCID));
 			g.setFont(font);
-			g.drawFittedText(getName(), bounds.toNearestInt(), just, 1);
+			g.drawFittedText(getName(), bounds.withY(nH).toNearestInt(), just, 1);
 		}
 
 		void resized() override
@@ -57,13 +55,32 @@ namespace gui
 		}
 
 	private:
-		void updateTextBounds()
+		void updateTextBounds(float minFontHeight = 6.f)
 		{
 			const auto thicc = utils.thicc();
 
-			const auto strWidth = font.getStringWidthFloat(getName());
+			const auto& text = getName();
+			float maxStrWidth = 0.f;
+			{
+				auto sIdx = 0;
+				for (auto i = 1; i < text.length(); ++i)
+				{
+					if (text[i] == '\n')
+					{
+						const auto lineWidth = font.getStringWidthFloat(text.substring(sIdx, i));
+						if (maxStrWidth < lineWidth)
+							maxStrWidth = lineWidth;
+						++i;
+						sIdx = i;
+					}
+				}
+				const auto lineWidth = font.getStringWidthFloat(text.substring(sIdx));
+				if (maxStrWidth < lineWidth)
+					maxStrWidth = lineWidth;
+			}
+
 			const auto width = static_cast<float>(getWidth());
-			const auto ratio = width / strWidth;
+			const auto ratio = width / maxStrWidth;
 
 			auto fontHeight = font.getHeight();
 			fontHeight *= ratio;
@@ -72,7 +89,9 @@ namespace gui
 			if (fontHeight > height)
 				fontHeight = height;
 
-			font.setHeight(fontHeight - thicc);
+			const auto nHeight = fontHeight - thicc;
+
+			font.setHeight(nHeight < minFontHeight ? minFontHeight : nHeight);
 		}
 	};
 }

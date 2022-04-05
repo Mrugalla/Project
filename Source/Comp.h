@@ -35,6 +35,12 @@ namespace gui
 
 		const String* getTooltip() const noexcept { return &tooltip; }
 		String* getTooltip() noexcept { return &tooltip; }
+
+		void setTooltip(String&& t)
+		{
+			tooltip = t;
+			setInterceptsMouseClicks(true, true);
+		}
 	
 		void setCursorType(CursorType ct)
 		{
@@ -43,6 +49,16 @@ namespace gui
 				cursorType = ct;
 				setMouseCursor(makeCursor(cursorType));
 			}
+		}
+
+		const Layout& getLayout() const noexcept { return layout; }
+		void initLayout(const std::vector<int>& xL, const std::vector<int>& yL)
+		{
+			layout.init(xL, yL);
+		}
+		void initLayout(const String& xL, const String& yL)
+		{
+			layout.fromStrings(xL, yL);
 		}
 
 	protected:
@@ -63,6 +79,10 @@ namespace gui
 			notify(EvtType::TooltipUpdated, &tooltip);
 		}
 
+		void mouseUp(const Mouse&) override
+		{
+			notify(EvtType::ClickedEmpty, this);
+		}
 	private:
 		const Evt notifyBasic;
 
@@ -80,10 +100,65 @@ namespace gui
 	};
 
 	struct CompWidgetable :
-		public Comp
+		public Comp,
+		public Timer
 	{
-		CompWidgetable(Utils& u) :
-			Comp(u)
-		{} // to do
+		CompWidgetable(Utils& u, String&& _tooltip, CursorType _cursorType = CursorType::Interact) :
+			Comp(u, std::move(_tooltip), _cursorType),
+			bounds0(),
+			bounds1(),
+			widgetEnvelope(0.f),
+			widgetInc(1.f)
+		{
+		}
+		
+		CompWidgetable(Utils& u, String&& _tooltip, Notify&& _notify = [](EvtType,const void*){}, CursorType _cursorType = CursorType::Interact) :
+			Comp(u, std::move(_tooltip), std::move(_notify), _cursorType),
+			bounds0(),
+			bounds1(),
+			widgetEnvelope(0.f),
+			widgetInc(1.f)
+		{
+		}
+
+		void defineBounds(const BoundsF& b0, const BoundsF& b1)
+		{
+			bounds0 = b0;
+			bounds1 = b1;
+		}
+
+		void initWidget(float lengthInSecs, bool _widgetEnv = false)
+		{
+			widgetEnvelope = _widgetEnv ? 1.f : 0.f;
+			widgetInc = 1.f / (30.f * lengthInSecs) * (_widgetEnv ? -1.f : 1.f);
+			startTimerHz(30);
+		}
+
+		void updateBounds()
+		{
+			const auto x = static_cast<int>(bounds0.getX() + widgetEnvelope * (bounds1.getX() - bounds0.getX()));
+			const auto y = static_cast<int>(bounds0.getY() + widgetEnvelope * (bounds1.getY() - bounds0.getY()));
+			const auto w = static_cast<int>(bounds0.getWidth() + widgetEnvelope * (bounds1.getWidth() - bounds0.getWidth()));
+			const auto h = static_cast<int>(bounds0.getHeight() + widgetEnvelope * (bounds1.getHeight() - bounds0.getHeight()));
+
+			setBounds(x, y, w, h);
+		}
+
+		void timerCallback() override
+		{
+			widgetEnvelope += widgetInc;
+			if(widgetEnvelope < 0.f || widgetEnvelope > 1.f)
+			{
+				stopTimer();
+				widgetEnvelope = std::rint(widgetEnvelope);
+			}
+			
+			updateBounds();
+		}
+		
+		BoundsF bounds0, bounds1;
+		float widgetEnvelope;
+	private:
+		float widgetInc;
 	};
 }

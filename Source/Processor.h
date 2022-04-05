@@ -23,6 +23,7 @@ namespace audio
 #include "Oversampling.h"
 #include "Meter.h"
 #include "Rectifier.h"
+#include "Bitcrusher.h"
 
 #include "config.h"
 
@@ -30,6 +31,7 @@ namespace audio
 {
     using State = sta::State;
     using Params = param::Params;
+    using MacroProcessor = param::MacroProcessor;
     using PID = param::PID;
     using Timer = juce::Timer;
 
@@ -47,7 +49,8 @@ namespace audio
             ),
             props(),
             state(),
-            params(*this, state)
+            params(*this, state),
+            macroProcessor(params)
 #if PPDHasHQ
             , oversampler()
 #endif
@@ -121,6 +124,7 @@ namespace audio
         AppProps props;
         State state;
         Params params;
+        MacroProcessor macroProcessor;
 
         DryWetMix dryWetMix;
 #if PPDHasHQ
@@ -147,11 +151,14 @@ namespace audio
 
         void processBlockBypassed(AudioBuffer& buffer, juce::MidiBuffer&) override
         {
+            macroProcessor();
+            const auto numSamples = buffer.getNumSamples();
+            if (numSamples == 0)
+                return;
             auto samples = buffer.getArrayOfWritePointers();
             const auto constSamples = buffer.getArrayOfReadPointers();
             const auto numChannels = buffer.getNumChannels();
-            const auto numSamples = buffer.getNumSamples();
-
+            
             dryWetMix.processBypass(samples, numChannels, numSamples);
 #if PPDHasGainIn
             meters.processIn(constSamples, numChannels, numSamples);
@@ -162,6 +169,8 @@ namespace audio
     protected:
         AudioBuffer* processBlockStart(AudioBuffer& buffer, juce::MidiBuffer& midi) noexcept
         {
+            macroProcessor();
+
             const auto numSamples = buffer.getNumSamples();
             if (numSamples == 0)
                 return nullptr;
@@ -286,7 +295,11 @@ private:
         
         void processBlockCustom(float** samples, int numChannels, int numSamples) noexcept
         {
-            rectify(samples, numChannels, numSamples);
+            {
+                const auto crushGain = params[PID::CrushGain]->getValModDenorm();
+
+                crush(samples, numChannels, numSamples, crushGain);
+            }
         }
 
         void releaseResources() override {}

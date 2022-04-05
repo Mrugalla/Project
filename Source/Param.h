@@ -39,27 +39,19 @@ namespace param
 		HQ,
 #endif
 		StereoConfig,
-		// neither high- nor lowlevel param(s)
-		Power,
 		PatchSelect,
 		PatchMode,
+		Power,
 
 		// low level parameters
-		DefaultParameter,
+		CrushGain,
+		AnotherDummyParam,
 
 		NumParams
 	};
 	static constexpr int NumParams = static_cast<int>(PID::NumParams);
 	static constexpr int MinLowLevelIdx = static_cast<int>(PID::Power) + 1;
 	static constexpr int NumLowLevelParams = NumParams - MinLowLevelIdx;
-	static constexpr int NumHighLevelParams = NumParams - NumLowLevelParams;
-	static constexpr int MinHighLevelButton = static_cast<int>(PID::Polarity);
-	static constexpr int NumHighLevelKnobs = MinHighLevelButton - 1;
-#if PPDHasGainIn
-	static constexpr int NumHighLevelGainKnobs = 2;
-#else
-	static constexpr int NumHighLevelGainKnobs = 1;
-#endif
 
 	PID ll(PID pID, int offset) noexcept
 	{
@@ -90,12 +82,13 @@ namespace param
 #if PPDHasUnityGain
 		case PID::UnityGain: return "Unity Gain";
 #endif
-		case PID::StereoConfig: return "StereoConfig";
+		case PID::StereoConfig: return "Stereo Config";
 
 		case PID::Power: return "Power";
 
 		// LOW LEVEL PARAMS:
-		case PID::DefaultParameter: return "Default Parameter";
+		case PID::CrushGain: return "Crush Gain";
+		case PID::AnotherDummyParam: return "AnotherDummyParam";
 		
 		default: return "Invalid Parameter Name";
 		}
@@ -127,7 +120,7 @@ namespace param
 
 		case PID::Power: return "Bypass the plugin with this parameter.";
 
-		case PID::DefaultParameter: return "Default Parameter Tooltip Txt";
+		case PID::CrushGain: return "Default Parameter Tooltip Txt";
 
 		default: return "Invalid Tooltip.";
 		}
@@ -200,9 +193,17 @@ namespace param
 			AudioProcessorParameter(),
 			id(pID),
 			range(_range),
+			val0(0.f),
+			val1(0.f),
+
 			state(_state),
 			valDenormDefault(_valDenormDefault),
+			
 			valNorm(range.convertTo0to1(_valDenormDefault)),
+			maxModDepth(0.f),
+			valMod(valNorm.load()),
+			modBias(.5f),
+
 			valToStr(_valToStr),
 			strToVal(_strToVal),
 			unit(_unit),
@@ -213,23 +214,37 @@ namespace param
 
 		void savePatch() const
 		{
-			state.set(getIDString(), "value", range.convertFrom0to1(getValue()), true);
-			state.set(getIDString(), "locked", locked.load() ? 1 : 0, true);
+			auto v = range.convertFrom0to1(getValue());
+			state.set(getIDString(), "value", v, true);
+			const auto mdd = getMaxModDepth();
+			state.set(getIDString(), "maxmoddepth", mdd, true);
+			auto mb = getModBias();
+			state.set(getIDString(), "modbias", mb, true);
 		}
 		void loadPatch()
 		{
-			auto var = state.get(getIDString(), "locked");
-			if (var)
+			const auto lckd = isLocked();
+			if (!lckd)
 			{
-				const auto val = static_cast<int>(*var);
-				locked.store(val == 1);
-			}
-			var = state.get(getIDString(), "value");
-			if (var)
-			{
-				const auto val = static_cast<float>(*var);
-				const auto valD = range.convertTo0to1(val);
-				setValueNotifyingHost(valD);
+				auto var = state.get(getIDString(), "value");
+				if (var)
+				{
+					const auto val = static_cast<float>(*var);
+					const auto valD = range.convertTo0to1(val);
+					setValueNotifyingHost(valD);
+				}
+				var = state.get(getIDString(), "maxmoddepth");
+				if (var)
+				{
+					const auto val = static_cast<float>(*var);
+					setMaxModDepth(val);
+				}
+				var = state.get(getIDString(), "modbias");
+				if (var)
+				{
+					const auto val = static_cast<float>(*var);
+					setModBias(val);
+				}
 			}
 		}
 
@@ -238,12 +253,13 @@ namespace param
 		float getValueDenorm() const noexcept { return range.convertFrom0to1(getValue()); }
 
 		// called by host, normalized, avoid locks, not used by editor
-		// use setValueNotifyingHost() from the editor
 		void setValue(float normalized) override
 		{
 			if(!isLocked())
 				valNorm.store(normalized);
 		}
+		
+		// called by editor
 		void setValueWithGesture(float norm)
 		{
 			beginChangeGesture();
@@ -252,6 +268,39 @@ namespace param
 		}
 		void beginGesture() { beginChangeGesture(); }
 		void endGesture() { endChangeGesture(); }
+		float getMaxModDepth() const noexcept { return maxModDepth.load(); }
+		void setMaxModDepth(float v) noexcept
+		{
+			if (!isLocked())
+			{
+				maxModDepth.store(juce::jlimit(-1.f, 1.f, v));
+			}
+		}
+		float getValMod() const noexcept { return valMod.load(); }
+		float getValModDenorm() const noexcept { return range.convertFrom0to1(valMod.load()); }
+		void setModBias(float b) noexcept
+		{
+			if (isLocked())
+				return;
+			
+			b = juce::jlimit(0.00001f, .99999f, b);
+			modBias.store(b);
+		}
+		float getModBias() const noexcept { return modBias.load(); }
+
+		// called by processor
+		void modulate(float macro) noexcept
+		{
+			val0 = getValue();
+
+			const auto mmd = maxModDepth.load();
+			const auto pol = mmd > 0.f ? 1.f : -1.f;
+			const auto md = mmd * pol;
+			const auto mdSkew = biased(0.f, md, modBias.load(), macro);
+			val1 = mdSkew * pol;
+			
+			valMod.store(juce::jlimit(0.f, 1.f, val0 + val1));
+		}
 
 		float getDefaultValue() const override { return range.convertTo0to1(valDenormDefault); }
 
@@ -286,20 +335,32 @@ namespace param
 
 		const PID id;
 		const Range range;
+		float val0, val1;
 	protected:
 		State& state;
 		const float valDenormDefault;
-		std::atomic<float> valNorm;
+		std::atomic<float> valNorm, maxModDepth, valMod, modBias;
 		ValToStrFunc valToStr;
 		StrToValFunc strToVal;
 		Unit unit;
+
 		
 		std::atomic<bool> locked;
-
 	private:
 		String getIDString() const
 		{
 			return "params/" + toID(toString(id));
+		}
+
+		inline float biased(float start, float end, float bias/*0,1*/, float x) const noexcept
+		{
+			const auto r = end - start;
+			if (r == 0.f)
+				return 0.f;
+			const auto a2 = 2.f * bias;
+			const auto aM = 1.f - bias;
+			const auto aR = r * bias;
+			return start + aR * x / (aM - x + a2 * x);
 		}
 	};
 
@@ -431,7 +492,7 @@ namespace param
 	{
 		inline ValToStrFunc patchMode()
 		{
-			return [](float v) { return v > .5f ? "parallel-processing" : "parameters"; };
+			return [](float v) { return v > .5f ? "Parallel" : "Params"; };
 		}
 		inline ValToStrFunc patchSelect()
 		{
@@ -439,15 +500,15 @@ namespace param
 		}
 		inline ValToStrFunc mute()
 		{
-			return [](float v) { return v > .5f ? "mute" : "not mute"; };
+			return [](float v) { return v > .5f ? "Mute" : "Not Mute"; };
 		}
 		inline ValToStrFunc solo()
 		{
-			return [](float v) { return v > .5f ? "solo" : "not solo"; };
+			return [](float v) { return v > .5f ? "Solo" : "Not Solo"; };
 		}
 		inline ValToStrFunc power()
 		{
-			return [](float v) { return v > .5f ? "enabled" : "disabled"; };
+			return [](float v) { return v > .5f ? "Enabled" : "Disabled"; };
 		}
 		inline ValToStrFunc percent()
 		{
@@ -524,6 +585,10 @@ namespace param
 
 		switch (unit)
 		{
+		case Unit::PatchMode:
+			valToStrFunc = valToStr::patchMode();
+			strToValFunc = strToVal::patchMode();
+			break;
 		case Unit::PatchSelect:
 			valToStrFunc = valToStr::patchSelect();
 			strToValFunc = strToVal::patchSelect();
@@ -602,13 +667,13 @@ namespace param
 			params.push_back(makeParam(PID::HQ, state, 1.f, makeRange::toggle()));
 #endif
 			params.push_back(makeParam(PID::StereoConfig, state, 1.f, makeRange::toggle(), Unit::StereoConfig));
-
-			params.push_back(makeParam(PID::Power, state, 0.f, makeRange::toggle(), Unit::Power));
 			params.push_back(makeParam(PID::PatchSelect, state, 0.f, {0.f, 2.f}, Unit::PatchSelect));
 			params.push_back(makeParam(PID::PatchMode, state, 0.f, makeRange::toggle(), Unit::PatchMode));
+			params.push_back(makeParam(PID::Power, state, 1.f, makeRange::toggle(), Unit::Power));
 
 			// LOW LEVEL PARAMS:
-			params.push_back(makeParam(PID::DefaultParameter, state));
+			params.push_back(makeParam(PID::CrushGain, state, 32.f, makeRange::withCentre(1.f, 128.f, 32.f)));
+			params.push_back(makeParam(PID::AnotherDummyParam, state, .5f, makeRange::withCentre(0.f, 1.f, .7f)));
 			
 			// LOW LEVEL PARAMS END
 
@@ -648,38 +713,21 @@ namespace param
 		Parameters params;
 	};
 
-	struct MParams
+	struct MacroProcessor
 	{
-		struct PRM
+		MacroProcessor(Params& _params) :
+			params(_params)
 		{
-			PRM() :
-				vN(0.f), vM(0.f), val(0.f),
-				modDepth(0.f)
-			{}
+		}
 
-			float vN, vM, val;
-			std::atomic<float> modDepth;
-		};
-
-		MParams(Params& _params) :
-			params(_params),
-			prms()
-		{}
-
-		void processBlock()
+		void operator()() noexcept
 		{
-			for (auto i = 0; i < NumParams; ++i)
-			{
-				const auto& param = *params[i];
-				auto& prm = prms[i];
-
-				prm.vN = param.getValue();
-				prm.val = prm.vN + prm.modDepth.load() * (prm.vM - prm.vN);
-			}
+			const auto modDepth = params[PID::Macro]->getValue();
+			for (auto i = MinLowLevelIdx; i < NumParams; ++i)
+				params[i]->modulate(modDepth);
 		}
 
 		Params& params;
-		std::array<PRM, NumParams> prms;
 	};
 }
 

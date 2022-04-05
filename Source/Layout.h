@@ -9,12 +9,14 @@ namespace gui
 	using Path = juce::Path;
 	using Point = juce::Point<int>;
 	using PointF = juce::Point<float>;
+	using Bounds = juce::Rectangle<int>;
+	using BoundsF = juce::Rectangle<float>;
 	using Line = juce::Line<int>;
 	using LineF = juce::Line<float>;
 	using Affine = juce::AffineTransform;
 	using Just = juce::Justification;
 
-	inline juce::Rectangle<float> maxQuadIn(const juce::Rectangle<float>& b) noexcept
+	inline BoundsF maxQuadIn(const BoundsF& b) noexcept
 	{
 		const auto minDimen = std::min(b.getWidth(), b.getHeight());
 		const auto x = b.getX() + .5f * (b.getWidth() - minDimen);
@@ -27,6 +29,11 @@ namespace gui
 		comp->repaint();
 		for (auto c = 0; c < comp->getNumChildComponents(); ++c)
 			repaintWithChildren(comp->getChildComponent(c));
+	}
+
+	inline std::unique_ptr<juce::XmlElement> loadXML(const char* data, const int sizeInBytes)
+	{
+		return juce::XmlDocument::parse(String(data, sizeInBytes));
 	}
 
 	class Layout
@@ -42,7 +49,7 @@ namespace gui
 			rY()
 		{
 		}
-		void init(std::vector<int>&& xDist, std::vector<int>&& yDist)
+		void init(const std::vector<int>& xDist, const std::vector<int>& yDist)
 		{
 			const auto numCols = xDist.size();
 			const auto numRows = yDist.size();
@@ -85,6 +92,35 @@ namespace gui
 
 			rX = rXRaw;
 			rY = rYRaw;
+		}
+		void fromStrings(const String& xStr, const String& yStr)
+		{
+			std::vector<int> xDist, yDist;
+
+			int sIdx = 0;
+			for (auto i = 0; i < xStr.length(); ++i)
+			{
+				if (xStr[i] == ';')
+				{
+					xDist.push_back(xStr.substring(sIdx, i).getIntValue());
+					++i;
+					sIdx = i;
+				}
+			}
+			xDist.push_back(xStr.substring(sIdx).getIntValue());
+			sIdx = 0;
+			for (auto i = 0; i < yStr.length(); ++i)
+			{
+				if (yStr[i] == ';')
+				{
+					yDist.push_back(yStr.substring(sIdx, i).getIntValue());
+					++i;
+					sIdx = i;
+				}
+			}
+			yDist.push_back(yStr.substring(sIdx).getIntValue());
+
+			init(xDist, yDist);
 		}
 
 		void resized() noexcept
@@ -216,6 +252,42 @@ namespace gui
 		path.startNewSubPath(layout(points[0]));
 		for (auto i = 1; i < points.size(); ++i)
 			path.lineTo(layout(points[i]));
+	}
+
+	template<class CompType>
+	inline void distributeVertically(const Component& parent, std::vector<std::unique_ptr<CompType>>& compArray)
+	{
+		const auto w = static_cast<float>(parent.getWidth());
+		const auto h = static_cast<float>(parent.getHeight());
+		const auto x = 0.f;
+
+		auto y = 0.f;
+
+		const auto cH = h / static_cast<float>(compArray.size());
+
+		for (auto& cmp: compArray)
+		{
+			cmp->setBounds(BoundsF(x, y, w, cH).toNearestInt());
+			y += cH;
+		}
+	}
+	
+	template<class CompType>
+	inline void distributeVertically(const Component& parent, CompType* compArray, int size)
+	{
+		const auto w = static_cast<float>(parent.getWidth());
+		const auto h = static_cast<float>(parent.getHeight());
+		const auto x = 0.f;
+
+		auto y = 0.f;
+
+		const auto cH = h / static_cast<float>(size);
+
+		for (auto i = 0; i < size; ++i)
+		{
+			compArray[i].setBounds(BoundsF(x, y, w, cH).toNearestInt());
+			y += cH;
+		}
 	}
 }
 

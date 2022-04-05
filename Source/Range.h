@@ -6,12 +6,13 @@ namespace makeRange
 {
 	using Range = juce::NormalisableRange<float>;
 
-	inline Range biased(float start, float end, float bias) noexcept
+	inline Range biased(float start, float end, float bias/*[-1, 1]*/) noexcept
 	{
 		// https://www.desmos.com/calculator/ps8q8gftcr
 		const auto a = bias * .5f + .5f;
 		const auto a2 = 2.f * a;
 		const auto aM = 1.f - a;
+		
 		const auto r = end - start;
 		const auto aR = r * a;
 		if (bias != 0.f)
@@ -56,9 +57,9 @@ namespace makeRange
 		};
 	}
 
-	// advanced ones:
+	// advanced one(s):
 
-	inline Range withCentre(float start, float end, float mid) noexcept
+	inline Range withCentre(float start, float end, float centre) noexcept
 	{
 		static constexpr float Thresh = .0001f;
 
@@ -66,7 +67,7 @@ namespace makeRange
 		auto bInc = 1.f;
 		auto range = biased(start, end, b);
 		auto nVal = range.convertFrom0to1(.5f);
-		auto dist = nVal - mid;
+		auto dist = nVal - centre;
 		auto dif = std::abs(dist);
 		if (dif < Thresh)
 			return range;
@@ -77,7 +78,7 @@ namespace makeRange
 			
 			range = biased(start, end, b);
 			nVal = range.convertFrom0to1(.5f);
-			dist = nVal - mid;
+			dist = nVal - centre;
 			dif = std::abs(dist);
 
 		} while (dif > Thresh);

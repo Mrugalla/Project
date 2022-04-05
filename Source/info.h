@@ -17,34 +17,43 @@ HOW TO USE:
 	2.2 Rename plugin name
 	2.3 Define unique plugin ID
 3. Open config.h and define the needed pro processor definitions
-4. ...
+4. Open LowLevel.h and define all low level parameters, layout and stuff
+5. Ship it!
 
 
 -------------------------------------------------------------------
 
 TO DO:
 
-Button
-	slightly rough lines when non-rect hitbox
+Options Menu
+	implement more sub menu types
+	think about how to make automatic tutorials or manuals
+	how to make automatic updates possible
+
+Param
+	bias curve of max modulation depth
+	locking max modulation depth
+	saving and loading max mod depth as preset
+
+Oversampler
+	less cpu demanding (FFT?)
 
 Design
 	deliberate x,y offset to label border for pseudo 3d fx
 
-FirstTimeAction
-	calculate lookup tables for hitboxes
+Tutorial at first open
 
-ValueBubble
-	not needed anymore. value shown in parameter labels.
-	remove correspndg parameter changed events
-	add label to dial
+FirstTimeAction
+	thing that only makes lookuptables when the plugin is started the first time
+	tutorial
 
 ProcessorBase
 	...
 
 LowLevel UI Elements
-	Jedes Patch hat eigenes Farbschema
+	Jedes Patch hat eigenes Farbschema?
 	Name?
-	Preset Browser
+	Preset Browser pro Patch oder pro Sub-Patch?
 
 PPD
 	PPDSidechainable
@@ -54,9 +63,9 @@ HighLevel UI Elements
 	Parameter Randomizer
 	Preset Browser
 	undo/redo
-	lookahead needed?
 	delta button
 	patches select parameter interpolation or parallel processing of sound
+		can highlevel params be macro-modulated in parallel? sketch out block diagram!
 	sidechain activated?
 
 Meters
@@ -66,11 +75,8 @@ Knob
 	combine Knob and Dial into one with Parametr
 	make templated (or so)
 	right click for context menu
-		- randomize
 		- midi learn
-		- set to default value
 		- save as default value
-		- lock
 
 -------------------------------------------------------------------
 

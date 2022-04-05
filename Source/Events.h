@@ -10,8 +10,9 @@ namespace evt
         ColourShemeChanged,
         TooltipUpdated,
         ButtonClicked,
-        KnobHovered,
-        KnobValueChanged,
+        ParametrRightClicked,
+        ParametrDragged,
+        ClickedEmpty,
         PatchUpdated,
         ComponentAdded,
         NumTypes

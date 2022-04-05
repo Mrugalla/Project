@@ -1,9 +1,6 @@
 #pragma once
-#include "Layout.h"
 #include "Param.h"
-#include "Comp.h"
 #include "Label.h"
-#include "Shared.h"
 #include "GUIParams.h"
 
 namespace gui
@@ -12,8 +9,8 @@ namespace gui
         public Parametr,
         public Timer
     {
-        Dial(Utils& u, String&& _name, PID _pID) :
-            Parametr(u, _pID),
+        Dial(Utils& u, String&& _name, PID _pID, bool _modulatable = true) :
+            Parametr(u, _pID, _modulatable),
             Timer(),
             label(u, std::move(_name)),
             dragY(0.f),
@@ -24,8 +21,6 @@ namespace gui
                 { 50, 40 }
             );
 
-            label.bgCID = ColourID::Transp;
-            label.outlineCID = ColourID::Transp;
             label.textCID = ColourID::Interact;
             label.just = Just::centredTop;
 
@@ -135,7 +130,6 @@ namespace gui
         void mouseEnter(const Mouse& mouse) override
         {
             Comp::mouseEnter(mouse);
-            notify(EvtType::KnobHovered, this);
         }
         void mouseDown(const Mouse& mouse) override
         {
@@ -152,7 +146,6 @@ namespace gui
 
                 param.beginGesture();
                 dragY = nPt.x / width;
-                notify(EvtType::KnobValueChanged, this);
             }
         }
         void mouseDrag(const Mouse& mouse) override
@@ -167,7 +160,6 @@ namespace gui
                 const auto newValue = juce::jlimit(0.f, 1.f, param.getValue() + dragOffset);
                 param.setValueNotifyingHost(newValue);
                 dragY = dragYNew;
-                notify(EvtType::KnobValueChanged, this);
             }
         }
         void mouseUp(const Mouse& mouse) override
@@ -186,7 +178,6 @@ namespace gui
                 if (!mouse.mouseWasDraggedSinceMouseDown())
                     if (mouse.mods.isCtrlDown())
                         param.setValueWithGesture(param.getDefaultValue());
-            notify(EvtType::KnobValueChanged, this);
         }
         void mouseWheelMove(const Mouse& mouse, const juce::MouseWheelDetails& wheel) override
         {
@@ -203,7 +194,6 @@ namespace gui
                 dragY *= SensitiveDrag;
             const auto newValue = juce::jlimit(0.f, 1.f, param.getValue() + dragY);
             param.setValueWithGesture(newValue);
-            notify(EvtType::KnobValueChanged, this);
         }
 
     };
