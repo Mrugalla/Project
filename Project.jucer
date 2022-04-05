@@ -22,9 +22,11 @@
         <FILE id="on3opn" name="RealTimePtr.h" compile="0" resource="0" file="Source/RealTimePtr.h"/>
       </GROUP>
       <GROUP id="{DA435779-5001-4379-F809-3E7C21D55DC0}" name="gui">
+        <FILE id="lsz5CB" name="menu.xml" compile="0" resource="1" file="Source/menu.xml"/>
+        <FILE id="dXahJJ" name="Menu.h" compile="0" resource="0" file="Source/Menu.h"/>
+        <FILE id="Bgk68f" name="PopUp.h" compile="0" resource="0" file="Source/PopUp.h"/>
+        <FILE id="n88pLf" name="LowLevel.h" compile="0" resource="0" file="Source/LowLevel.h"/>
         <FILE id="CWx4m5" name="Shader.h" compile="0" resource="0" file="Source/Shader.h"/>
-        <FILE id="B6fZ8G" name="Parametr.h" compile="0" resource="0" file="Source/Parametr.h"/>
-        <FILE id="J9mhwQ" name="ValueBubble.h" compile="0" resource="0" file="Source/ValueBubble.h"/>
         <FILE id="qZsO69" name="Layout.h" compile="0" resource="0" file="Source/Layout.h"/>
         <FILE id="JQwbSV" name="nel19.ttf" compile="0" resource="1" file="Source/nel19.ttf"/>
         <FILE id="LuE3Ws" name="Shared.cpp" compile="1" resource="0" file="Source/Shared.cpp"/>
@@ -43,6 +45,7 @@
         <FILE id="WEGEgZ" name="Dial.h" compile="0" resource="0" file="Source/Dial.h"/>
       </GROUP>
       <GROUP id="{6A8CB2D6-E6E3-8D1E-1148-21BD24558A7A}" name="audio">
+        <FILE id="j7HQYg" name="Bitcrusher.h" compile="0" resource="0" file="Source/Bitcrusher.h"/>
         <FILE id="x0oUmr" name="EnvelopeFollower.h" compile="0" resource="0"
               file="Source/EnvelopeFollower.h"/>
         <FILE id="gTSoWy" name="Meter.h" compile="0" resource="0" file="Source/Meter.h"/>
