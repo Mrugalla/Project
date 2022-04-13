@@ -442,7 +442,7 @@ namespace param
 		}
 		inline StrToValFunc oct()
 		{
-			return [](const String& txt) { return txt.trimCharactersAtEnd(toString(Unit::Octaves)).getIntValue(); };
+			return [](const String& txt) { return std::floor(txt.trimCharactersAtEnd(toString(Unit::Octaves)).getFloatValue()); };
 		}
 		inline StrToValFunc oct2()
 		{
@@ -450,7 +450,7 @@ namespace param
 		}
 		inline StrToValFunc semi()
 		{
-			return [](const String& txt) { return txt.trimCharactersAtEnd(toString(Unit::Semi)).getIntValue(); };
+			return [](const String& txt) { return std::floor(txt.trimCharactersAtEnd(toString(Unit::Semi)).getFloatValue()); };
 		}
 		inline StrToValFunc fine()
 		{
@@ -723,7 +723,7 @@ namespace param
 		void operator()() noexcept
 		{
 			const auto modDepth = params[PID::Macro]->getValue();
-			for (auto i = MinLowLevelIdx; i < NumParams; ++i)
+			for (auto i = 1; i < NumParams; ++i)
 				params[i]->modulate(modDepth);
 		}
 

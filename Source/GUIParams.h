@@ -80,6 +80,9 @@ namespace gui
                     case State::Bias:
                         dragYNew = mouse.position.y / utils.getDragSpeed() * 2.f;
                         break;
+                    default:
+                        dragYNew = 0.f;
+                        break;
                     }
                     auto dragOffset = dragYNew - dragY;
                     if (mouse.mods.isShiftDown())

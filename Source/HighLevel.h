@@ -19,12 +19,12 @@ namespace gui
 			pluginTitle(u, JucePlugin_Name),
 			macro(u, "Macro", PID::Macro, false),
 #if PPDHasGainIn
-			gainIn(u, "Gain >", PID::GainIn, false),
+			gainIn(u, "Gain >", PID::GainIn),
 			meterIn(gainIn, u.getMeter(0)),
 #endif
-			gainOut(u, "< Gain", PID::Gain, false),
+			gainOut(u, "< Gain", PID::Gain),
 			meterOut(gainOut, u.getMeter(PPDHasGainIn ? 1 : 0)),
-			mix(u, "Mix", PID::Mix, false),
+			mix(u, "Mix", PID::Mix),
 #if PPDHasUnityGain
 			unityGain(u, param::toTooltip(PID::UnityGain)),
 #endif
@@ -46,8 +46,8 @@ namespace gui
 			menuButton(u, "Click here to open or close the panel with the advanced settings.")
 		{
 			layout.init(
-				{ 5, 30, 30, 30, 5, 5 },
-				{ 5, 15, 30, 30, 40, 15, 5, 15, 5, 10 }
+				{ 1, 5, 1, 5, 1, 13, 1, 5, 1, 1 },
+				{ 1, 5, 1, 5, 2, 21, 2, 8, 1, 13, 1, 5, 1 }
 			);
 
 			pluginTitle.font = getFontNEL();
@@ -130,17 +130,19 @@ namespace gui
 
 		void paint(Graphics& g) override
 		{
-			Comp::paint(g);
-			layout.paint(g);
-
+			//g.setColour(juce::Colours::white.withAlpha(.2f));
+			//layout.paint(g);
 			g.setColour(Colours::c(ColourID::Hover));
-			layout.label(g, "delta", 3.f, 1.25f, .5f, .75f, true);
-			layout.label(g, "<", 1.25f, 5, .25f, 1, false);
-			layout.label(g, "preset browser", 1.5f, 5, 1.5f, 1, false);
-			layout.label(g, ">", 3.f, 5, .25f, 1, false);
-			layout.label(g, "save", 3.25f, 5, .5f, 1, false);
-			layout.label(g, "<\n<\n<", 5, 0, 1, 10, false);
 			
+			layout.label(g, "<", 1.f, 3.f, 1.f, 1.f, false);
+			layout.label(g, "preset name", 3.f, 3.f, 3.f, 1.f, false);
+			layout.label(g, ">", 7.f, 3.f, 1.f, 1.f, false);
+			layout.label(g, "v", 1.f, 5.f, 1.f, 1.f, true);
+			layout.label(g, "dlta", 3.f, 9.f, 1.f, 1.f, true);
+			
+			g.fillRect(layout.right());
+
+			/*
 			const auto thicc = utils.thicc();
 			auto thiccI = static_cast<int>(thicc) / 2;
 			if (thiccI == 0)
@@ -170,41 +172,35 @@ namespace gui
 				}
 			}
 #endif
+			*/
 		}
 
 		void resized() override
 		{
 			layout.resized();
 
-			layout.place(pluginTitle, 1.25f, 10, 2.5f, 1, false);
+			layout.place(menuButton, 1.f, 1.f, 1.f, 1.f, false);
+			layout.place(pluginTitle, 3.f, 1.f, 5.f, 1.f, false);
 
-			layout.place(macro, 2, 4, 1, 1, true);
-#if PPDHasGainIn
-			layout.place(gainIn, 1, 3, 1, 1, true);
-#endif
-			layout.place(gainOut, 3, 3, 1, 1, true);
-			layout.place(mix, 2, 2, 1, 1, true);
-#if PPDHasUnityGain
-			layout.place(unityGain, 2.25f, 3.25f, .5f, .5f, true);
-#endif
-#if PPDHasHQ
-			layout.place(hq, 2.f, 7, 1.f, 1, true);
-#endif
-			layout.place(stereoConfig, 3.f, 7, 1.f, 1, true);
-			layout.place(power, 2.25f, 1.f, .5f, .75f, true);
-			layout.place(polarity, 1.5f, 1.25f, .5f, .75f, true);
-			layout.place(patchSelect[0], 1.5f + .125f, 4.5f, .5f, .5f, true);
-			layout.place(patchSelect[1], 2.75f + .125f, 4.5f, .5f, .5f, true);
-			layout.place(patchMode, 1.125f, 4.25f, .5f, .5f, true);
+			layout.place(macro, 3.f, 5.f, 5.f, 1.f, true);
+			
+			layout.place(gainIn, 3.f, 7.f, 2.2f, 1.f, true);
+			layout.place(unityGain, 5.2f, 7.2f, .6f, .6f, true);
+			layout.place(gainOut, 5.8f, 7.f, 2.2f, 1.f, true);
 
-			layout.place(menuButton, 1.f, 7, 1.f, 1, true);
+			layout.place(mix, 5.f, 9.f, 1.f, 1.f, true);
+
+			layout.place(power, 5.f, 11.f, 1.f, 1.f, true);
+			layout.place(polarity, 7.f, 9.f, 1.f, 1.f, true);
+
+			layout.place(hq, 1.f, 11.f, 1.f, 1.f, true);
+			layout.place(stereoConfig, 3.f, 11.f, 1.f, 1.f, true);
 
 			if (menu != nullptr)
 			{
 				menu->defineBounds(menu->getBounds().toFloat(), lowLevel->getBounds().toFloat());
 				menu->initWidget(.3f, false);
 			}
-				
 		}
 
 	protected:

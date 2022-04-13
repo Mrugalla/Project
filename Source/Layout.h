@@ -182,6 +182,16 @@ namespace gui
 			Bounds nBounds(0.f, 0.f, w, h);
 			return isQuad ? maxQuadIn(nBounds) : nBounds;
 		}
+		Bounds right(bool isQuad = false) const noexcept
+		{
+			const auto y = 0.f;
+			const auto x = getX(static_cast<int>(rX.size() - 3));
+			const auto w = getX(static_cast<int>(rX.size() - 2)) - x;
+			const auto h = rY.back();
+
+			Bounds nBounds(x, y, w, h);
+			return isQuad ? maxQuadIn(nBounds) : nBounds;
+		}
 
 		float getX(int i) const noexcept { return rX[i]; }
 		float getY(int i) const noexcept { return rY[i]; }

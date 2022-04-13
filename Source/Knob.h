@@ -32,7 +32,7 @@ namespace gui
                 { 100, 40, 40 }
             );
 
-            label.textCID = ColourID::Interact;
+            label.textCID = ColourID::Txt;
             label.just = Just::centredTop;
 
             setName(std::move(_name));
@@ -222,6 +222,8 @@ namespace gui
         {
             if (mouse.mods.isLeftButtonDown())
             {
+                juce::Desktop::getInstance().getMainMouseSource().enableUnboundedMouseMovement(true, false);
+
                 param.beginGesture();
                 dragY = mouse.position.y / utils.getDragSpeed();
                 {
@@ -277,6 +279,9 @@ namespace gui
                         param.setValueWithGesture(param.getDefaultValue());
                     else
                         notify(EvtType::ParametrRightClicked, this);
+            auto mms = juce::Desktop::getInstance().getMainMouseSource();
+            mms.setScreenPosition((getScreenPosition() + Point(getWidth() / 2, getHeight() / 2)).toFloat());
+            mms.enableUnboundedMouseMovement(false, true);
             {
                 label.setText(param.getCurrentValueAsText());
                 label.repaint();
