@@ -18,6 +18,8 @@ namespace audio
 
 #include "RealTimePtr.h"
 
+#include "ProcessSuspend.h"
+#include "MIDILearn.h"
 #include "DryWetMix.h"
 #include "MidSide.h"
 #include "Oversampling.h"
@@ -48,13 +50,15 @@ namespace audio
                 .withOutput("Output", ChannelSet::stereo(), true)
             ),
             props(),
+            sus(*this),
             state(),
             params(*this, state),
-            macroProcessor(params)
+            macroProcessor(params),
+            midiLearn(params, state),
 #if PPDHasHQ
-            , oversampler()
+            oversampler(),
 #endif
-            , meters(),
+            meters(),
             midSideEnabled(false)
         {
             {
@@ -71,9 +75,8 @@ namespace audio
 
                 props.setStorageParameters(options);
             }
-#if PPDHasHQ
-            startTimerHz(8);
-#endif
+
+            startTimerHz(6);
         }
 
         const juce::String getName() const override { return JucePlugin_Name; }
@@ -95,16 +98,18 @@ namespace audio
 
         void savePatch()
         {
-            params.savePatch();
+            params.savePatch(props);
+            midiLearn.savePatch();
         }
         void loadPatch()
         {
-            params.loadPatch();
+            params.loadPatch(props);
+            midiLearn.loadPatch();
             forcePrepareToPlay();
         }
 
         bool hasEditor() const override { return PPDHasEditor; }
-        bool acceptsMidi() const override { return false; }
+        bool acceptsMidi() const override { return true; }
         bool producesMidi() const override { return false; }
         bool isMidiEffect() const override { return false; }
 
@@ -122,9 +127,12 @@ namespace audio
         }
 
         AppProps props;
+        ProcessSuspender sus;
+
         State state;
         Params params;
         MacroProcessor macroProcessor;
+        MIDILearn midiLearn;
 
         DryWetMix dryWetMix;
 #if PPDHasHQ
@@ -134,10 +142,7 @@ namespace audio
 
         void forcePrepareToPlay()
         {
-            suspendProcessing(true);
-            while (!isSuspended()) {}
-            prepareToPlay(getSampleRate(), getBlockSize());
-            suspendProcessing(false);
+            sus.suspend();
         }
 
         void timerCallback() override
@@ -169,22 +174,24 @@ namespace audio
     protected:
         AudioBuffer* processBlockStart(AudioBuffer& buffer, juce::MidiBuffer& midi) noexcept
         {
+            midiLearn(midi);
+
             macroProcessor();
 
             const auto numSamples = buffer.getNumSamples();
             if (numSamples == 0)
                 return nullptr;
 
-            const auto numChannels = buffer.getNumChannels() == 1 ? 1 : 2;
-
-            const auto constSamples = buffer.getArrayOfReadPointers();
-            auto samples = buffer.getArrayOfWritePointers();
-
             if (params[PID::Power]->getValue() < .5f)
             {
                 processBlockBypassed(buffer, midi);
                 return nullptr;
             }
+
+            const auto numChannels = buffer.getNumChannels() == 1 ? 1 : 2;
+
+            const auto constSamples = buffer.getArrayOfReadPointers();
+            auto samples = buffer.getArrayOfWritePointers();
 
             dryWetMix.saveDry(
                 samples,
@@ -274,12 +281,17 @@ private:
             meters.prepare(sampleRateF, maxBlockSize);
 
             setLatencySamples(latency);
+
+            sus.prepareToPlay();
         }
 
         void processBlock(AudioBuffer& buffer, juce::MidiBuffer& midi)
         {
             const juce::ScopedNoDenormals noDenormals;
             
+            if (sus.suspendIfNeeded(buffer))
+                return;
+
             auto buf = processBlockStart(buffer, midi);
             if (buf == nullptr)
                 return;

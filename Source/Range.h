@@ -19,13 +19,27 @@ namespace makeRange
 			return
 		{
 				start, end,
-				[a2, aM, aR](float min, float, float x)
+				[a2, aM, aR](float min, float max, float x)
 				{
-					return min + aR * x / (aM - x + a2 * x);
+					if (x < 0.f)
+						return min;
+					if (x > 1.f)
+						return max;
+					const auto denom = aM - x + a2 * x;
+					if (denom == 0.f)
+						return min;
+					return min + aR * x / denom;
 				},
-				[a2, aM, aR](float min, float, float x)
+				[a2, aM, aR](float min, float max, float x)
 				{
-					return aM * (x - min) / (a2 * min + aR - a2 * x - min + x);
+					if (x < min)
+						return 0.f;
+					if (x > max)
+						return 1.f;
+					const auto denom = a2 * min + aR - a2 * x - min + x;
+					if (denom == 0.f)
+						return 0.f;
+					return aM * (x - min) / denom;
 				},
 				nullptr
 		};

@@ -34,11 +34,6 @@ namespace gui
 			stereoConfig(u, param::toTooltip(PID::StereoConfig)),
 			power(u, param::toTooltip(PID::Power)),
 			polarity(u, param::toTooltip(PID::Polarity)),
-			patchSelect{
-				Button(u, param::toTooltip(PID::PatchSelect)),
-				Button(u, param::toTooltip(PID::PatchSelect))
-			},
-			patchMode(u, param::toTooltip(PID::PatchMode)),
 
 			lowLevel(_lowLevel),
 
@@ -46,8 +41,8 @@ namespace gui
 			menuButton(u, "Click here to open or close the panel with the advanced settings.")
 		{
 			layout.init(
-				{ 1, 5, 1, 5, 1, 13, 1, 5, 1, 1 },
-				{ 1, 5, 1, 5, 2, 21, 2, 8, 1, 13, 1, 5, 1 }
+				{ 1, 8, 1, 8, 1, 8, 1, 8, 1, 1 },
+				{ 1, 8, 1, 5, 1, 13, 1, 13, 1, 13, 1, 8 }
 			);
 
 			pluginTitle.font = getFontNEL();
@@ -65,9 +60,11 @@ namespace gui
 #endif
 #if PPDHasHQ
 			makeParameterSwitchButton(hq, PID::HQ, "HQ");
+			hq.getLabel().mode = Label::Mode::TextToLabelBounds;
 			addAndMakeVisible(hq);
 #endif
 			makeParameterSwitchButton(stereoConfig, PID::StereoConfig, ButtonSymbol::StereoConfig);
+			stereoConfig.getLabel().mode = Label::Mode::TextToLabelBounds;
 			addAndMakeVisible(stereoConfig);
 
 			makeParameterSwitchButton(power, PID::Power, ButtonSymbol::Power);
@@ -75,18 +72,6 @@ namespace gui
 
 			makeParameterSwitchButton(polarity, PID::Polarity, ButtonSymbol::Polarity);
 			addAndMakeVisible(polarity);
-
-			makeParameterButtonsGroup(patchSelect, PID::PatchSelect, "AB", true);
-			for(auto i = 0; i < 2; ++i)
-			{
-				auto& ab = patchSelect[i];
-				auto& label = ab.getLabel();
-				label.textCID = ColourID::Mod;
-				addAndMakeVisible(ab);
-			}
-
-			makeParameterSwitchButton(patchMode, PID::PatchMode, ButtonSymbol::PatchMode);
-			addAndMakeVisible(patchMode);
 
 			makeSymbolButton(menuButton, ButtonSymbol::Settings);
 			menuButton.toggleState = 0;
@@ -132,13 +117,14 @@ namespace gui
 		{
 			//g.setColour(juce::Colours::white.withAlpha(.2f));
 			//layout.paint(g);
+			
 			g.setColour(Colours::c(ColourID::Hover));
 			
 			layout.label(g, "<", 1.f, 3.f, 1.f, 1.f, false);
 			layout.label(g, "preset name", 3.f, 3.f, 3.f, 1.f, false);
 			layout.label(g, ">", 7.f, 3.f, 1.f, 1.f, false);
 			layout.label(g, "v", 1.f, 5.f, 1.f, 1.f, true);
-			layout.label(g, "dlta", 3.f, 9.f, 1.f, 1.f, true);
+			layout.label(g, "dlta", 1.f, 9.f, 1.f, 1.f, true);
 			
 			g.fillRect(layout.right());
 
@@ -179,22 +165,22 @@ namespace gui
 		{
 			layout.resized();
 
-			layout.place(menuButton, 1.f, 1.f, 1.f, 1.f, false);
+			layout.place(menuButton, 1.f, 1.f, 1.f, 1.f, true);
 			layout.place(pluginTitle, 3.f, 1.f, 5.f, 1.f, false);
 
-			layout.place(macro, 3.f, 5.f, 5.f, 1.f, true);
+			layout.place(macro, 3.f, 5.f, 3.f, 1.f, true);
 			
-			layout.place(gainIn, 3.f, 7.f, 2.2f, 1.f, true);
-			layout.place(unityGain, 5.2f, 7.2f, .6f, .6f, true);
-			layout.place(gainOut, 5.8f, 7.f, 2.2f, 1.f, true);
+			layout.place(gainIn, 1.f, 7.f, 2.5f, 2.f, true);
+			layout.place(unityGain, 3.6f, 7.2f, 1.8f, .6f, true);
+			layout.place(gainOut, 5.5f, 7.f, 2.5f, 2.f, true);
 
-			layout.place(mix, 5.f, 9.f, 1.f, 1.f, true);
+			layout.place(mix, 3.f, 9.f, 3.f, 1.f, true);
 
-			layout.place(power, 5.f, 11.f, 1.f, 1.f, true);
+			layout.place(power, 1.f, 11.f, 1.f, 1.f, true);
 			layout.place(polarity, 7.f, 9.f, 1.f, 1.f, true);
 
-			layout.place(hq, 1.f, 11.f, 1.f, 1.f, true);
-			layout.place(stereoConfig, 3.f, 11.f, 1.f, 1.f, true);
+			layout.place(hq, 7.f, 11.f, 1.f, 1.f, true);
+			layout.place(stereoConfig, 5.f, 11.f, 1.f, 1.f, true);
 
 			if (menu != nullptr)
 			{
@@ -222,8 +208,6 @@ namespace gui
 		Button stereoConfig;
 		Button power;
 		Button polarity;
-		std::array<Button, 2> patchSelect;
-		Button patchMode;
 
 		LowLevel* lowLevel;
 		std::unique_ptr<Menu> menu;

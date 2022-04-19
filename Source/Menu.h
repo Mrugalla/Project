@@ -1,6 +1,7 @@
 #pragma once
 #include "Comp.h"
 #include "Shared.h"
+#include <juce_gui_extra/juce_gui_extra.h>
 
 namespace gui
 {
@@ -10,12 +11,165 @@ namespace gui
 	inline Just getJust(const String& t)
 	{
 		if (t == "left") return Just::left;
+		if (t == "topLeft") return Just::topLeft;
+		if (t == "topRight") return Just::topRight;
 		if (t == "top") return Just::top;
 		if (t == "bottom") return Just::bottom;
 		if (t == "right") return Just::right;
 		
 		return Just::centred;
 	}
+
+	struct ColourSelector :
+		public Comp,
+		public Timer
+	{
+		ColourSelector(Utils& u) :
+			Comp(u, "", CursorType::Default),
+			selector(27, 4, 7),
+			revert(u, "Click here to revert to the last state of your coloursheme."),
+			deflt(u, "Click here to set the coloursheme back to its default state."),
+			colButtons(),
+			curSheme(),
+			colIdx(0)
+		{
+			layout.init(
+				{ 5, 2 },
+				{ 8, 2 }
+			);
+
+			const auto numCols = static_cast<int>(ColourID::NumCols);
+
+			for (auto c = 0; c < numCols; ++c)
+				curSheme[c] = Colours::c(c);
+
+			colButtons.reserve(numCols);
+			for (auto i = 0; i < numCols; ++i)
+			{
+				colButtons.push_back(std::make_unique<Button>(
+					utils, "Select this colour to individualize it."
+				));
+
+				auto& btn = *colButtons.back();
+
+				makeTextButton(btn, toString(ColourID(i)), true, true);
+			}
+
+			makeButtonsGroup(colButtons, colIdx);
+
+			for (auto i = 0; i < numCols; ++i)
+			{
+				auto& btn = *colButtons[i];
+
+				btn.onClick.push_back([this, i]()
+					{
+						colIdx = i;
+
+						selector.setCurrentColour(
+							Colours::c(i),
+							juce::NotificationType::dontSendNotification
+						);
+					});
+			}
+
+			for (auto& oc : colButtons[colIdx]->onClick)
+				oc();
+
+			makeTextButton(revert, "Revert", false, true);
+			makeTextButton(deflt, "Default", false, true);
+
+			revert.onClick.push_back([this, numCols]()
+			{
+				for (auto i = 0; i < numCols; ++i)
+					Colours::c.set(i, curSheme[i]);
+				selector.setCurrentColour(
+					curSheme[colIdx],
+					juce::NotificationType::dontSendNotification
+				);
+
+				notify(EvtType::ColourShemeChanged);
+			});
+			deflt.onClick.push_back([this, numCols]()
+			{
+				for (auto i = 0; i < numCols; ++i)
+					Colours::c.set(i, getDefault(static_cast<ColourID>(i)));
+
+				for (auto c = 0; c < numCols; ++c)
+					curSheme[c] = Colours::c(c);
+				selector.setCurrentColour(
+					curSheme[colIdx],
+					juce::NotificationType::dontSendNotification
+				);
+
+				notify(EvtType::ColourShemeChanged);
+			});
+
+			addAndMakeVisible(selector);
+			addAndMakeVisible(revert);
+			addAndMakeVisible(deflt);
+
+			for (auto& c : colButtons)
+				addAndMakeVisible(*c);
+
+			startTimerHz(12);
+		}
+
+		void paint(Graphics&) override
+		{
+		}
+
+		void resized() override
+		{
+			layout.resized();
+
+			{
+				const auto bounds = layout(0, 1, 1, 1);
+				const auto y = bounds.getY();
+				const auto w = bounds.getWidth() / 2.f;
+				const auto h = bounds.getHeight();
+				auto x = bounds.getX();
+
+				revert.setBounds(BoundsF(x, y, w, h).toNearestInt());
+				x += w;
+				deflt.setBounds(BoundsF(x, y, w, h).toNearestInt());
+			}
+
+			layout.place(selector, 0, 0, 1, 1, false);
+
+			{
+				const auto bounds = layout(1, 0, 1, 1);
+				const auto x = bounds.getX();
+				const auto w = bounds.getWidth();
+				const auto h = bounds.getHeight() / static_cast<float>(colButtons.size());
+				auto y = bounds.getY();
+
+				for (auto& c : colButtons)
+				{
+					c->setBounds(BoundsF(x, y, w, h).toNearestInt());
+					y += h;
+				}
+			}
+		}
+
+		void timerCallback() override
+		{
+			const auto curCol = selector.getCurrentColour();
+			const auto lastCol = Colours::c(colIdx);
+
+			if (curCol == lastCol)
+				return;
+
+			Colours::c.set(colIdx, curCol);
+			notify(EvtType::ColourShemeChanged);
+		}
+
+	protected:
+		juce::ColourSelector selector;
+		Button revert, deflt;
+		std::vector<std::unique_ptr<Button>> colButtons;
+		std::array<Colour, static_cast<int>(ColourID::NumCols)> curSheme;
+		int colIdx;
+	};
 
 	struct ComponentWithBounds
 	{
@@ -46,10 +200,10 @@ namespace gui
 
 		std::vector<ComponentWithBounds> comps;
 	protected:
-		void paint(Graphics& g) override
+		void paint(Graphics&) override
 		{
-			Comp::paint(g);
-			layout.paint(g);
+			//g.setColour(juce::Colours::red);
+			//layout.paint(g);
 		}
 
 		void resized() override
@@ -119,10 +273,10 @@ namespace gui
 	public:
 		NavBar(Utils& u, const ValueTree& xml) :
 			Comp(u, "", CursorType::Default),
-			label(u, "< Nav >"),
+			label(u, "Nav:"),
 			nodes(makeNodes(xml)),
 			buttons(),
-			numMenus(nodes.size()),
+			numMenus(static_cast<int>(nodes.size())),
 			deepestNode(getDeepestNode())
 		{
 			label.setTooltip("Click on a node in order to navigate to its sub menu.");
@@ -133,6 +287,7 @@ namespace gui
 
 			layout.init(b, a);
 			
+			label.textCID = ColourID::Hover;
 			addAndMakeVisible(label);
 
 			buttons.reserve(numMenus);
@@ -166,73 +321,90 @@ namespace gui
 				// make navigation functionality
 
 				btn.onClick.push_back([&sub = subMenu, &prnt = parent, &node = nodes[i]]()
+				{
+					auto& utils = prnt.getUtils();
+
+					sub.reset(new CompModular(utils, "", CursorType::Default));
+
+					auto& comps = sub->comps;
+
 					{
-						auto& utils = prnt.getUtils();
+						const auto& xLayoutProp = node.vt.getProperty("x");
+						const auto& yLayoutProp = node.vt.getProperty("y");
+						if (xLayoutProp.isUndefined() || yLayoutProp.isUndefined())
+							return;
 
-						sub.reset(new CompModular(utils, "", CursorType::Default));
+						sub->initLayout(xLayoutProp.toString(), yLayoutProp.toString());
+					}
 
-						auto& comps = sub->comps;
+					enum Type { kTitle, kTxt, kColourSheme, kLink, kNumTypes };
+					std::array<Identifier, kNumTypes> ids
+					{
+						"title",
+						"txt",
+						"coloursheme",
+						"link"
+					};
 
+					for (auto c = 0; c < node.vt.getNumChildren(); ++c)
+					{
+						const auto child = node.vt.getChild(c);
+
+						const auto& xProp = child.getProperty("x", 0.f);
+						const auto& yProp = child.getProperty("y", 0.f);
+						const auto& wProp = child.getProperty("w", 1.f);
+						const auto& hProp = child.getProperty("h", 1.f);
+
+						Component* comp{ nullptr };
+
+						if (child.getType() == ids[kTitle])
 						{
-							const auto& xLayoutProp = node.vt.getProperty("x");
-							const auto& yLayoutProp = node.vt.getProperty("y");
-							if (xLayoutProp.isUndefined() || yLayoutProp.isUndefined())
-								return;
+							auto cmp = new Label(utils, node.vt.getProperty("id").toString());
 
-							sub->initLayout(xLayoutProp.toString(), yLayoutProp.toString());
+							comp = cmp;
+						}
+						else if (child.getType() == ids[kTxt])
+						{
+							auto cmp = new Label(utils, child.getProperty("text").toString());
+							cmp->just = getJust(child.getProperty("just").toString());
+							cmp->font = juce::Font();
+
+							comp = cmp;
+						}
+						else if (child.getType() == ids[kColourSheme])
+						{
+							auto cmp = new ColourSelector(utils);
+
+							comp = cmp;
+						}
+						else if (child.getType() == ids[kLink])
+						{
+							auto cmp = new Button(utils, child.getProperty("tooltip", "").toString());
+
+							makeTextButton(*cmp, child.getProperty("id").toString(), false, true);
+							makeURLButton(*cmp, child.getProperty("link"));
+
+							comp = cmp;
 						}
 
-						enum Type{ kTitle, kTxt, kNumTypes };
-						std::array<Identifier, kNumTypes> ids
-						{
-							"title",
-							"txt"
-						};
+						if (comp != nullptr)
+							comps.push_back(ComponentWithBounds({
+									comp,
+									{
+										static_cast<float>(xProp),
+										static_cast<float>(yProp),
+										static_cast<float>(wProp),
+										static_cast<float>(hProp)
+									},
+									false
+								}));
+					}
 
-						for (auto c = 0; c < node.vt.getNumChildren(); ++c)
-						{
-							const auto child = node.vt.getChild(c);
+					sub->init();
 
-							const auto& xProp = child.getProperty("x", 0.f);
-							const auto& yProp = child.getProperty("y", 0.f);
-							const auto& wProp = child.getProperty("w", 1.f);
-							const auto& hProp = child.getProperty("h", 1.f);
-
-							Component* comp{ nullptr };
-
-							if (child.getType() == ids[kTitle])
-							{
-								auto cmp = new Label(utils, node.vt.getProperty("id").toString());
-								
-								comp = cmp;
-							}
-							else if (child.getType() == ids[kTxt])
-							{
-								auto cmp = new Label(utils, child.getProperty("text").toString());
-								cmp->just = getJust(child.getProperty("just").toString());
-								cmp->font = juce::Font();
-
-								comp = cmp;
-							}
-
-							if(comp != nullptr)
-								comps.push_back(ComponentWithBounds({
-										comp,
-										{
-											static_cast<float>(xProp),
-											static_cast<float>(yProp),
-											static_cast<float>(wProp),
-											static_cast<float>(hProp)
-										},
-										false
-									}));
-						}
-
-						sub->init();
-
-						prnt.addAndMakeVisible(*sub);
-						prnt.getLayout().place(*sub, 1, 2, 2, 1, false);
-					});
+					prnt.addAndMakeVisible(*sub);
+					prnt.getLayout().place(*sub, 1, 2, 2, 1, false);
+				});
 			}
 
 			for (auto& oc : buttons.front()->onClick)
@@ -290,6 +462,7 @@ namespace gui
 				{ 20, 50, 750, 20 }
 			);
 
+			label.textCID = ColourID::Hover;
 			addAndMakeVisible(label);
 			addAndMakeVisible(navBar);
 

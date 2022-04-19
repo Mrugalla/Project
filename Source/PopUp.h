@@ -33,7 +33,7 @@ namespace gui
 					{
 						juce::Random rand;
 						auto val = param->getValue();
-						val += .1f * (rand.nextFloat() - .5f);
+						val += .05f * (rand.nextFloat() - .5f);
 						param->setValueWithGesture(juce::jlimit(0.f, 1.f, val));
 					}, 1);
 					pop.setButton("Load Default", "Resets this parameter value to its default value.", [param = utils.getParam(parametr.getPID())]()
@@ -43,21 +43,31 @@ namespace gui
 					}, 2);
 					pop.setButton("Save Default", "Saves this parameter value as its default one.", [param = utils.getParam(parametr.getPID())]()
 					{
-						// yet to implement..
+						param->setDefaultValue(param->getValue());
 					}, 3);
 					pop.setButton("Lock / Unlock", "Parameter values are locked into place, even when changing presets.", [param = utils.getParam(parametr.getPID())]()
 					{
 						param->switchLock();
 					}, 4);
-					pop.setButton("MIDI Learn", "Click here to assign this parameter to a hardware control.", [param = utils.getParam(parametr.getPID())]()
+					pop.setButton("MIDI Learn", "Click here to assign this parameter to a hardware control.", [&u = utils, pID = parametr.getPID()]()
 					{
-						// yet to implement..
+						u.assignMIDILearn(pID);
 					}, 5);
+					pop.setButton("MIDI Unlearn", "Click here to remove this parameter from its hardware control(s).", [&u = utils, pID = parametr.getPID()]()
+					{
+						u.removeMIDILearn(pID);
+					}, 6);
 					
 					const auto screenPos = (parametr.getScreenPosition() + Point(parametr.getWidth() / 2, parametr.getHeight() / 2) - pluginTop.getScreenPosition()).toFloat();
+					BoundsF dest(screenPos.x, screenPos.y, 150.f, pluginTop.getHeight() * .5f);
+					if (dest.getBottom() > pluginTop.getBottom())
+						dest.setY(pluginTop.getBottom() - dest.getHeight());
+					if (dest.getRight() > pluginTop.getWidth())
+						dest.setX(pluginTop.getWidth() - dest.getWidth());
+
 					pop.defineBounds(
 						BoundsF(screenPos.x, screenPos.y, 1.f, 1.f),
-						BoundsF(screenPos.x, screenPos.y, 150.f, pluginTop.getHeight() * .5f)
+						dest
 					);
 					pop.initWidget(.15f, false);
 					pop.setVisible(true);

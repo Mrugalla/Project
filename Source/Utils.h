@@ -36,6 +36,7 @@ namespace gui
 		Interact,
 		Inactive,
 		Mod,
+		Bias,
 		NumTypes
 	};
 
@@ -58,6 +59,8 @@ namespace gui
 			col = Colours::c(ColourID::Inactive);
 		else if (c == CursorType::Mod)
 			col = Colours::c(ColourID::Mod);
+		else if (c == CursorType::Bias)
+			col = Colours::c(ColourID::Bias);
 
 		for (auto y = 0; y < h; ++y)
 			for (auto x = 0; x < w; ++x)
@@ -68,20 +71,6 @@ namespace gui
 		img = img.rescaled(w * scale, h * scale, Graphics::ResamplingQuality::lowResamplingQuality);
 
 		return { img, 0, 0 };
-	}
-
-	inline void hideCursor()
-	{
-		auto& desktop = juce::Desktop::getInstance();
-		auto mainMouse = desktop.getMainMouseSource();
-		mainMouse.hideCursor();
-	}
-
-	inline void showCursor()
-	{
-		auto& desktop = juce::Desktop::getInstance();
-		auto mainMouse = desktop.getMainMouseSource();
-		mainMouse.revealCursor();
 	}
 
 	class Utils
@@ -114,6 +103,15 @@ namespace gui
 		Param* getParam(PID pID) noexcept { return params[pID]; }
 		const Param* getParam(PID pID) const noexcept { return params[pID]; }
 
+		void assignMIDILearn(PID pID) noexcept
+		{
+			audioProcessor.midiLearn.assignParam(params[pID]);
+		}
+		void removeMIDILearn(PID pID) noexcept
+		{
+			audioProcessor.midiLearn.removeParam(params[pID]);
+		}
+
 		float getDragSpeed() const noexcept
 		{
 			const auto height = static_cast<float>(pluginTop.getHeight());
@@ -133,6 +131,16 @@ namespace gui
 		{
 			const auto t = thicc(pluginTop.getLocalBounds()) * .1f;
 			return t < 1.f ? 1.f : t;
+		}
+
+		float fontHeight() const noexcept
+		{
+			const auto w = static_cast<float>(pluginTop.getWidth());
+			const auto h = static_cast<float>(pluginTop.getHeight());
+
+			const auto avr = (w + h) * .5f;
+			const auto norm = (avr - 500.f) / 500.f;
+			return std::floor(8.5f + norm * 5.f);
 		}
 
 		EventSystem& getEventSystem()

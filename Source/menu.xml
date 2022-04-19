@@ -1,57 +1,76 @@
 <menu id="Options">
-  <menu id="Welcome" x="40;40;40" y="20;100;20" tooltip="This is the options menu's welcome tab.">
+  <menu id="Welcome" x="40;40;40" y="20;100" tooltip="This is the options menu's welcome tab.">
     <title x="1" y="0" />
-    <txt x=".5" y="1" w="2" just="left" text=
-"Welcome to the options menu of my plugin.
+    <txt x=".1" y="1.1" w="2.8" h=".8" just="topLeft" text=
+"Welcome to the options menu of my plugin :)
 
-Click on the buttons in the navigation bar
-in order to navigate to more meaningful pages."
+This is where you find all the options
+that kinda have to exist, but shouldn't
+be in your way on the main interface.
+
+Click on the nav tabs to navigate
+to the different pages!"
     />
   </menu>
-  <menu id="Help" x="40;40;40" y="20;100;20" tooltip="Get help! Literally.">
+  <menu id="Controls" x="40;40;40" y="20;100" tooltip="Get help! Literally.">
     <title x="1" y="0" />
-    <txt x=".5" y="1" w="2" just="left" text=
-"This is where you can get help or change settings
-about the way the plugin attempts to help you."
-    />
-    <menu id="Manual" x="40;40;40" y="20;100;20" tooltip="The manual explains all the plugin's features">
-      <title x="1" y="0" />
-    </menu>
+    <txt x="0" y="1" w="1" h="1" just="topRight" text=
+"Knobs:
+Click/Drag/Mousewheel
+Hold Shift
+Press Ctrl
+Right Click
+ 
+(M):
+Drag/Mousewheel
+ 
+Right Click
+ 
+(B):
+Drag/Mousewheel
+ 
+Right Click"/>
+
+    <txt x="1" y="1" w="2" h="1" just="topLeft" text=
+"
+Modify parameter value.
+Sensitive parameter changes.
+Back to default value.
+Additional parameter options.
+ 
+ 
+Modify macro parameter's modulation depth
+relative to its parameter value.
+Switch to bias-control.
+ 
+Bias macro parameter's influence on
+the parameter.
+Switch to mod-depth-control."/>
+
   </menu>
-  <menu id="Look and Feel" tooltip="Individualize the look and feel of the plugin here.">
-    <menu id="Colours" tooltip="Individualize the colour sheme of the plugin here.">
-      <colourselector id="bg"/>
-      <colourselector id="interact"/>
-      <colourselector id="txt"/>
-      <colourselector id="mod"/>
-      <colourselector id="Inactive"/>
-      <colourselector id="darken"/>
-      <colourselector id="hover"/>
-      <colourselector id="abort"/>
-    </menu>
+  <menu id="Colours" x="1" y="1;5" tooltip="Individualize the colour sheme of the plugin here.">
+    <txt y="0" just="topLeft" text="Individualize the colour sheme of the plugin here." />
+    <coloursheme y="1" id="coloursheme"/>
   </menu>
   <menu id="Thank You" x="40;40;40" y="20;100;20" tooltip="I always wanted to become a VST Developer. Thanks to everyone who makes this possible.">
     <!--<imgStrip id="Logos"/>-->
-    <txt id="ThanksText" x=".5" y="1" w="2" just="left" text=
-"I just want to thank everyone! It really means a lot to me.
-I'm producing my own music since I was a child. I was always
-fascinated by the creativity used to make all these different
-kinds of VST effects and instruments. VST is much more than
-just a technology or a trademark. It is a lifestyle!
+    <txt id="ThanksText" x=".1" y="1.1" w="2.8" h=".8" just="topLeft" text=
+"Hi,
 
-A lifestyle about experiencing transcendental moments and
-a lifestyle about sharing these experiences with each other.
+my name is Florian Mrugalla and I am now making beats since
+I was a child. VST is a technology owned by Steinberg, their
+trademark. But it's actually much more than that. VST plugins
+enable musicians to come together in passionate discussions
+and even mangage to throw us into deep transcendental
+moments of trance on a regular basis.
 
-Needless to say my own music was always heavily influenced
-by my urge to explore all of these experiences.
-I want to make people feel just what I felt through my
-plugins now and I really hope I am able to do that."
-     />
-    <!--
-    <linkstrip id="Linkstrip">
-      <link id="Support Me" link="https://www.paypal.com/paypalme/alteoma" tooltip="consider this if you find yourself continuously enjoying the experience."/>
-      <link id="Discord" link="https://discord.gg/PFnAsvMW5f" tooltip="come to my discord to receive news, or to tell me about bugs or feature requests."/>
-    </linkstrip>
-    -->
+That's why I consider VST a lifestyle!
+
+I always wanted to make my own VST plugins and here I am!
+Let's go on a journey together with my creations now.
+
+:)"/>
+    <link id="Community" x="0" y="2" w="1.5" h="1" link="https://discord.gg/PFnAsvMW5f" tooltip="come to my discord to receive news or to tell me about bugs or feature requests!"/>
+    <link id="Donate" x="1.5" y="2" w="1.5" h="1" link="https://www.paypal.com/paypalme/alteoma" tooltip="support my work if you continuously find yourself enjoying the experience!"/>
   </menu>
 </menu>

@@ -22,7 +22,6 @@ namespace gui
             Timer(),
             knobBounds(0.f, 0.f, 0.f, 0.f),
             label(u, std::move(_name)),
-            //popUp(u),
             dragY(0.f),
             valMeter(0.f),
             cID(ColourID::Interact)
@@ -33,7 +32,8 @@ namespace gui
             );
 
             label.textCID = ColourID::Txt;
-            label.just = Just::centredTop;
+            label.just = Just::centred;
+            //label.mode = Label::Mode::TextToLabelBounds;
 
             setName(std::move(_name));
             addAndMakeVisible(label);
@@ -51,6 +51,8 @@ namespace gui
             cID = c;
             label.textCID = cID;
         }
+
+        Label& getLabel() noexcept { return label; }
     protected:
         BoundsF knobBounds;
         Label label;
@@ -59,9 +61,9 @@ namespace gui
 
         void timerCallback() override
         {
-            const auto lckd = param.isLocked();
             bool needsRepaint = false;
 
+            const auto lckd = param.isLocked();
             if (locked != lckd)
                 setLocked(lckd);
 
@@ -223,7 +225,8 @@ namespace gui
             if (mouse.mods.isLeftButtonDown())
             {
                 juce::Desktop::getInstance().getMainMouseSource().enableUnboundedMouseMovement(true, false);
-
+                if (param.isInGesture())
+                    return;
                 param.beginGesture();
                 dragY = mouse.position.y / utils.getDragSpeed();
                 {

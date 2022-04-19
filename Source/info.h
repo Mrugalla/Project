@@ -25,21 +25,39 @@ HOW TO USE:
 
 TO DO:
 
+Solve JUCE Bugs
+	Graphics::drawFittedText skips first line if it only has space or \n
+		seen in options/controls' text
+
+MIDI Learn
+	automation doesnt work in bitwig
+	1 cc to n parameters
+	different midi channnels (16 * 128 CCs instead of 128)
+	possible to save and load default state of whole midi learn patch
+
+PopUp
+	MIDI Learn
+	clear MIDI Learn
+	enter value
+
+Label
+	group has bad architecture. doesn't go to right value on first resized
+	consider text changes as source of setHeight as well
+
 Options Menu
-	implement more sub menu types
+	lookandfeel thickness
 	think about how to make automatic tutorials or manuals
 	how to make automatic updates possible
 
+All Params
+	saving and loading max mod depths as preset
+	setting max mod depths as absolute
+
 Param
-	bias curve of max modulation depth
-	locking max modulation depth
-	saving and loading max mod depth as preset
+	...
 
 Oversampler
 	less cpu demanding (FFT?)
-
-Design
-	deliberate x,y offset to label border for pseudo 3d fx
 
 Tutorial at first open
 
@@ -59,13 +77,10 @@ PPD
 	PPDSidechainable
 
 HighLevel UI Elements
-	Options menu
 	Parameter Randomizer
 	Preset Browser
 	undo/redo
 	delta button
-	patches select parameter interpolation or parallel processing of sound
-		can highlevel params be macro-modulated in parallel? sketch out block diagram!
 	sidechain activated?
 
 Meters
@@ -74,9 +89,6 @@ Meters
 Knob
 	combine Knob and Dial into one with Parametr
 	make templated (or so)
-	right click for context menu
-		- midi learn
-		- save as default value
 
 -------------------------------------------------------------------
 

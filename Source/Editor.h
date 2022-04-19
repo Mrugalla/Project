@@ -53,8 +53,8 @@ namespace gui
             setMouseCursor(makeCursor(CursorType::Default));
             
             layout.init(
-                { 50, 130 },
-                { 150, 10 }
+                { 8, 34 },
+                { 34, 2 }
             );
 
             addAndMakeVisible(lowLevel);
@@ -128,7 +128,7 @@ namespace gui
         HighLevel highLevel;
 
         Tooltip tooltip;
-        PopUp<6> popUp;
+        PopUp<7> popUp;
 
         bool bypassed;
         Shader shadr;

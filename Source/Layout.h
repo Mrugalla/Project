@@ -239,9 +239,9 @@ namespace gui
 		void paint(Graphics& g)
 		{
 			for (auto x = 0; x < rX.size(); ++x)
-				g.drawVerticalLine(static_cast<int>(rX[x]), static_cast<float>(comp.getY()), static_cast<float>(comp.getBottom()));
+				g.drawVerticalLine(static_cast<int>(rX[x]), rY[0], static_cast<float>(comp.getBottom()));
 			for (auto y = 0; y < rY.size(); ++y)
-				g.drawHorizontalLine(static_cast<int>(rY[y]), static_cast<float>(comp.getX()), static_cast<float>(comp.getRight()));
+				g.drawHorizontalLine(static_cast<int>(rY[y]), rX[0], static_cast<float>(comp.getRight()));
 		}
 		template<typename X, typename Y>
 		void label(Graphics& g, String&& txt, X x, Y y, X width = static_cast<X>(1), Y height = static_cast<Y>(1), bool isQuad = false)

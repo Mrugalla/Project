@@ -25,6 +25,7 @@ namespace gui
                 dragY(0.f),
                 state(State::MaxModDepth)
             {
+                label.mode = Label::Mode::TextToLabelBounds;
                 label.textCID = ColourID::Bg;
                 addAndMakeVisible(label);
             }
@@ -32,15 +33,17 @@ namespace gui
             void paint(Graphics& g) override
             {
                 const auto bounds = getLocalBounds().toFloat();
+                Colour col;
                 switch (state)
                 {
                 case State::MaxModDepth:
-                    g.setColour(Colours::c(ColourID::Mod));
+                    col = Colours::c(ColourID::Mod);
                     break;
                 case State::Bias:
-                    g.setColour(Colours::c(ColourID::Bias));
+                    col = Colours::c(ColourID::Bias);
                     break;
                 }
+                g.setColour(col);
                 g.fillEllipse(bounds);
             }
 
@@ -49,6 +52,7 @@ namespace gui
             Parametr& parametr;
             Label label;
             float dragY;
+        public:
             State state;
 
             void resized() override
@@ -63,6 +67,7 @@ namespace gui
                 {
                 case State::MaxModDepth:
                     dragY = mouse.position.y / utils.getDragSpeed();
+                    break;
                 case State::Bias:
                     dragY = mouse.position.y / utils.getDragSpeed() * 2.f;
                     break;
@@ -76,7 +81,9 @@ namespace gui
                     switch (state)
                     {
                     case State::MaxModDepth:
+                        
                         dragYNew = mouse.position.y / utils.getDragSpeed();
+                        break;
                     case State::Bias:
                         dragYNew = mouse.position.y / utils.getDragSpeed() * 2.f;
                         break;
@@ -107,15 +114,18 @@ namespace gui
             {
                 if (!mouse.mouseWasDraggedSinceMouseDown())
                     if (mouse.mods.isCtrlDown())
+                    {
                         switch (state)
                         {
                         case State::MaxModDepth:
+
                             parametr.param.setMaxModDepth(0.f);
                             break;
                         case State::Bias:
                             parametr.param.setModBias(.5f);
                             break;
                         }
+                    }
                     else if (mouse.mods.isRightButtonDown())
                     {
                         state = static_cast<State>((static_cast<int>(state) + 1) % NumStates);
@@ -123,9 +133,11 @@ namespace gui
                         {
                         case State::MaxModDepth:
                             label.setText("M");
+                            setCursorType(CursorType::Mod);
                             break;
                         case State::Bias:
                             label.setText("B");
+                            setCursorType(CursorType::Bias);
                             break;
                         }
                         repaintWithChildren(&parametr);
@@ -166,6 +178,7 @@ namespace gui
                 setAlpha(1.f);
             }
         }
+
     protected:
         Param& param;
         ModDial modDial;

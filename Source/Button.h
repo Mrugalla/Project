@@ -443,16 +443,19 @@ namespace gui
 			}
 			else if (symbol == ButtonSymbol::Settings)
 			{
-				const auto thicc3 = thicc * 4.f;
-				bounds = maxQuadIn(bounds).reduced(thicc3);
-
 				if (button.toggleState == 1)
 				{
+					const auto thicc3 = thicc * 3.f;
+					bounds = maxQuadIn(bounds).reduced(thicc3);
+
 					g.setFont(getFontNEL());
-					g.drawFittedText("X", bounds.toNearestInt(), Just::centred, 1);
+					g.drawFittedText("X", bounds.toNearestInt(), Just::centred, 1, 0.f);
 				}
 				else
 				{
+					const auto thicc3 = thicc * 4.f;
+					bounds = maxQuadIn(bounds).reduced(thicc3);
+
 					const auto x = bounds.getX();
 					const auto y = bounds.getY();
 					const auto w = bounds.getWidth();
@@ -563,6 +566,16 @@ namespace gui
 				buttons[i]->toggleState = 1;
 			});
 		}
+	}
+
+	inline void makeURLButton(Button& b, String&& urlPath)
+	{
+		const juce::URL url(urlPath);
+
+		b.onClick.push_back([url]()
+		{
+			url.launchInDefaultBrowser();
+		});
 	}
 }
 

@@ -7,46 +7,52 @@ namespace gui
 	struct Label :
 		public Comp
 	{
+		enum class Mode { WindowToTextBounds, TextToLabelBounds, NumModes };
+
+		static constexpr float MinFontHeight = 7.f;
+
 		Label(Utils& u, String&& _name, Notify&& _notify = [](EvtType, const void*){}) :
 			Comp(u, "", std::move(_notify), gui::CursorType::Default),
+			group(),
 			textCID(ColourID::Txt),
 			just(Just::centred),
-			font(getFontNEL())
+			font(getFontNEL()),
+			mode(Mode::WindowToTextBounds),
+			text(_name)
 		{
+			font.setHeight(MinFontHeight);
 			setInterceptsMouseClicks(false, false);
-			setText(_name);
 		}
 
 		void setText(const String& txt)
 		{
-			if (txt == getName())
+			if (txt == text)
 				return;
 
-			setName(txt);
+			text = txt;
 
-			if (txt.isEmpty() || getWidth() == 0 || getHeight() == 0)
+			if (empty() || getWidth() == 0 || getHeight() == 0)
 				return;
 			
 			updateTextBounds();
 		}
 
-		bool empty() const noexcept { return getName().isEmpty(); }
+		bool empty() const noexcept { return text.isEmpty(); }
 
+		std::vector<Label*> group;
 		ColourID textCID;
 		Just just;
 		Font font;
+		Mode mode;
 	protected:
+		String text;
+
 		void paint(Graphics& g) override
 		{
-			const auto thicc = utils.thicc();
-			const auto bounds = getLocalBounds().toFloat().reduced(thicc);
-			const auto y = bounds.getY();
-			const auto h = bounds.getHeight();
-			const auto fontH = font.getHeight();
-			const auto nH = y + (h - fontH) * .5f;
+			const auto bounds = getLocalBounds().toFloat();
 			g.setColour(Colours::c(textCID));
 			g.setFont(font);
-			g.drawFittedText(getName(), bounds.withY(nH).toNearestInt(), just, 1);
+			g.drawFittedText(text, bounds.toNearestInt(), just, 1);
 		}
 
 		void resized() override
@@ -55,43 +61,53 @@ namespace gui
 		}
 
 	private:
-		void updateTextBounds(float minFontHeight = 6.f)
+		void updateTextBounds()
 		{
-			const auto thicc = utils.thicc();
+			float nHeight = MinFontHeight;
 
-			const auto& text = getName();
-			float maxStrWidth = 0.f;
+			if (mode == Mode::WindowToTextBounds)
 			{
-				auto sIdx = 0;
-				for (auto i = 1; i < text.length(); ++i)
-				{
-					if (text[i] == '\n')
-					{
-						const auto lineWidth = font.getStringWidthFloat(text.substring(sIdx, i));
-						if (maxStrWidth < lineWidth)
-							maxStrWidth = lineWidth;
-						++i;
-						sIdx = i;
-					}
-				}
-				const auto lineWidth = font.getStringWidthFloat(text.substring(sIdx));
-				if (maxStrWidth < lineWidth)
-					maxStrWidth = lineWidth;
+				auto val = utils.fontHeight();
+				nHeight = std::max(nHeight, val);
 			}
+			if (mode == Mode::TextToLabelBounds)
+			{
+				const auto thicc = utils.thicc();
 
-			const auto width = static_cast<float>(getWidth());
-			const auto ratio = width / maxStrWidth;
+				float maxStrWidth = 0.f;
+				{
+					auto sIdx = 0;
+					for (auto i = 1; i < text.length(); ++i)
+					{
+						if (text[i] == '\n')
+						{
+							const auto lineWidth = font.getStringWidthFloat(text.substring(sIdx, i));
+							if (maxStrWidth < lineWidth)
+								maxStrWidth = lineWidth;
+							++i;
+							sIdx = i;
+						}
+					}
+					const auto lineWidth = font.getStringWidthFloat(text.substring(sIdx));
+					if (maxStrWidth < lineWidth)
+						maxStrWidth = lineWidth;
+				}
 
-			auto fontHeight = font.getHeight();
-			fontHeight *= ratio;
+				const auto width = static_cast<float>(getWidth());
+				const auto ratio = width / maxStrWidth;
 
-			const auto height = static_cast<float>(getHeight());
-			if (fontHeight > height)
-				fontHeight = height;
+				auto fontHeight = font.getHeight();
+				fontHeight *= ratio;
 
-			const auto nHeight = fontHeight - thicc;
+				const auto height = static_cast<float>(getHeight());
+				if (fontHeight > height)
+					fontHeight = height;
 
-			font.setHeight(nHeight < minFontHeight ? minFontHeight : nHeight);
+				nHeight = std::max(fontHeight - thicc, nHeight);
+			}
+			if (font != getFontNEL())
+				nHeight += 2.5f;
+			font.setHeight(nHeight);
 		}
 	};
 }

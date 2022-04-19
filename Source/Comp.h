@@ -47,8 +47,12 @@ namespace gui
 			if (cursorType != ct)
 			{
 				cursorType = ct;
-				setMouseCursor(makeCursor(cursorType));
+				updateCursor();
 			}
+		}
+		void updateCursor()
+		{
+			setMouseCursor(makeCursor(cursorType));
 		}
 
 		const Layout& getLayout() const noexcept { return layout; }
@@ -92,7 +96,7 @@ namespace gui
 			{
 				if (type == EvtType::ColourShemeChanged)
 				{
-					// c->update mouse cursor
+					c->updateCursor();
 					c->repaint();
 				}
 			};

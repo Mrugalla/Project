@@ -39,8 +39,6 @@ namespace param
 		HQ,
 #endif
 		StereoConfig,
-		PatchSelect,
-		PatchMode,
 		Power,
 
 		// low level parameters
@@ -65,8 +63,6 @@ namespace param
 		switch (pID)
 		{
 		case PID::Macro: return "Macro";
-		case PID::PatchSelect: return "Patch Select";
-		case PID::PatchMode: return "Patch Mode";
 #if PPDHasGainIn
 		case PID::GainIn: return "Gain In";
 #endif
@@ -94,13 +90,22 @@ namespace param
 		}
 	}
 
+	inline PID toPID(const String& id)
+	{
+		for (auto i = 0; i < NumParams; ++i)
+		{
+			auto pID = static_cast<PID>(i);
+			if (id == toID(toString(pID)))
+				return pID;
+		}
+		return PID::NumParams;
+	}
+
 	inline String toTooltip(PID pID)
 	{
 		switch (pID)
 		{
-		case PID::Macro: return "Interpolate between the two patches X and Y.";
-		case PID::PatchSelect: return "Solo one of the patches tweak it in isolation.";
-		case PID::PatchMode: return "The macro can interpolate between two patch-states or two parallel-processed patches.";
+		case PID::Macro: return "Dial in the desired amount of macro modulation depth.";
 #if PPDHasGainIn
 		case PID::GainIn: return "Apply input gain to the wet signal.";
 #endif
@@ -128,8 +133,6 @@ namespace param
 
 	enum class Unit
 	{
-		PatchMode,
-		PatchSelect,
 		Power,
 		Solo,
 		Mute,
@@ -154,8 +157,6 @@ namespace param
 	{
 		switch (pID)
 		{
-		case Unit::PatchMode: return "";
-		case Unit::PatchSelect: return "";
 		case Unit::Power: return "";
 		case Unit::Solo: return "S";
 		case Unit::Mute: return "M";
@@ -183,9 +184,11 @@ namespace param
 	using ParameterBase = juce::AudioProcessorParameter;
 	using State = sta::State;
 
-	struct Param :
+	class Param :
 		public ParameterBase
 	{
+		static constexpr float BiasEps = .000001f;
+	public:
 		Param(const PID pID, const Range& _range, const float _valDenormDefault,
 			const ValToStrFunc& _valToStr, const StrToValFunc& _strToVal,
 			State& _state, const Unit _unit = Unit::NumUnits, bool _locked = false) :
@@ -193,8 +196,6 @@ namespace param
 			AudioProcessorParameter(),
 			id(pID),
 			range(_range),
-			val0(0.f),
-			val1(0.f),
 
 			state(_state),
 			valDenormDefault(_valDenormDefault),
@@ -208,20 +209,27 @@ namespace param
 			strToVal(_strToVal),
 			unit(_unit),
 
-			locked(_locked)
+			locked(_locked),
+			inGesture(false)
 		{
 		}
 
-		void savePatch() const
+		void savePatch(juce::ApplicationProperties& appProps) const
 		{
-			auto v = range.convertFrom0to1(getValue());
+			const auto v = range.convertFrom0to1(getValue());
 			state.set(getIDString(), "value", v, true);
 			const auto mdd = getMaxModDepth();
 			state.set(getIDString(), "maxmoddepth", mdd, true);
-			auto mb = getModBias();
+			const auto mb = getModBias();
 			state.set(getIDString(), "modbias", mb, true);
+			
+			auto user = appProps.getUserSettings();
+			if (user->isValidFile())
+			{
+				user->setValue(getIDString() + "valDefault", valDenormDefault);
+			}
 		}
-		void loadPatch()
+		void loadPatch(juce::ApplicationProperties& appProps)
 		{
 			const auto lckd = isLocked();
 			if (!lckd)
@@ -245,6 +253,12 @@ namespace param
 					const auto val = static_cast<float>(*var);
 					setModBias(val);
 				}
+				auto user = appProps.getUserSettings();
+				if (user->isValidFile())
+				{
+					const auto vdd = user->getDoubleValue(getIDString() + "valDefault", static_cast<double>(valDenormDefault));
+					setDefaultValue(range.convertTo0to1(static_cast<float>(vdd)));
+				}
 			}
 		}
 
@@ -260,21 +274,35 @@ namespace param
 		}
 		
 		// called by editor
+		bool isInGesture() const noexcept
+		{
+			return inGesture.load();
+		}
 		void setValueWithGesture(float norm)
 		{
+			if (isInGesture())
+				return;
 			beginChangeGesture();
 			setValueNotifyingHost(norm);
 			endChangeGesture();
 		}
-		void beginGesture() { beginChangeGesture(); }
-		void endGesture() { endChangeGesture(); }
+		void beginGesture()
+		{
+			inGesture.store(true);
+			beginChangeGesture();
+		}
+		void endGesture()
+		{
+			inGesture.store(false);
+			endChangeGesture();
+		}
 		float getMaxModDepth() const noexcept { return maxModDepth.load(); }
 		void setMaxModDepth(float v) noexcept
 		{
-			if (!isLocked())
-			{
-				maxModDepth.store(juce::jlimit(-1.f, 1.f, v));
-			}
+			if (isLocked())
+				return;
+
+			maxModDepth.store(juce::jlimit(-1.f, 1.f, v));
 		}
 		float getValMod() const noexcept { return valMod.load(); }
 		float getValModDenorm() const noexcept { return range.convertFrom0to1(valMod.load()); }
@@ -283,23 +311,27 @@ namespace param
 			if (isLocked())
 				return;
 			
-			b = juce::jlimit(0.00001f, .99999f, b);
+			b = juce::jlimit(BiasEps, 1.f - BiasEps, b);
 			modBias.store(b);
 		}
 		float getModBias() const noexcept { return modBias.load(); }
+		void setDefaultValue(float norm) noexcept
+		{
+			valDenormDefault = range.convertFrom0to1(norm);
+		}
 
-		// called by processor
+		// called by processor to update modulation value(s)
 		void modulate(float macro) noexcept
 		{
-			val0 = getValue();
+			const auto norm = getValue();
 
 			const auto mmd = maxModDepth.load();
 			const auto pol = mmd > 0.f ? 1.f : -1.f;
 			const auto md = mmd * pol;
 			const auto mdSkew = biased(0.f, md, modBias.load(), macro);
-			val1 = mdSkew * pol;
+			const auto mod = mdSkew * pol;
 			
-			valMod.store(juce::jlimit(0.f, 1.f, val0 + val1));
+			valMod.store(juce::jlimit(0.f, 1.f, norm + mod));
 		}
 
 		float getDefaultValue() const override { return range.convertTo0to1(valDenormDefault); }
@@ -335,24 +367,23 @@ namespace param
 
 		const PID id;
 		const Range range;
-		float val0, val1;
+		//float val0, val1;
 	protected:
 		State& state;
-		const float valDenormDefault;
+		float valDenormDefault;
 		std::atomic<float> valNorm, maxModDepth, valMod, modBias;
 		ValToStrFunc valToStr;
 		StrToValFunc strToVal;
 		Unit unit;
 
-		
-		std::atomic<bool> locked;
+		std::atomic<bool> locked, inGesture;
 	private:
 		String getIDString() const
 		{
 			return "params/" + toID(toString(id));
 		}
 
-		inline float biased(float start, float end, float bias/*0,1*/, float x) const noexcept
+		inline float biased(float start, float end, float bias/*[0,1]*/, float x) const noexcept
 		{
 			const auto r = end - start;
 			if (r == 0.f)
@@ -387,20 +418,6 @@ namespace param
 			};
 		}
 
-		inline StrToValFunc patchMode()
-		{
-			return[](const String& txt)
-			{
-				return txt.trimCharactersAtEnd(toString(Unit::PatchMode)).getFloatValue() > .5f ? 1.f : 0.f;
-			};
-		}
-		inline StrToValFunc patchSelect()
-		{
-			return[](const String& txt)
-			{
-				return std::rint(txt.trimCharactersAtEnd(toString(Unit::PatchSelect)).getFloatValue());
-			};
-		}
 		inline StrToValFunc power()
 		{
 			return[](const String& txt)
@@ -490,14 +507,6 @@ namespace param
 
 	namespace valToStr
 	{
-		inline ValToStrFunc patchMode()
-		{
-			return [](float v) { return v > .5f ? "Parallel" : "Params"; };
-		}
-		inline ValToStrFunc patchSelect()
-		{
-			return [](float v) { return v < .5f ? "Play All" : v < 1.5f ? "Solo A" : "Solo B"; };
-		}
 		inline ValToStrFunc mute()
 		{
 			return [](float v) { return v > .5f ? "Mute" : "Not Mute"; };
@@ -585,14 +594,6 @@ namespace param
 
 		switch (unit)
 		{
-		case Unit::PatchMode:
-			valToStrFunc = valToStr::patchMode();
-			strToValFunc = strToVal::patchMode();
-			break;
-		case Unit::PatchSelect:
-			valToStrFunc = valToStr::patchSelect();
-			strToValFunc = strToVal::patchSelect();
-			break;
 		case Unit::Power:
 			valToStrFunc = valToStr::power();
 			strToValFunc = strToVal::power();
@@ -667,8 +668,6 @@ namespace param
 			params.push_back(makeParam(PID::HQ, state, 1.f, makeRange::toggle()));
 #endif
 			params.push_back(makeParam(PID::StereoConfig, state, 1.f, makeRange::toggle(), Unit::StereoConfig));
-			params.push_back(makeParam(PID::PatchSelect, state, 0.f, {0.f, 2.f}, Unit::PatchSelect));
-			params.push_back(makeParam(PID::PatchMode, state, 0.f, makeRange::toggle(), Unit::PatchMode));
 			params.push_back(makeParam(PID::Power, state, 1.f, makeRange::toggle(), Unit::Power));
 
 			// LOW LEVEL PARAMS:
@@ -681,15 +680,15 @@ namespace param
 				audioProcessor.addParameter(param);
 		}
 
-		void loadPatch()
+		void loadPatch(juce::ApplicationProperties& appProps)
 		{
 			for (auto param : params)
-				param->loadPatch();
+				param->loadPatch(appProps);
 		}
-		void savePatch() const
+		void savePatch(juce::ApplicationProperties& appProps) const
 		{
 			for (auto param : params)
-				param->savePatch();
+				param->savePatch(appProps);
 		}
 
 		int getParamIdx(const String& nameOrID) const

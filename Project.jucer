@@ -45,6 +45,9 @@
         <FILE id="WEGEgZ" name="Dial.h" compile="0" resource="0" file="Source/Dial.h"/>
       </GROUP>
       <GROUP id="{6A8CB2D6-E6E3-8D1E-1148-21BD24558A7A}" name="audio">
+        <FILE id="bCXlue" name="MIDILearn.h" compile="0" resource="0" file="Source/MIDILearn.h"/>
+        <FILE id="pB8yhV" name="ProcessSuspend.h" compile="0" resource="0"
+              file="Source/ProcessSuspend.h"/>
         <FILE id="j7HQYg" name="Bitcrusher.h" compile="0" resource="0" file="Source/Bitcrusher.h"/>
         <FILE id="x0oUmr" name="EnvelopeFollower.h" compile="0" resource="0"
               file="Source/EnvelopeFollower.h"/>
