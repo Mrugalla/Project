@@ -15,6 +15,7 @@ namespace evt
         ClickedEmpty,
         PatchUpdated,
         ComponentAdded,
+        EnterParameterValue,
         NumTypes
     };
 

@@ -11,6 +11,7 @@
 
 #define PPDFPSKnobs 30
 #define PPDFPSMeters 30.f
+#define PPDFPSTextEditor 3
 
 #define PPDFPSValueBubble 24.f
 #define PPDValueBubbleVisibleTimeMs 1500.f

@@ -9,6 +9,7 @@
 #include "Shader.h"
 
 #include "PopUp.h"
+#include "TextEditor.h"
 #include "Knob.h"
 #include "HighLevel.h"
 #include "LowLevel.h"
@@ -43,7 +44,10 @@ namespace gui
             highLevel(utils, &lowLevel),
 
             tooltip(utils, "The tooltips bar leads you to wisdom."),
-            popUp(utils),
+
+            popUpKnobs(utils),
+
+            editorKnobs(utils),
 
             bypassed(false),
             shadr(bypassed)
@@ -61,7 +65,10 @@ namespace gui
             addAndMakeVisible(highLevel);
 
             addAndMakeVisible(tooltip);
-            addAndMakeVisible(popUp);
+            
+            addAndMakeVisible(popUpKnobs);
+
+            addChildComponent(editorKnobs);
 
             startTimerHz(12);
             setOpaque(true);
@@ -98,6 +105,9 @@ namespace gui
 
             tooltip.setBounds(layout.bottom().toNearestInt());
 
+            const auto thicc = utils.thicc();
+            editorKnobs.setBounds(0, 0, static_cast<int>(thicc * 42.f), static_cast<int>(thicc * 12.f));
+
             saveBounds();
         }
 
@@ -128,7 +138,9 @@ namespace gui
         HighLevel highLevel;
 
         Tooltip tooltip;
-        PopUp<7> popUp;
+        PopUpKnobs popUpKnobs;
+
+        TextEditorKnobs editorKnobs;
 
         bool bypassed;
         Shader shadr;

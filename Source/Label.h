@@ -36,6 +36,10 @@ namespace gui
 			
 			updateTextBounds();
 		}
+		const String& getText() const noexcept
+		{
+			return text;
+		}
 
 		bool empty() const noexcept { return text.isEmpty(); }
 

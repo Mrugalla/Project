@@ -14,3 +14,4 @@
 #undef PPD_UnityGainDefault
 #undef PPDFPSValueBubble
 #undef PPDValueBubbleVisibleTimeMs
+#undef PPDFPSTextEditor

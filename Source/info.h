@@ -29,8 +29,13 @@ Solve JUCE Bugs
 	Graphics::drawFittedText skips first line if it only has space or \n
 		seen in options/controls' text
 
+Comp
+	should have vector of Evt instead of single Evt
+
 TextEditor
-	basically write everything / copy from NEL
+	TextEditorKnobs
+		named like Parametr?
+		wrong positioning on event
 
 sta::State
 	contains valueTree as well as ApplicationProperties for max workflow!
@@ -43,9 +48,8 @@ MIDI Learn
 	possible to save and load default state of whole midi learn patch
 
 PopUp
-	MIDI Learn
-	clear MIDI Learn
-	enter value
+	Make Generalizable (for Buttons and ccMonitor)
+	implement Enter value
 
 Label
 	group has bad architecture. doesn't go to right value on first resized
