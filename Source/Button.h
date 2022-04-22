@@ -200,43 +200,11 @@ namespace gui
 		};
 	}
 
-	inline void makeTextButton(Button& b, String&& txt, bool withToggle = false, bool onlyText = false, int targetToggleState = 1)
+	inline void makeTextButton(Button& b, String&& txt, bool withToggle = false, int targetToggleState = 1)
 	{
 		b.enableLabel(std::move(txt));
 
-		if (onlyText)
-			b.onPaint.push_back([withToggle, targetToggleState](Graphics& g, Button& button)
-			{
-				const auto& utils = button.getUtils();
-				const auto& blinkyBoy = button.blinkyBoy;
-
-				auto thicc = utils.thicc();
-				const bool isOver = button.isMouseOver();
-				const bool isDown = button.isMouseButtonDown();
-				thicc *= (isOver ? 1.1f : 1.f);
-
-				auto area = button.getLocalBounds().toFloat().reduced(thicc * .5f);
-				const auto col = blinkyBoy.getInterpolated(Colours::c(ColourID::Transp), juce::Colours::white);
-
-				g.setColour(col);
-				g.fillRoundedRectangle(area, thicc);
-
-				if (withToggle && button.toggleState == targetToggleState)
-				{
-					g.setColour(Colours::c(ColourID::Hover));
-					g.fillRoundedRectangle(area, thicc);
-				}
-
-				if (button.isMouseOver())
-				{
-					g.setColour(Colours::c(ColourID::Hover));
-					g.fillRoundedRectangle(area, thicc);
-					if (isDown)
-						g.fillRoundedRectangle(area, thicc);
-				}
-			});
-		else
-			b.onPaint.push_back([withToggle, targetToggleState](Graphics& g, Button& button)
+		b.onPaint.push_back([withToggle, targetToggleState](Graphics& g, Button& button)
 			{
 				const auto& utils = button.getUtils();
 				const auto& blinkyBoy = button.blinkyBoy;
@@ -248,28 +216,25 @@ namespace gui
 				thicc *= (isOver ? 1.1f : 1.f);
 
 				const auto area = button.getLocalBounds().toFloat().reduced(thiccHalf);
-				
+
 				const auto col = blinkyBoy.getInterpolated(Colours::c(ColourID::Bg), juce::Colours::white);
 
 				g.setColour(col);
 				g.fillRoundedRectangle(area, thicc);
 
+				g.setColour(Colours::c(ColourID::Hover));
 				if (withToggle && button.toggleState == targetToggleState)
-				{
-					g.setColour(Colours::c(ColourID::Hover));
 					g.fillRoundedRectangle(area, thicc);
-				}
+
+				g.drawRoundedRectangle(area, thicc, thicc);
 
 				if (button.isMouseOver())
 				{
-					g.setColour(Colours::c(ColourID::Hover));
 					g.fillRoundedRectangle(area, thicc);
 					if (isDown)
 						g.fillRoundedRectangle(area, thicc);
 				}
-				g.setColour(Colours::c(ColourID::Interact));
-				g.drawRoundedRectangle(area, thicc, thicc);
-			});
+		});
 	}
 
 	enum class ButtonSymbol
@@ -283,7 +248,7 @@ namespace gui
 		NumSymbols
 	};
 
-	inline void makeSymbolButton(Button& b, ButtonSymbol symbol)
+	inline void makeSymbolButton(Button& b, ButtonSymbol symbol, int targetToggleState = 1)
 	{
 		bool withToggle = true;
 		if (symbol == ButtonSymbol::PatchMode)
@@ -294,7 +259,7 @@ namespace gui
 			b.enableLabel({ "L/R", "M/S" });
 		}
 		
-		b.onPaint.push_back([symbol, withToggle](Graphics& g, Button& button)
+		b.onPaint.push_back([symbol, withToggle, targetToggleState](Graphics& g, Button& button)
 		{
 			const auto& utils = button.getUtils();
 			const auto& blinkyBoy = button.blinkyBoy;
@@ -310,15 +275,13 @@ namespace gui
 			g.setColour(col);
 			g.fillRoundedRectangle(bounds, thicc);
 
-			if (withToggle && button.toggleState == 1)
-			{
-				g.setColour(Colours::c(ColourID::Hover));
+			g.setColour(Colours::c(ColourID::Hover));
+			if (withToggle && button.toggleState == targetToggleState)
 				g.fillRoundedRectangle(bounds, thicc);
-			}
+			g.drawRoundedRectangle(bounds, thicc, thicc);
 
 			if (button.isMouseOver())
 			{
-				g.setColour(Colours::c(ColourID::Hover));
 				g.fillRoundedRectangle(bounds, thicc);
 				if (isDown)
 					g.fillRoundedRectangle(bounds, thicc);
@@ -330,7 +293,6 @@ namespace gui
 			else
 				col = Colours::c(ColourID::Interact);
 			g.setColour(col);
-			g.drawRoundedRectangle(bounds, thicc, thicc);
 
 			if (symbol == ButtonSymbol::Polarity)
 			{

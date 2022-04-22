@@ -42,6 +42,7 @@ namespace audio
 	public:
 		MIDILearn(Params& _params, State& _state) :
 			ccBuf(),
+			ccIdx(-1),
 			assignableParam(nullptr),
 			params(_params),
 			state(_state)
@@ -76,25 +77,33 @@ namespace audio
 
 		void operator()(const MIDIBuf& midiBuf) noexcept
 		{
+			int c = -1;
+
 			for (auto midi : midiBuf)
 			{
 				auto msg = midi.getMessage();
 
 				if (msg.isController())
 				{
-					const auto ccIdx = msg.getControllerNumber();
-					auto& cc = ccBuf[ccIdx];
-
-					auto ap = assignableParam.load();
-					if (ap != nullptr)
+					c = msg.getControllerNumber();
+					if (c < ccBuf.size())
 					{
-						cc.param.store(ap);
-						assignableParam.store(nullptr);
-					}
+						auto& cc = ccBuf[c];
 
-					cc.setValue(msg.getControllerValue());
+						auto ap = assignableParam.load();
+						if (ap != nullptr)
+						{
+							cc.param.store(ap);
+							assignableParam.store(nullptr);
+						}
+
+						cc.setValue(msg.getControllerValue());
+					}
 				}
 			}
+
+			if(c != -1)
+				ccIdx.store(c);
 		}
 
 		void assignParam(Param* param) noexcept
@@ -108,8 +117,9 @@ namespace audio
 					cc.param.store(nullptr);
 		}
 
+		std::array<CC, 120> ccBuf;
+		std::atomic<int> ccIdx;
 	protected:
-		std::array<CC, 128> ccBuf;
 		std::atomic<Param*> assignableParam;
 		Params& params;
 		State& state;

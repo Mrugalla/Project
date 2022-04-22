@@ -2,6 +2,7 @@
 #include "Param.h"
 #include "Events.h"
 #include "Processor.h"
+#include "MIDILearn.h"
 
 namespace gui
 {
@@ -110,6 +111,10 @@ namespace gui
 		void removeMIDILearn(PID pID) noexcept
 		{
 			audioProcessor.midiLearn.removeParam(params[pID]);
+		}
+		const audio::MIDILearn& getMIDILearn() const noexcept
+		{
+			return audioProcessor.midiLearn;
 		}
 
 		float getDragSpeed() const noexcept

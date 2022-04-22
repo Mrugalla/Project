@@ -29,9 +29,16 @@ Solve JUCE Bugs
 	Graphics::drawFittedText skips first line if it only has space or \n
 		seen in options/controls' text
 
+TextEditor
+	basically write everything / copy from NEL
+
+sta::State
+	contains valueTree as well as ApplicationProperties for max workflow!
+	finally implement undo/redo
+
 MIDI Learn
-	automation doesnt work in bitwig
-	1 cc to n parameters
+	setValueNotifyHost() uses ScopedLock! needs message thread?
+	1 cc to n parameters?
 	different midi channnels (16 * 128 CCs instead of 128)
 	possible to save and load default state of whole midi learn patch
 
@@ -69,11 +76,9 @@ ProcessorBase
 	...
 
 LowLevel UI Elements
-	Jedes Patch hat eigenes Farbschema?
-	Name?
-	Preset Browser pro Patch oder pro Sub-Patch?
+	...
 
-PPD
+Pre Processor Defines (PPD)
 	PPDSidechainable
 
 HighLevel UI Elements

@@ -4,6 +4,7 @@
 #include "Knob.h"
 #include "Dial.h"
 #include "Menu.h"
+#include "MIDICCMonitor.h"
 #include "LowLevel.h"
 
 #include <array>
@@ -35,6 +36,8 @@ namespace gui
 			power(u, param::toTooltip(PID::Power)),
 			polarity(u, param::toTooltip(PID::Polarity)),
 
+			ccMonitor(u, u.getMIDILearn()),
+
 			lowLevel(_lowLevel),
 
 			menu(nullptr),
@@ -42,7 +45,7 @@ namespace gui
 		{
 			layout.init(
 				{ 1, 8, 1, 8, 1, 8, 1, 8, 1, 1 },
-				{ 1, 8, 1, 5, 1, 13, 1, 13, 1, 13, 1, 8 }
+				{ 1, 8, 1, 5, 1, 13, 1, 13, 1, 13, 1, 8, 2 }
 			);
 
 			pluginTitle.font = getFontNEL();
@@ -72,6 +75,8 @@ namespace gui
 
 			makeParameterSwitchButton(polarity, PID::Polarity, ButtonSymbol::Polarity);
 			addAndMakeVisible(polarity);
+
+			addAndMakeVisible(ccMonitor);
 
 			makeSymbolButton(menuButton, ButtonSymbol::Settings);
 			menuButton.toggleState = 0;
@@ -175,12 +180,13 @@ namespace gui
 			layout.place(gainOut, 5.5f, 7.f, 2.5f, 2.f, true);
 
 			layout.place(mix, 3.f, 9.f, 3.f, 1.f, true);
-
-			layout.place(power, 1.f, 11.f, 1.f, 1.f, true);
 			layout.place(polarity, 7.f, 9.f, 1.f, 1.f, true);
 
+			layout.place(power, 1.f, 11.f, 1.f, 1.f, true);
 			layout.place(hq, 7.f, 11.f, 1.f, 1.f, true);
 			layout.place(stereoConfig, 5.f, 11.f, 1.f, 1.f, true);
+
+			layout.place(ccMonitor, 1.f, 12.f, 3.f, 1.f, false);
 
 			if (menu != nullptr)
 			{
@@ -191,6 +197,7 @@ namespace gui
 
 	protected:
 		Label pluginTitle;
+
 		Knob macro;
 #if PPDHasGainIn
 		Knob gainIn;
@@ -208,6 +215,8 @@ namespace gui
 		Button stereoConfig;
 		Button power;
 		Button polarity;
+
+		MIDICCMonitor ccMonitor;
 
 		LowLevel* lowLevel;
 		std::unique_ptr<Menu> menu;

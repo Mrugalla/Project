@@ -110,7 +110,7 @@ namespace audio
 
         bool hasEditor() const override { return PPDHasEditor; }
         bool acceptsMidi() const override { return true; }
-        bool producesMidi() const override { return false; }
+        bool producesMidi() const override { return true; }
         bool isMidiEffect() const override { return false; }
 
         /////////////////////////////////////////////

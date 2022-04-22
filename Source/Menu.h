@@ -301,7 +301,7 @@ namespace gui
 
 				auto& btn = *buttons[i];
 
-				makeTextButton(btn, "- " + node.getProperty("id").toString(), true, true, 1);
+				makeTextButton(btn, "- " + node.getProperty("id").toString(), true, 1);
 				btn.getLabel().just = Just::left;
 				btn.getLabel().font = Font();
 			}
