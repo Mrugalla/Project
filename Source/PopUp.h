@@ -12,7 +12,9 @@ namespace gui
 		{
 			return [&pop = popUp](EvtType type, const void*)
 			{
-				if (type == EvtType::ClickedEmpty || type == EvtType::ParametrDragged)
+				if (type == EvtType::ClickedEmpty ||
+					type == EvtType::ParametrDragged ||
+					type == EvtType::EnterParameterValue)
 				{
 					pop.setVisible(false);
 				}
@@ -96,8 +98,7 @@ namespace gui
 				{
 					const auto& parametr = *static_cast<const Parametr*>(stuff);
 					auto& utils = pop.getUtils();
-					auto& buttons = pop.buttons;
-
+					
 					pop.setButton([param = utils.getParam(parametr.getPID())]()
 					{
 						juce::Random rand;

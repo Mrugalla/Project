@@ -70,6 +70,11 @@ namespace gui
 			layout.fromStrings(xL, yL);
 		}
 
+		void notify(EvtType type, const void* stuff = nullptr)
+		{
+			evts[0](type, stuff);
+		}
+
 	protected:
 		Utils& utils;
 		Layout layout;
@@ -93,11 +98,6 @@ namespace gui
 			notify(EvtType::ClickedEmpty, this);
 		}
 
-		void notify(EvtType type, const void* stuff = nullptr)
-		{
-			evts[0](type, stuff);
-		}
-	
 	private:
 		Notify makeNotifyBasic(Comp* c)
 		{

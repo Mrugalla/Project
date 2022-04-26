@@ -173,16 +173,24 @@ namespace gui
 
 					editor.onReturn = [&tek = editor, param]()
 					{
-						const auto val = juce::jlimit(0.f, 1.f, param->getValueForText(tek.txt));
-						param->setValueWithGesture(val);
+						if (tek.txt.isNotEmpty())
+						{
+							const auto val = juce::jlimit(0.f, 1.f, param->getValueForText(tek.txt));
+							param->setValueWithGesture(val);
+						}
 						tek.disable();
 					};
 
 					const auto mouse = juce::Desktop::getInstance().getMainMouseSource();
-					const auto mousePos = mouse.getScreenPosition();
-					const auto parametrPos = parametr->getScreenPosition().toFloat();
-					Point pt = (mousePos - parametrPos).toInt();
-					editor.setCentrePosition(pt);
+					const auto& utils = editor.getUtils();
+					const auto screenPos = utils.getScreenPosition();
+					const auto parametrScreenPos = parametr->getScreenPosition();
+					const auto parametrPos = parametrScreenPos - screenPos;
+					const Point parametrCentre(
+						parametr->getWidth() / 2,
+						parametr->getHeight() / 2
+					);
+					editor.setCentrePosition(parametrPos + parametrCentre);
 					editor.enable();
 				}
 			};
@@ -192,6 +200,15 @@ namespace gui
 			TextEditor(u, "Enter a value for this parameter.", makeNotify(*this))
 		{
 
+		}
+
+		void paint(Graphics& g) override
+		{
+			const auto thicc = utils.thicc();
+			g.setColour(Colours::c(ColourID::Darken));
+			g.fillRoundedRectangle(getLocalBounds().toFloat(), thicc);
+
+			TextEditor::paint(g);
 		}
 	};
 }

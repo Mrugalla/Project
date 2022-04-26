@@ -25,9 +25,11 @@ HOW TO USE:
 
 TO DO:
 
-Solve JUCE Bugs
-	Graphics::drawFittedText skips first line if it only has space or \n
-		seen in options/controls' text
+ParameterRandomizer
+	can randomize power param. better make buttons lockable!
+
+Comp
+	rewrite all components to not have makeNotify methods anymore but making stuff in constructor
 
 TextEditor
 	TextEditorKnobs
@@ -45,13 +47,15 @@ MIDI Learn
 	possible to save and load default state of whole midi learn patch
 
 PopUp
-	do not open atm! why?
-	Make Generalizable (for Buttons and ccMonitor)
-	implement Enter value
+	implement context menus for
+		Buttons
+		ccMonitor
+
+TextEditorKnobs
+	...
 
 Label
-	group has bad architecture. doesn't go to right value on first resized
-	consider text changes as source of setHeight as well
+	...
 
 Options Menu
 	lookandfeel thickness
@@ -84,6 +88,7 @@ Pre Processor Defines (PPD)
 	PPDSidechainable
 
 HighLevel UI Elements
+	Title Label resizes itself only on manual resize. why
 	Parameter Randomizer
 	Preset Browser
 	undo/redo
