@@ -33,15 +33,24 @@ namespace evt
                 notifier(nullptr)
             {
             }
+
             Evt(System& _sys, const Notify& _notifier) :
                 sys(_sys),
                 notifier(_notifier)
             {
                 sys.add(this);
             }
+
             Evt(System& _sys, Notify&& _notifier) :
                 sys(_sys),
                 notifier(_notifier)
+            {
+                sys.add(this);
+            }
+
+            Evt(const Evt& other) :
+                notifier(other.notifier),
+                sys(other.sys)
             {
                 sys.add(this);
             }
@@ -72,6 +81,7 @@ namespace evt
             for (const auto e : evts)
                 e->notifier(type, stuff);
         }
+
     protected:
 		std::vector<Evt*> evts;
 
