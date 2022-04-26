@@ -103,6 +103,15 @@ namespace gui
 
 		Param* getParam(PID pID) noexcept { return params[pID]; }
 		const Param* getParam(PID pID) const noexcept { return params[pID]; }
+		
+		std::vector<Param*>& getAllParams() noexcept
+		{
+			return params.data();
+		}
+		const std::vector<Param*>& getAllParams() const noexcept
+		{
+			return params.data();
+		}
 
 		void assignMIDILearn(PID pID) noexcept
 		{

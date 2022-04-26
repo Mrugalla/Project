@@ -7,6 +7,7 @@ namespace gui
 {
 	using Component = juce::Component;
 	using Path = juce::Path;
+	using Stroke = juce::PathStrokeType;
 	using Point = juce::Point<int>;
 	using PointF = juce::Point<float>;
 	using Bounds = juce::Rectangle<int>;
@@ -262,6 +263,70 @@ namespace gui
 		path.startNewSubPath(layout(points[0]));
 		for (auto i = 1; i < points.size(); ++i)
 			path.lineTo(layout(points[i]));
+	}
+
+	inline void drawHorizontalLine(Graphics& g, int y, float left, float right, int thicc = 1)
+	{
+		g.drawHorizontalLine(y, left, right);
+		for (auto t = 1; t < thicc; ++t)
+		{
+			g.drawHorizontalLine(y + t, left, right);
+			g.drawHorizontalLine(y - t, left, right);
+		}
+	}
+	
+	inline void drawVerticalLine(Graphics& g, int x, float top, float bottom, int thicc = 1)
+	{
+		g.drawVerticalLine(x, top, bottom);
+		for (auto t = 1; t < thicc; ++t)
+		{
+			g.drawVerticalLine(x + t, top, bottom);
+			g.drawVerticalLine(x - t, top, bottom);
+		}
+	}
+
+	inline void drawRectEdges(Graphics& g, const BoundsF& bounds,
+		float edgeWidth, float edgeHeight, juce::PathStrokeType st)
+	{
+		const auto x = bounds.getX();
+		const auto y = bounds.getY();
+		const auto right = bounds.getRight();
+		const auto bottom = bounds.getBottom();
+
+		const auto xPlusEdge = x + edgeWidth;
+		const auto yPlusEdge = y + edgeHeight;
+		const auto rightMinusEdge = right - edgeWidth;
+		const auto bottomMinusEdge = bottom - edgeHeight;
+
+		Path path;
+		path.startNewSubPath(x, yPlusEdge);
+		path.lineTo(x, y);
+		path.lineTo(xPlusEdge, y);
+
+		path.startNewSubPath(x, bottomMinusEdge);
+		path.lineTo(x, bottom);
+		path.lineTo(xPlusEdge, bottom);
+
+		path.startNewSubPath(rightMinusEdge, bottom);
+		path.lineTo(right, bottom);
+		path.lineTo(right, bottomMinusEdge);
+
+		path.startNewSubPath(right, yPlusEdge);
+		path.lineTo(right, y);
+		path.lineTo(rightMinusEdge, y);
+
+		g.strokePath(path, st);
+	}
+
+	inline void drawRectEdges(Graphics& g, const BoundsF& bounds,
+		float edgeWidth, juce::PathStrokeType st)
+	{
+		drawRectEdges(g, bounds, edgeWidth, edgeWidth, st);
+	}
+
+	inline void drawHeadLine(Graphics& g, const BoundsF& bounds, const String& txt)
+	{
+		g.drawFittedText(txt, bounds.toNearestInt(), Just::centredTop, 1);
 	}
 
 	template<class CompType>

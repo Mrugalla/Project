@@ -1,6 +1,7 @@
 #pragma once
 #include "Comp.h"
 #include "Button.h"
+#include "ButtonParameterRandomizer.h"
 #include "Knob.h"
 #include "Dial.h"
 #include "Menu.h"
@@ -19,11 +20,12 @@ namespace gui
 			Comp(u, "", CursorType::Default),
 			pluginTitle(u, JucePlugin_Name),
 			macro(u, "Macro", PID::Macro, false),
+			parameterRandomizer(u),
 #if PPDHasGainIn
-			gainIn(u, "Gain >", PID::GainIn),
+			gainIn(u, "In", PID::GainIn),
 			meterIn(gainIn, u.getMeter(0)),
 #endif
-			gainOut(u, "< Gain", PID::Gain),
+			gainOut(u, "Out", PID::Gain),
 			meterOut(gainOut, u.getMeter(PPDHasGainIn ? 1 : 0)),
 			mix(u, "Mix", PID::Mix),
 #if PPDHasUnityGain
@@ -45,13 +47,17 @@ namespace gui
 		{
 			layout.init(
 				{ 1, 8, 1, 8, 1, 8, 1, 8, 1, 1 },
-				{ 1, 8, 1, 5, 1, 13, 1, 13, 1, 13, 1, 8, 2 }
+				{ 1, 13, 1, 8, 1, 21, 1, 21, 1, 21, 1, 13, 3 }
 			);
 
 			pluginTitle.font = getFontNEL();
 
 			addAndMakeVisible(pluginTitle);
+			pluginTitle.mode = Label::Mode::TextToLabelBounds;
+
 			addAndMakeVisible(macro);
+			addAndMakeVisible(parameterRandomizer);
+			parameterRandomizer.add(utils.getAllParams());
 #if PPDHasGainIn
 			addAndMakeVisible(gainIn);
 #endif
@@ -133,37 +139,13 @@ namespace gui
 			
 			g.fillRect(layout.right());
 
-			/*
 			const auto thicc = utils.thicc();
-			auto thiccI = static_cast<int>(thicc) / 2;
-			if (thiccI == 0)
-				thiccI = 1;
-			g.setColour(Colours::c(ColourID::Txt));
-			{
-				const auto y = static_cast<int>(layout.getY(4.5f));
-				const auto left = layout.getX(1.5f);
-				const auto right = layout.getX(2.125f);
-				for (auto i = -thiccI; i < thiccI; ++i)
-					g.drawHorizontalLine(y + i, left, right);
-			}
-#if PPDHasUnityGain
-			{
-				const auto y = static_cast<int>(layout.getY(3.5f));
-				{
-					const auto left = layout.getX(2.f);
-					const auto right = layout.getX(2.125f);
-					for (auto i = -thiccI; i < thiccI; ++i)
-						g.drawHorizontalLine(y + i, left, right);
-				}
-				{
-					const auto right = layout.getX(3.f);
-					const auto left = layout.getX(2.875f);
-					for (auto i = -thiccI; i < thiccI; ++i)
-						g.drawHorizontalLine(y + i, left, right);
-				}
-			}
-#endif
-			*/
+			const auto thicc3 = thicc * 3.f;
+			const Stroke stroke(thicc, Stroke::JointStyle::curved, Stroke::EndCapStyle::rounded);
+
+			const auto gainArea = layout(1.f, 7.f, 7.f, 1.f);
+			g.drawFittedText("Gain", gainArea.toNearestInt(), Just::centredTop, 1);
+			drawRectEdges(g, gainArea, thicc3, stroke);
 		}
 
 		void resized() override
@@ -171,7 +153,8 @@ namespace gui
 			layout.resized();
 
 			layout.place(menuButton, 1.f, 1.f, 1.f, 1.f, true);
-			layout.place(pluginTitle, 3.f, 1.f, 5.f, 1.f, false);
+			layout.place(pluginTitle, 3.f, 1.f, 3.f, 1.f, false);
+			layout.place(parameterRandomizer, 6.f, 1.f, 2.f, 2.f, true);
 
 			layout.place(macro, 3.f, 5.f, 3.f, 1.f, true);
 			
@@ -199,6 +182,7 @@ namespace gui
 		Label pluginTitle;
 
 		Knob macro;
+		ButtonParameterRandomizer parameterRandomizer;
 #if PPDHasGainIn
 		Knob gainIn;
 		KnobMeter meterIn;

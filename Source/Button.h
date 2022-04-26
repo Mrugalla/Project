@@ -248,6 +248,7 @@ namespace gui
 		Power,
 		PatchMode,
 		Settings,
+		Random,
 		NumSymbols
 	};
 
@@ -478,6 +479,24 @@ namespace gui
 
 						g.drawLine(x0, y0, x1, y1, thicc);
 					}
+				}
+			}
+			else if (symbol == ButtonSymbol::Random)
+			{
+				const auto thicc3 = thicc * 2.f;
+				bounds = maxQuadIn(bounds).reduced(thicc3);
+
+				const auto minDimen = std::min(bounds.getWidth(), bounds.getHeight());
+				const auto radius = minDimen * .5f;
+				const auto pointSize = radius * .4f;
+				const auto pointRadius = pointSize * .5f;
+				const auto d4 = minDimen / 4.f;
+				const auto x0 = d4 * 1.2f + bounds.getX();
+				const auto x1 = d4 * 2.8f + bounds.getX();
+				for (auto i = 1; i < 4; ++i) {
+					const auto y = d4 * i + bounds.getY();
+					g.fillEllipse(x0 - pointRadius, y - pointRadius, pointSize, pointSize);
+					g.fillEllipse(x1 - pointRadius, y - pointRadius, pointSize, pointSize);
 				}
 			}
 		});

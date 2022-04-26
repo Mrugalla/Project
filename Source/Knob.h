@@ -90,7 +90,7 @@ namespace gui
             const auto thicc = utils.thicc();
             const auto thicc2 = thicc * 2.f;
             const auto thicc3 = thicc * 3.f;
-            juce::PathStrokeType strokeType(thicc, juce::PathStrokeType::JointStyle::curved, juce::PathStrokeType::EndCapStyle::rounded);
+            Stroke strokeType(thicc, Stroke::JointStyle::curved, Stroke::EndCapStyle::rounded);
             const auto radius = knobBounds.getWidth() * .5f;
             const auto radiusBetween = radius - thicc;
             const auto radiusInner = radius - thicc2;

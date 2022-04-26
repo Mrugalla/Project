@@ -467,6 +467,8 @@ namespace gui
 			addAndMakeVisible(navBar);
 
 			navBar.init(subMenu, *this);
+
+			setOpaque(true);
 		}
 
 	protected:
@@ -476,7 +478,7 @@ namespace gui
 
 		void paint(juce::Graphics& g) override
 		{
-			g.fillAll(Colours::c(ColourID::Darken));
+			g.fillAll(Colour(0xff000000));
 		}
 
 		void resized() override

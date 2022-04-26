@@ -22,6 +22,8 @@
         <FILE id="on3opn" name="RealTimePtr.h" compile="0" resource="0" file="Source/RealTimePtr.h"/>
       </GROUP>
       <GROUP id="{DA435779-5001-4379-F809-3E7C21D55DC0}" name="gui">
+        <FILE id="ZfS3YX" name="ButtonParameterRandomizer.h" compile="0" resource="0"
+              file="Source/ButtonParameterRandomizer.h"/>
         <FILE id="EByzgv" name="MIDICCMonitor.h" compile="0" resource="0" file="Source/MIDICCMonitor.h"/>
         <FILE id="JlSQXw" name="TextEditor.h" compile="0" resource="0" file="Source/TextEditor.h"/>
         <FILE id="lsz5CB" name="menu.xml" compile="0" resource="1" file="Source/menu.xml"/>

@@ -708,6 +708,9 @@ namespace param
 		const Param* operator[](int i) const noexcept { return params[i]; }
 		Param* operator[](PID p) noexcept { return params[static_cast<int>(p)]; }
 		const Param* operator[](PID p) const noexcept { return params[static_cast<int>(p)]; }
+
+		Parameters& data() noexcept { return params; }
+		const Parameters& data() const noexcept { return params; }
 	protected:
 		Parameters params;
 	};
