@@ -143,9 +143,10 @@ namespace gui
 	
 	public:
 		PopUpKnobs(Utils& u) :
-			PopUp(u),
-			evt2(utils.getEventSystem(), makeNotify2(*this))
+			PopUp(u)
 		{
+			evts.push_back({ utils.getEventSystem(), makeNotify2(*this) });
+
 			buttons.reserve(7);
 			addButton("Randomize", "Randomize this parameter value.");
 			addButton("Rand Relative", "Randomize this parameter value relative to its current value.");
@@ -158,8 +159,5 @@ namespace gui
 
 			init();
 		}
-
-	protected:
-		Evt evt2;
 	};
 }

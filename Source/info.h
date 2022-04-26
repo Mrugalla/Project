@@ -29,9 +29,6 @@ Solve JUCE Bugs
 	Graphics::drawFittedText skips first line if it only has space or \n
 		seen in options/controls' text
 
-Comp
-	should have vector of Evt instead of single Evt
-
 TextEditor
 	TextEditorKnobs
 		named like Parametr?
@@ -48,6 +45,7 @@ MIDI Learn
 	possible to save and load default state of whole midi learn patch
 
 PopUp
+	do not open atm! why?
 	Make Generalizable (for Buttons and ccMonitor)
 	implement Enter value
 

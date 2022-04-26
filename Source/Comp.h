@@ -12,21 +12,26 @@ namespace gui
 		Comp(Utils& _utils, const String& _tooltip = "", CursorType _cursorType = CursorType::Interact) :
 			utils(_utils),
 			layout(*this),
-			notify(utils.getEventSystem()),
+			evts(),
 			tooltip(_tooltip),
-			notifyBasic(utils.getEventSystem(), makeNotifyBasic(this)),
 			cursorType(_cursorType)
 		{
+			evts.reserve(1);
+			evts.emplace_back(utils.getEventSystem(), makeNotifyBasic(this));
+
 			setMouseCursor(makeCursor(cursorType));
 		}
 		Comp(Utils& _utils, const String& _tooltip, Notify&& _notify, CursorType _cursorType = CursorType::Interact) :
 			utils(_utils),
 			layout(*this),
-			notify(utils.getEventSystem(), _notify),
+			evts(),
 			tooltip(_tooltip),
-			notifyBasic(utils.getEventSystem(), makeNotifyBasic(this)),
 			cursorType(_cursorType)
 		{
+			evts.reserve(2);
+			evts.emplace_back(utils.getEventSystem(), makeNotifyBasic(this));
+			evts.emplace_back(utils.getEventSystem(), _notify);
+
 			setMouseCursor(makeCursor(cursorType));
 		}
 
@@ -68,7 +73,7 @@ namespace gui
 	protected:
 		Utils& utils;
 		Layout layout;
-		const Evt notify;
+		std::vector<Evt> evts;
 		String tooltip;
 		CursorType cursorType;
 
@@ -87,9 +92,13 @@ namespace gui
 		{
 			notify(EvtType::ClickedEmpty, this);
 		}
-	private:
-		const Evt notifyBasic;
 
+		void notify(EvtType type, const void* stuff = nullptr)
+		{
+			evts[0](type, stuff);
+		}
+	
+	private:
 		Notify makeNotifyBasic(Comp* c)
 		{
 			return [c](const EvtType type, const void*)

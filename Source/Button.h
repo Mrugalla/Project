@@ -11,6 +11,7 @@ namespace gui
 			env(0.f),
 			inv(0.f)
 		{}
+
 		void init(Comp* _comp, float timeInSecs) noexcept
 		{
 			const auto fps = 30.f;
@@ -19,11 +20,13 @@ namespace gui
 			inv = 1.f / (timeInSecs * fps);
 			startTimerHz(static_cast<int>(fps));
 		}
+
 		Colour getInterpolated(Colour c0, Colour c1) const noexcept
 		{
 			const auto e = env * env;
 			return c0.interpolatedWith(c1, e < 0.f ? 0.f : e);
 		}
+
 	protected:
 		Comp* comp;
 		float env, inv;
