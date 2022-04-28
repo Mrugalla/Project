@@ -1,4 +1,4 @@
-#include "Comp.h"
+#include "Label.h"
 
 namespace gui
 {
@@ -7,27 +7,39 @@ namespace gui
 	{
 		Tooltip(Utils& _utils, String&& _tooltip) :
 			Comp(_utils, _tooltip, makeNotify(this), CursorType::Default),
-			curTooltip(""),
-			BuildDate(static_cast<String>(JucePlugin_Manufacturer) + " Plugins, v: " + static_cast<String>(__DATE__) + " " + static_cast<String>(__TIME__))
+			buildDateLabel(utils, static_cast<String>(JucePlugin_Manufacturer) + " Plugins, v: " + static_cast<String>(__DATE__) + " " + static_cast<String>(__TIME__)),
+			tooltipLabel(utils, "")
 		{
-			setBufferedToImage(true);
+			buildDateLabel.textCID = ColourID::Hover;
+			buildDateLabel.just = Just::centredRight;
+			buildDateLabel.mode = Label::Mode::TextToLabelBounds;
+			buildDateLabel.font = getFontDosisLight();
+			tooltipLabel.textCID = ColourID::Txt;
+			tooltipLabel.just = Just::centredLeft;
+			tooltipLabel.mode = buildDateLabel.mode;
+			tooltipLabel.font = buildDateLabel.font;
+
+			addAndMakeVisible(buildDateLabel);
+			addAndMakeVisible(tooltipLabel);
 		}
 		
 		void updateTooltip(const String* t)
 		{
-			curTooltip = t == nullptr ? "" : *t;
-			repaint();
+			tooltipLabel.setText(t == nullptr ? "" : *t);
+			tooltipLabel.repaint();
 		}
 
 	protected:
-		String curTooltip;
+		Label buildDateLabel, tooltipLabel;
 		
-		void paint(Graphics& g) override
+		void paint(Graphics&) override
 		{
-			g.setColour(Colours::c(ColourID::Hover));
-			g.drawFittedText(BuildDate, getLocalBounds(), Just::centredRight, 1);
-			g.setColour(Colours::c(ColourID::Txt));
-			g.drawFittedText(curTooltip, getLocalBounds(), Just::left, 1);
+		}
+
+		void resized() override
+		{
+			buildDateLabel.setBounds(getLocalBounds());
+			tooltipLabel.setBounds(getLocalBounds());
 		}
 
 	private:

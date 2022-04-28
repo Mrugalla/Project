@@ -33,7 +33,7 @@ namespace gui
 
             label.textCID = ColourID::Txt;
             label.just = Just::centred;
-            //label.mode = Label::Mode::TextToLabelBounds;
+            label.mode = Label::Mode::TextToLabelBounds;
 
             setName(std::move(_name));
             addAndMakeVisible(label);

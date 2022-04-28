@@ -13,6 +13,29 @@
     <FILE id="TMwdaE" name="config.h" compile="0" resource="0" file="Source/config.h"/>
     <FILE id="DA5beK" name="configEnd.h" compile="0" resource="0" file="Source/configEnd.h"/>
     <GROUP id="{329F0704-CF49-5A90-357A-72806BBA6C7A}" name="Source">
+      <GROUP id="{A1DC8406-64F0-570C-C476-FD7F8BC43F40}" name="fonts">
+        <GROUP id="{D4EEB393-DA77-341D-54B4-AE2A95F5E3C1}" name="static">
+          <FILE id="gejOLh" name="Dosis-Bold.ttf" compile="0" resource="1" file="Source/fonts/Dosis/static/Dosis-Bold.ttf"/>
+          <FILE id="Z1hwqg" name="Dosis-ExtraBold.ttf" compile="0" resource="1"
+                file="Source/fonts/Dosis/static/Dosis-ExtraBold.ttf"/>
+          <FILE id="zu40UC" name="Dosis-ExtraLight.ttf" compile="0" resource="1"
+                file="Source/fonts/Dosis/static/Dosis-ExtraLight.ttf"/>
+          <FILE id="PM8KoQ" name="Dosis-Light.ttf" compile="0" resource="1" file="Source/fonts/Dosis/static/Dosis-Light.ttf"/>
+          <FILE id="UV2jnz" name="Dosis-Medium.ttf" compile="0" resource="1"
+                file="Source/fonts/Dosis/static/Dosis-Medium.ttf"/>
+          <FILE id="cWo4wt" name="Dosis-Regular.ttf" compile="0" resource="1"
+                file="Source/fonts/Dosis/static/Dosis-Regular.ttf"/>
+          <FILE id="RXqojy" name="Dosis-SemiBold.ttf" compile="0" resource="1"
+                file="Source/fonts/Dosis/static/Dosis-SemiBold.ttf"/>
+        </GROUP>
+        <FILE id="yYO675" name="Dosis-VariableFont_wght.ttf" compile="0" resource="1"
+              file="Source/fonts/Dosis/Dosis-VariableFont_wght.ttf"/>
+        <FILE id="TtETZF" name="Lobster-Regular.ttf" compile="0" resource="1"
+              file="Source/fonts/Lobster/Lobster-Regular.ttf"/>
+        <FILE id="Srkl61" name="MsMadi-Regular.ttf" compile="0" resource="1"
+              file="Source/fonts/Ms_Madi/MsMadi-Regular.ttf"/>
+        <FILE id="abkRAU" name="nel19.ttf" compile="0" resource="1" file="Source/fonts/nel19.ttf"/>
+      </GROUP>
       <GROUP id="{D379AB76-3EAE-A37D-31CD-FC91511F3FC1}" name="arch">
         <FILE id="L39r3C" name="State.h" compile="0" resource="0" file="Source/State.h"/>
         <FILE id="bzDhpf" name="Smooth.h" compile="0" resource="0" file="Source/Smooth.h"/>
@@ -32,7 +55,6 @@
         <FILE id="n88pLf" name="LowLevel.h" compile="0" resource="0" file="Source/LowLevel.h"/>
         <FILE id="CWx4m5" name="Shader.h" compile="0" resource="0" file="Source/Shader.h"/>
         <FILE id="qZsO69" name="Layout.h" compile="0" resource="0" file="Source/Layout.h"/>
-        <FILE id="JQwbSV" name="nel19.ttf" compile="0" resource="1" file="Source/nel19.ttf"/>
         <FILE id="LuE3Ws" name="Shared.cpp" compile="1" resource="0" file="Source/Shared.cpp"/>
         <FILE id="VKP98V" name="Shared.h" compile="0" resource="0" file="Source/Shared.h"/>
         <FILE id="Wxr0h5" name="Button.h" compile="0" resource="0" file="Source/Button.h"/>

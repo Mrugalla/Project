@@ -133,12 +133,68 @@ namespace gui
         Props* props;
     };
 
+    // GET FONT
     inline Font getFont(const char* ttf, size_t size)
     {
         return juce::Font(juce::Typeface::createSystemTypefaceFor(ttf, size));
     }
+    
+    // GET FONT NEL
     inline Font getFontNEL()
     {
         return getFont(BinaryData::nel19_ttf, BinaryData::nel19_ttfSize);
+    }
+
+    // GET FONT LOBSTER
+    inline Font getFontLobster()
+    {
+        return getFont(BinaryData::LobsterRegular_ttf, BinaryData::LobsterRegular_ttfSize);
+    }
+
+    // GET FONT MS MADI
+    inline Font getFontMsMadi()
+    {
+        return getFont(BinaryData::MsMadiRegular_ttf, BinaryData::MsMadiRegular_ttfSize);
+    }
+
+    // GET FONT DOSIS
+    inline Font getFontDosisSemiBold()
+    {
+        return getFont(BinaryData::DosisSemiBold_ttf, BinaryData::DosisSemiBold_ttfSize);
+    }
+
+    inline Font getFontDosisBold()
+    {
+        return getFont(BinaryData::DosisBold_ttf, BinaryData::DosisBold_ttfSize);
+    }
+
+    inline Font getFontDosisExtraBold()
+    {
+        return getFont(BinaryData::DosisExtraBold_ttf, BinaryData::DosisExtraBold_ttfSize);
+    }
+
+    inline Font getFontDosisLight()
+    {
+        return getFont(BinaryData::DosisLight_ttf, BinaryData::DosisLight_ttfSize);
+    }
+
+    inline Font getFontDosisExtraLight()
+    {
+        return getFont(BinaryData::DosisExtraLight_ttf, BinaryData::DosisExtraLight_ttfSize);
+    }
+
+    inline Font getFontDosisMedium()
+    {
+        return getFont(BinaryData::DosisMedium_ttf, BinaryData::DosisMedium_ttfSize);
+    }
+
+    inline Font getFontDosisRegular()
+    {
+        return getFont(BinaryData::DosisRegular_ttf, BinaryData::DosisRegular_ttfSize);
+    }
+
+    inline Font getFontDosisVariable()
+    {
+        return getFont(BinaryData::DosisVariableFont_wght_ttf, BinaryData::DosisVariableFont_wght_ttfSize);
     }
 }

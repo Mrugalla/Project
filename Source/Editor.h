@@ -57,8 +57,8 @@ namespace gui
             setMouseCursor(makeCursor(CursorType::Default));
             
             layout.init(
-                { 8, 34 },
-                { 34, 2 }
+                { 1, 3 },
+                { 21, 1 }
             );
 
             addAndMakeVisible(lowLevel);

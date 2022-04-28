@@ -9,18 +9,17 @@ namespace gui
 	{
 		enum class Mode { WindowToTextBounds, TextToLabelBounds, NumModes };
 
-		static constexpr float MinFontHeight = 7.f;
-
-		Label(Utils& u, String&& _name, Notify&& _notify = [](EvtType, const void*){}) :
+		Label(Utils& u, String&& _name, Notify&& _notify = [](EvtType, const void*) {}) :
 			Comp(u, "", std::move(_notify), gui::CursorType::Default),
 			group(),
 			textCID(ColourID::Txt),
 			just(Just::centred),
-			font(getFontNEL()),
+			font(getFontDosisExtraBold()),
+			minFontHeight(12.f),
 			mode(Mode::WindowToTextBounds),
 			text(_name)
 		{
-			font.setHeight(MinFontHeight);
+			font.setHeight(minFontHeight);
 			setInterceptsMouseClicks(false, false);
 		}
 
@@ -36,6 +35,7 @@ namespace gui
 			
 			updateTextBounds();
 		}
+
 		const String& getText() const noexcept
 		{
 			return text;
@@ -47,6 +47,7 @@ namespace gui
 		ColourID textCID;
 		Just just;
 		Font font;
+		float minFontHeight;
 		Mode mode;
 	protected:
 		String text;
@@ -67,14 +68,15 @@ namespace gui
 	private:
 		void updateTextBounds()
 		{
-			float nHeight = MinFontHeight;
+			float nHeight = minFontHeight;
 
 			if (mode == Mode::WindowToTextBounds)
 			{
 				auto val = utils.fontHeight();
 				nHeight = std::max(nHeight, val);
 			}
-			if (mode == Mode::TextToLabelBounds)
+
+			else if (mode == Mode::TextToLabelBounds)
 			{
 				const auto thicc = utils.thicc();
 
@@ -109,8 +111,8 @@ namespace gui
 
 				nHeight = std::max(fontHeight - thicc, nHeight);
 			}
-			if (font != getFontNEL())
-				nHeight += 2.5f;
+			//if (font != getFontNEL())
+			//	nHeight += 2.5f;
 			font.setHeight(nHeight);
 		}
 	};

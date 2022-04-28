@@ -47,10 +47,10 @@ namespace gui
 		{
 			layout.init(
 				{ 1, 8, 1, 8, 1, 8, 1, 8, 1, 1 },
-				{ 1, 13, 1, 8, 1, 21, 1, 21, 1, 21, 1, 13, 3 }
+				{ 1, 13, 1, 5, 1, 21, 1, 21, 1, 21, 1, 8, 5 }
 			);
 
-			pluginTitle.font = getFontNEL();
+			pluginTitle.font = getFontMsMadi();
 
 			addAndMakeVisible(pluginTitle);
 			pluginTitle.mode = Label::Mode::TextToLabelBounds;
@@ -126,8 +126,8 @@ namespace gui
 
 		void paint(Graphics& g) override
 		{
-			//g.setColour(juce::Colours::white.withAlpha(.2f));
-			//layout.paint(g);
+			g.setColour(juce::Colours::white.withAlpha(.2f));
+			layout.paint(g);
 			
 			g.setColour(Colours::c(ColourID::Hover));
 			
@@ -135,13 +135,14 @@ namespace gui
 			layout.label(g, "preset name", 3.f, 3.f, 3.f, 1.f, false);
 			layout.label(g, ">", 7.f, 3.f, 1.f, 1.f, false);
 			layout.label(g, "v", 1.f, 5.f, 1.f, 1.f, true);
-			layout.label(g, "dlta", 1.f, 9.f, 1.f, 1.f, true);
 			
 			g.fillRect(layout.right());
 
 			const auto thicc = utils.thicc();
 			const auto thicc3 = thicc * 3.f;
 			const Stroke stroke(thicc, Stroke::JointStyle::curved, Stroke::EndCapStyle::rounded);
+
+			g.setFont(getFontDosisMedium());
 
 			const auto gainArea = layout(1.f, 7.f, 7.f, 1.f);
 			g.drawFittedText("Gain", gainArea.toNearestInt(), Just::centredTop, 1);
@@ -163,11 +164,11 @@ namespace gui
 			layout.place(gainOut, 5.5f, 7.f, 2.5f, 2.f, true);
 
 			layout.place(mix, 3.f, 9.f, 3.f, 1.f, true);
-			layout.place(polarity, 7.f, 9.f, 1.f, 1.f, true);
 
 			layout.place(power, 1.f, 11.f, 1.f, 1.f, true);
-			layout.place(hq, 7.f, 11.f, 1.f, 1.f, true);
+			layout.place(polarity, 3.f, 11.f, 1.f, 1.f, true);
 			layout.place(stereoConfig, 5.f, 11.f, 1.f, 1.f, true);
+			layout.place(hq, 7.f, 11.f, 1.f, 1.f, true);
 
 			layout.place(ccMonitor, 1.f, 12.f, 3.f, 1.f, false);
 
