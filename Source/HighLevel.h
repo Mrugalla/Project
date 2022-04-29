@@ -2,6 +2,7 @@
 #include "Comp.h"
 #include "Button.h"
 #include "ButtonParameterRandomizer.h"
+#include "PatchBrowser.h"
 #include "Knob.h"
 #include "Dial.h"
 #include "Menu.h"
@@ -19,6 +20,10 @@ namespace gui
 		HighLevel(Utils& u, LowLevel* _lowLevel) :
 			Comp(u, "", CursorType::Default),
 			pluginTitle(u, JucePlugin_Name),
+
+			patchBrowser(u),
+			patchBrowserButton(u, patchBrowser),
+
 			macro(u, "Macro", PID::Macro, false),
 			parameterRandomizer(u),
 #if PPDHasGainIn
@@ -47,13 +52,15 @@ namespace gui
 		{
 			layout.init(
 				{ 1, 8, 1, 8, 1, 8, 1, 8, 1, 1 },
-				{ 1, 13, 1, 5, 1, 21, 1, 21, 1, 21, 1, 8, 5 }
+				{ 1, 8, 1, 5, 1, 21, 1, 21, 1, 21, 1, 8, 5 }
 			);
 
 			pluginTitle.font = getFontMsMadi();
 
 			addAndMakeVisible(pluginTitle);
 			pluginTitle.mode = Label::Mode::TextToLabelBounds;
+			
+			addAndMakeVisible(patchBrowserButton);
 
 			addAndMakeVisible(macro);
 			addAndMakeVisible(parameterRandomizer);
@@ -124,25 +131,29 @@ namespace gui
 			setInterceptsMouseClicks(false, true);
 		}
 
+		void init()
+		{
+			auto& pluginTop = utils.pluginTop;
+			pluginTop.addChildComponent(patchBrowser);
+		}
+
 		void paint(Graphics& g) override
 		{
-			g.setColour(juce::Colours::white.withAlpha(.2f));
-			layout.paint(g);
+			//g.setColour(juce::Colours::white.withAlpha(.2f));
+			//layout.paint(g);
 			
+			g.setFont(getFontDosisMedium());
 			g.setColour(Colours::c(ColourID::Hover));
 			
-			layout.label(g, "<", 1.f, 3.f, 1.f, 1.f, false);
-			layout.label(g, "preset name", 3.f, 3.f, 3.f, 1.f, false);
-			layout.label(g, ">", 7.f, 3.f, 1.f, 1.f, false);
-			layout.label(g, "v", 1.f, 5.f, 1.f, 1.f, true);
+			layout.label(g, "<", 7.f, 3.f, .5f, 1.f, false);
+			layout.label(g, ">", 7.5f, 3.f, .5f, 1.f, false);
+			layout.label(g, "v", 1.5f, 5.f, .5f, .25f, true);
 			
 			g.fillRect(layout.right());
 
 			const auto thicc = utils.thicc();
 			const auto thicc3 = thicc * 3.f;
 			const Stroke stroke(thicc, Stroke::JointStyle::curved, Stroke::EndCapStyle::rounded);
-
-			g.setFont(getFontDosisMedium());
 
 			const auto gainArea = layout(1.f, 7.f, 7.f, 1.f);
 			g.drawFittedText("Gain", gainArea.toNearestInt(), Just::centredTop, 1);
@@ -153,9 +164,11 @@ namespace gui
 		{
 			layout.resized();
 
+			layout.place(patchBrowserButton, 1.f, 3.f, 5.f, 1.f, false);
+
 			layout.place(menuButton, 1.f, 1.f, 1.f, 1.f, true);
 			layout.place(pluginTitle, 3.f, 1.f, 3.f, 1.f, false);
-			layout.place(parameterRandomizer, 6.f, 1.f, 2.f, 2.f, true);
+			layout.place(parameterRandomizer, 7.f, 1.f, 1.f, 1.f, true);
 
 			layout.place(macro, 3.f, 5.f, 3.f, 1.f, true);
 			
@@ -172,6 +185,8 @@ namespace gui
 
 			layout.place(ccMonitor, 1.f, 12.f, 3.f, 1.f, false);
 
+			patchBrowser.setBounds(lowLevel->getBounds());
+
 			if (menu != nullptr)
 			{
 				menu->defineBounds(menu->getBounds().toFloat(), lowLevel->getBounds().toFloat());
@@ -181,6 +196,9 @@ namespace gui
 
 	protected:
 		Label pluginTitle;
+
+		PatchBrowser patchBrowser;
+		ButtonPatchBrowser patchBrowserButton;
 
 		Knob macro;
 		ButtonParameterRandomizer parameterRandomizer;

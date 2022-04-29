@@ -64,6 +64,8 @@ namespace gui
             addAndMakeVisible(lowLevel);
             addAndMakeVisible(highLevel);
 
+            highLevel.init();
+
             addAndMakeVisible(tooltip);
             
             addAndMakeVisible(popUpKnobs);

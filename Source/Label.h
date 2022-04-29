@@ -41,6 +41,12 @@ namespace gui
 			return text;
 		}
 
+		void setMinFontHeight(float h)
+		{
+			minFontHeight = h;
+			updateTextBounds();
+		}
+
 		bool empty() const noexcept { return text.isEmpty(); }
 
 		std::vector<Label*> group;

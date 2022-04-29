@@ -45,6 +45,7 @@
         <FILE id="on3opn" name="RealTimePtr.h" compile="0" resource="0" file="Source/RealTimePtr.h"/>
       </GROUP>
       <GROUP id="{DA435779-5001-4379-F809-3E7C21D55DC0}" name="gui">
+        <FILE id="b0dfsx" name="PatchBrowser.h" compile="0" resource="0" file="Source/PatchBrowser.h"/>
         <FILE id="ZfS3YX" name="ButtonParameterRandomizer.h" compile="0" resource="0"
               file="Source/ButtonParameterRandomizer.h"/>
         <FILE id="EByzgv" name="MIDICCMonitor.h" compile="0" resource="0" file="Source/MIDICCMonitor.h"/>

@@ -23,6 +23,7 @@ namespace gui
 			drawTick(false)
 		{
 			addAndMakeVisible(label);
+			label.mode = Label::Mode::TextToLabelBounds;
 			setWantsKeyboardFocus(true);
 		}
 
@@ -54,6 +55,33 @@ namespace gui
 		String emptyString, txt;
 		int tickIdx;
 		bool drawTick;
+
+		void mouseUp(const Mouse& mouse) override
+		{
+			if (txt.isEmpty())
+				return;
+
+			if (label.mode == Label::Mode::TextToLabelBounds)
+			{
+				const auto x = mouse.position.x;
+				const auto w = static_cast<float>(getWidth());
+				const auto& font = label.font;
+				const auto strWidth = font.getStringWidthFloat(txt);
+				const auto xOff = (w - strWidth) * .5f;
+				const auto xShifted = x - xOff;
+				const auto strLen = static_cast<float>(txt.length());
+				auto xRatio = xShifted / strWidth;
+				auto xMapped = xRatio * strLen;
+				auto xLimited = juce::jlimit(0.f, strLen, xMapped);
+				tickIdx = static_cast<int>(std::rint(xLimited));
+			}
+			else
+				return; // not implemented yet cause not needed lol
+			
+			drawTick = true;
+			updateLabel();
+			repaint();
+		}
 
 		void paint(Graphics& g) override
 		{

@@ -360,6 +360,8 @@ namespace gui
 						if (child.getType() == ids[kTitle])
 						{
 							auto cmp = new Label(utils, node.vt.getProperty("id").toString());
+							cmp->font = getFontLobster();
+							cmp->mode = Label::Mode::TextToLabelBounds;
 
 							comp = cmp;
 						}
@@ -367,7 +369,8 @@ namespace gui
 						{
 							auto cmp = new Label(utils, child.getProperty("text").toString());
 							cmp->just = getJust(child.getProperty("just").toString());
-							cmp->font = juce::Font();
+							cmp->font = getFontDosisRegular();
+							cmp->setMinFontHeight(17.f);
 
 							comp = cmp;
 						}

@@ -1,5 +1,5 @@
 <menu id="Options">
-  <menu id="Welcome" x="40;40;40" y="20;100" tooltip="This is the options menu's welcome tab.">
+  <menu id="Welcome" x="40;40;40" y="1;5" tooltip="This is the options menu's welcome tab.">
     <title x="1" y="0" />
     <txt x=".1" y="1.1" w="2.8" h=".8" just="topLeft" text=
 "Welcome to the options menu of my plugin :)
@@ -12,7 +12,7 @@ Click on the nav tabs to navigate
 to the different pages!"
     />
   </menu>
-  <menu id="Controls" x="40;5;40;5;40" y="20;100" tooltip="Get help! Literally.">
+  <menu id="Controls" x="40;5;40;5;40" y="1;5" tooltip="Get help! Literally.">
     <title x="1" y="0" w="3" h="1" />
     <txt x="0" y="1" w="1" h="1" just="topRight" text=
 "Knobs:
@@ -51,11 +51,11 @@ Switch to mod-depth-control."/>
 
   </menu>
   <menu id="Colours" x="1" y="1;5" tooltip="Individualize the colour sheme of the plugin here.">
-    <txt y="0" just="topLeft" text="Individualize the colour sheme of the plugin here." />
+    <title y="0" />
     <coloursheme y="1" id="coloursheme"/>
   </menu>
-  <menu id="Thank You" x="40;40;40" y="20;100;20" tooltip="I always wanted to become a VST Developer. Thanks to everyone who makes this possible.">
-    <!--<imgStrip id="Logos"/>-->
+  <menu id="Thank You" x="40;40;40" y="3;13;2" tooltip="I always wanted to become a VST Developer. Thanks to everyone who makes this possible.">
+    <title y="0" w="2" />
     <txt id="ThanksText" x=".1" y="1.1" w="2.8" h=".8" just="topLeft" text=
 "Hi,
 
