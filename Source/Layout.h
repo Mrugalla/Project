@@ -329,8 +329,8 @@ namespace gui
 		g.drawFittedText(txt, bounds.toNearestInt(), Just::centredTop, 1);
 	}
 
-	template<class CompType>
-	inline void distributeVertically(const Component& parent, std::vector<std::unique_ptr<CompType>>& compArray)
+	template<class ArrayCompPtr>
+	inline void distributeVertically(const Component& parent, ArrayCompPtr& compArray)
 	{
 		const auto w = static_cast<float>(parent.getWidth());
 		const auto h = static_cast<float>(parent.getHeight());
@@ -340,15 +340,15 @@ namespace gui
 
 		const auto cH = h / static_cast<float>(compArray.size());
 
-		for (auto& cmp: compArray)
+		for (auto& cmp : compArray)
 		{
 			cmp->setBounds(BoundsF(x, y, w, cH).toNearestInt());
 			y += cH;
 		}
 	}
-	
-	template<class CompType>
-	inline void distributeVertically(const Component& parent, CompType* compArray, int size)
+
+	template<class SizeType>
+	inline void distributeVertically(const Component& parent, Component* compArray, SizeType size)
 	{
 		const auto w = static_cast<float>(parent.getWidth());
 		const auto h = static_cast<float>(parent.getHeight());
@@ -360,7 +360,8 @@ namespace gui
 
 		for (auto i = 0; i < size; ++i)
 		{
-			compArray[i].setBounds(BoundsF(x, y, w, cH).toNearestInt());
+			auto& cmp = compArray[i];
+			cmp.setBounds(BoundsF(x, y, w, cH).toNearestInt());
 			y += cH;
 		}
 	}

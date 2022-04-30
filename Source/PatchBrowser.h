@@ -16,6 +16,8 @@ namespace gui
 			);
 
 			makeTextButton(closeButton, "X", false);
+			closeButton.getLabel().mode = Label::Mode::TextToLabelBounds;
+			closeButton.getLabel().textCID = ColourID::Abort;
 			closeButton.onClick.push_back([&]()
 			{
 				setVisible(false);

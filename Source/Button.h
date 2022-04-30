@@ -249,6 +249,7 @@ namespace gui
 		PatchMode,
 		Settings,
 		Random,
+		Abort,
 		NumSymbols
 	};
 
@@ -292,7 +293,7 @@ namespace gui
 			}
 
 			bool abortable = symbol == ButtonSymbol::Settings;
-			if (abortable && button.toggleState == 1)
+			if (abortable && button.toggleState == 1 || symbol == ButtonSymbol::Abort)
 				col = Colours::c(ColourID::Abort);
 			else
 				col = Colours::c(ColourID::Interact);
@@ -429,10 +430,10 @@ namespace gui
 					const auto btm = y + h;
 					const auto rght = x + w;
 
-					juce::PathStrokeType stroke(
+					Stroke stroke(
 						thicc,
-						juce::PathStrokeType::JointStyle::curved,
-						juce::PathStrokeType::EndCapStyle::rounded
+						Stroke::JointStyle::curved,
+						Stroke::EndCapStyle::rounded
 					);
 
 					const auto tickWidth = .2f;
@@ -480,6 +481,14 @@ namespace gui
 						g.drawLine(x0, y0, x1, y1, thicc);
 					}
 				}
+			}
+			else if (symbol == ButtonSymbol::Abort)
+			{
+				const auto thicc3 = thicc * 3.f;
+				bounds = maxQuadIn(bounds).reduced(thicc3);
+
+				g.setFont(getFontNEL());
+				g.drawFittedText("X", bounds.toNearestInt(), Just::centred, 1, 0.f);
 			}
 			else if (symbol == ButtonSymbol::Random)
 			{

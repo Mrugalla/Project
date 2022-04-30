@@ -414,6 +414,18 @@ namespace param
 						}
 					}
 				}
+				else if (txt.contains("*"))
+				{
+					for (auto i = 0; i < txt.length(); ++i)
+					{
+						if (txt[i] == '*')
+						{
+							const auto a = txt.substring(0, i).getFloatValue();
+							const auto b = txt.substring(i + 1).getFloatValue();
+							return a * b;
+						}
+					}
+				}
 				return altVal;
 			};
 		}

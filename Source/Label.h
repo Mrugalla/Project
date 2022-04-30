@@ -7,7 +7,7 @@ namespace gui
 	struct Label :
 		public Comp
 	{
-		enum class Mode { WindowToTextBounds, TextToLabelBounds, NumModes };
+		enum class Mode { None, WindowToTextBounds, TextToLabelBounds, NumModes };
 
 		Label(Utils& u, String&& _name, Notify&& _notify = [](EvtType, const void*) {}) :
 			Comp(u, "", std::move(_notify), gui::CursorType::Default),
@@ -117,8 +117,12 @@ namespace gui
 
 				nHeight = std::max(fontHeight - thicc, nHeight);
 			}
-			//if (font != getFontNEL())
-			//	nHeight += 2.5f;
+
+			else if (mode == Mode::None)
+			{
+				font.setHeight(nHeight);
+			}
+
 			font.setHeight(nHeight);
 		}
 	};

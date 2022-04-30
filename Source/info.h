@@ -25,6 +25,11 @@ HOW TO USE:
 
 TO DO:
 
+Param
+	strToVal division method
+		replace with actual formularparser
+		atm can only do easy divisions and multiplications, not cool
+
 ParameterRandomizer
 	can randomize power param. better make buttons lockable!
 
@@ -32,13 +37,11 @@ Comp
 	rewrite all components to not have makeNotify methods anymore but making stuff in constructor
 
 TextEditor
-	TextEditorKnobs
-		named like Parametr?
-		wrong positioning on event
+	...
 
 sta::State
 	contains valueTree as well as ApplicationProperties for max workflow!
-	finally implement undo/redo
+	implement undo/redo
 
 MIDI Learn
 	setValueNotifyHost() uses ScopedLock! needs message thread?
@@ -51,11 +54,8 @@ PopUp
 		Buttons
 		ccMonitor
 
-TextEditorKnobs
-	...
-
 Label
-	...
+	make free func(s) for grouping labels (n buttons)
 
 Options Menu
 	lookandfeel thickness
@@ -88,19 +88,14 @@ Pre Processor Defines (PPD)
 	PPDSidechainable
 
 HighLevel UI Elements
-	Title Label resizes itself only on manual resize. why
-	Parameter Randomizer
-	Preset Browser
-	undo/redo
-	delta button
+	undo/redo buttons
 	sidechain activated?
 
 Meters
 	...
 
 Knob
-	combine Knob and Dial into one with Parametr
-	make templated (or so)
+	...
 
 -------------------------------------------------------------------
 

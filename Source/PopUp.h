@@ -25,6 +25,7 @@ namespace gui
 		PopUp(Utils& u) :
 			CompWidgetable(u, "", makeNotify(*this)),
 			buttons(),
+			labelPtr(),
 			origin(0.f, 0.f),
 			bounds(0.f, 0.f, 0.f, 0.f)
 		{
@@ -35,6 +36,10 @@ namespace gui
 		{
 			for (auto& b : buttons)
 				addAndMakeVisible(*b);
+
+			labelPtr.reserve(buttons.size());
+			for (auto& b : buttons)
+				labelPtr.emplace_back(&b->getLabel());
 		}
 
 		void place(const Comp* comp)
@@ -77,13 +82,32 @@ namespace gui
 		}
 
 		std::vector<std::unique_ptr<Button>> buttons;
+		std::vector<Label*> labelPtr;
 	protected:
 		PointF origin;
 		BoundsF bounds;
 
 		void resized() override
 		{
+			for (auto l : labelPtr)
+				l->mode = Label::Mode::TextToLabelBounds;
+
 			distributeVertically(*this, buttons);
+
+			auto minHeight = labelPtr.front()->font.getHeight();
+			for (auto i = 1; i < labelPtr.size(); ++i)
+			{
+				const auto& l = *labelPtr[i];
+				const auto nHeight = l.font.getHeight();
+				if (minHeight < nHeight)
+					minHeight = nHeight;
+			}
+
+			for (auto l: labelPtr)
+			{
+				l->mode = Label::Mode::None;
+				l->setMinFontHeight(minHeight);
+			}
 		}
 	};
 
