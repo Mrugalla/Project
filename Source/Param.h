@@ -1,5 +1,7 @@
 #pragma once
 
+#include "FormularParser.h"
+
 #include <functional>
 #include <array>
 
@@ -397,35 +399,13 @@ namespace param
 
 	namespace strToVal
 	{
-		inline std::function<float(String, const float/*altVal*/)> division()
+		inline std::function<float(String, const float/*altVal*/)> parse()
 		{
-			return [](const String& txt, const float altVal)
+			return[](const String& txt, const float altVal)
 			{
-				if (txt.contains(":") || txt.contains("/"))
-				{
-					for (auto i = 0; i < txt.length(); ++i)
-					{
-						if (txt[i] == ':' || txt[i] == '/')
-						{
-							const auto a = txt.substring(0, i).getFloatValue();
-							const auto b = txt.substring(i + 1).getFloatValue();
-							if (b != 0.f)
-								return a / b;
-						}
-					}
-				}
-				else if (txt.contains("*"))
-				{
-					for (auto i = 0; i < txt.length(); ++i)
-					{
-						if (txt[i] == '*')
-						{
-							const auto a = txt.substring(0, i).getFloatValue();
-							const auto b = txt.substring(i + 1).getFloatValue();
-							return a * b;
-						}
-					}
-				}
+				parser::Parser parse;
+				if(parse(txt))
+					return parse[0];
 				return altVal;
 			};
 		}
@@ -453,11 +433,11 @@ namespace param
 		}
 		inline StrToValFunc percent()
 		{
-			return[d = division()](const String& txt)
+			return[p = parse()](const String& txt)
 			{
-				const auto val = d(txt, 0.f);
+				const auto val = p(txt, 0.f);
 				if (val != 0.f)
-					return val;
+					return 0.f;
 				return txt.trimCharactersAtEnd(toString(Unit::Percent)).getFloatValue() * .01f;
 			};
 		}
@@ -487,11 +467,11 @@ namespace param
 		}
 		inline StrToValFunc ratio()
 		{
-			return[d = division()](const String& txt)
+			return[p = parse()](const String& txt)
 			{
-				const auto val = d(txt, -1.f);
+				const auto val = p(txt, -1.f);
 				if (val != -1.f)
-					return val;
+					return 0.f;
 				return juce::jlimit(0.f, 1.f, txt.getFloatValue() * .01f);
 			};
 		}

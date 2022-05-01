@@ -37,6 +37,8 @@
         <FILE id="abkRAU" name="nel19.ttf" compile="0" resource="1" file="Source/fonts/nel19.ttf"/>
       </GROUP>
       <GROUP id="{D379AB76-3EAE-A37D-31CD-FC91511F3FC1}" name="arch">
+        <FILE id="aUSWRs" name="FormularParser.h" compile="0" resource="0"
+              file="Source/FormularParser.h"/>
         <FILE id="L39r3C" name="State.h" compile="0" resource="0" file="Source/State.h"/>
         <FILE id="bzDhpf" name="Smooth.h" compile="0" resource="0" file="Source/Smooth.h"/>
         <FILE id="zBYPEZ" name="Range.h" compile="0" resource="0" file="Source/Range.h"/>

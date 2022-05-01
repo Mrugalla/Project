@@ -25,10 +25,16 @@ HOW TO USE:
 
 TO DO:
 
+FormularParser
+	doesn't work (with parameter inputs) yet. why?
+	make more lightweight
+		maybe remove message string
+		isConstant in token needed?
+		values push_backs in calculate and calculateX needed?
+
 Param
-	strToVal division method
-		replace with actual formularparser
-		atm can only do easy divisions and multiplications, not cool
+	strToVal parse method
+		formularparser doesn't entirely work yet
 
 ParameterRandomizer
 	can randomize power param. better make buttons lockable!
