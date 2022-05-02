@@ -185,7 +185,7 @@ namespace gui
 				{
 					editor.disable();
 				}
-				if (type == EvtType::EnterParameterValue)
+				if (type == EvtType::EnterParametrValue)
 				{
 					editor.disable();
 					editor.txt.clear();

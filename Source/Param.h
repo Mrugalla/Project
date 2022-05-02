@@ -404,96 +404,150 @@ namespace param
 			return[](const String& txt, const float altVal)
 			{
 				parser::Parser parse;
-				if(parse(txt))
+				if (parse(txt))
 					return parse[0];
+					
 				return altVal;
 			};
 		}
 
 		inline StrToValFunc power()
 		{
-			return[](const String& txt)
+			return[p = parse()](const String& txt)
 			{
-				return txt.trimCharactersAtEnd(toString(Unit::Power)).getFloatValue() > .5f ? 1.f : 0.f;
+				const auto text = txt.trimCharactersAtEnd(toString(Unit::Power));
+				const auto val = p(text, 0.f);
+				return val > .5f ? 1.f : 0.f;
 			};
 		}
 		inline StrToValFunc solo()
 		{
-			return[](const String& txt)
+			return[p = parse()](const String& txt)
 			{
-				return txt.trimCharactersAtEnd(toString(Unit::Solo)).getFloatValue() > .5f ? 1.f : 0.f;
+				const auto text = txt.trimCharactersAtEnd(toString(Unit::Solo));
+				const auto val = p(text, 0.f);
+				return val > .5f ? 1.f : 0.f;
 			};
 		}
 		inline StrToValFunc mute()
 		{
-			return[](const String& txt)
+			return[p = parse()](const String& txt)
 			{
-				return txt.trimCharactersAtEnd(toString(Unit::Mute)).getFloatValue() > .5f ? 1.f : 0.f;
+				const auto text = txt.trimCharactersAtEnd(toString(Unit::Mute));
+				const auto val = p(text, 0.f);
+				return val > .5f ? 1.f : 0.f;
 			};
 		}
 		inline StrToValFunc percent()
 		{
 			return[p = parse()](const String& txt)
 			{
-				const auto val = p(txt, 0.f);
-				if (val != 0.f)
-					return 0.f;
-				return txt.trimCharactersAtEnd(toString(Unit::Percent)).getFloatValue() * .01f;
+				const auto text = txt.trimCharactersAtEnd(toString(Unit::Percent));
+				const auto val = p(text, 0.f);
+				return val * .01f;
 			};
 		}
 		inline StrToValFunc hz()
 		{
-			return [](const String& txt) { return txt.trimCharactersAtEnd(toString(Unit::Hz)).getFloatValue(); };
+			return [p = parse()](const String& txt)
+			{
+				const auto text = txt.trimCharactersAtEnd(toString(Unit::Hz));
+				const auto val = p(text, 0.f);
+				return val;
+			};
 		}
 		inline StrToValFunc phase()
 		{
-			return [](const String& txt) { return txt.trimCharactersAtEnd(toString(Unit::Degree)).getFloatValue(); };
+			return [p = parse()](const String& txt)
+			{
+				const auto text = txt.trimCharactersAtEnd(toString(Unit::Degree));
+				const auto val = p(text, 0.f);
+				return val;
+			};
 		}
 		inline StrToValFunc oct()
 		{
-			return [](const String& txt) { return std::floor(txt.trimCharactersAtEnd(toString(Unit::Octaves)).getFloatValue()); };
+			return [p = parse()](const String& txt)
+			{
+				const auto text = txt.trimCharactersAtEnd(toString(Unit::Octaves));
+				const auto val = p(text, 0.f);
+				return std::floor(val);
+			};
 		}
 		inline StrToValFunc oct2()
 		{
-			return [](const String& txt) { return txt.trimCharactersAtEnd(toString(Unit::Octaves)).getFloatValue() / 12.f; };
+			return [p = parse()](const String& txt)
+			{
+				const auto text = txt.trimCharactersAtEnd(toString(Unit::Octaves));
+				const auto val = p(text, 0.f);
+				return val / 12.f;
+			};
 		}
 		inline StrToValFunc semi()
 		{
-			return [](const String& txt) { return std::floor(txt.trimCharactersAtEnd(toString(Unit::Semi)).getFloatValue()); };
+			return [p = parse()](const String& txt)
+			{
+				const auto text = txt.trimCharactersAtEnd(toString(Unit::Semi));
+				const auto val = p(text, 0.f);
+				return std::floor(val);
+			};
 		}
 		inline StrToValFunc fine()
 		{
-			[](const String& txt) { return txt.trimCharactersAtEnd(toString(Unit::Fine)).getFloatValue() * .01f; };
+			[p = parse()](const String& txt)
+			{
+				const auto text = txt.trimCharactersAtEnd(toString(Unit::Fine));
+				const auto val = p(text, 0.f);
+				return val * .01f;
+			};
 		}
 		inline StrToValFunc ratio()
 		{
 			return[p = parse()](const String& txt)
 			{
-				const auto val = p(txt, -1.f);
-				if (val != -1.f)
-					return 0.f;
-				return juce::jlimit(0.f, 1.f, txt.getFloatValue() * .01f);
+				const auto text = txt.trimCharactersAtEnd(toString(Unit::Ratio));
+				const auto val = p(text, 0.f);
+				return val * .01f;
 			};
 		}
 		inline StrToValFunc lrms()
 		{
-			return [](const String& txt) { return txt[0] == 'l' ? 0.f : 1.f; };
+			return [](const String& txt)
+			{
+				return txt[0] == 'l' ? 0.f : 1.f;
+			};
 		}
 		inline StrToValFunc freeSync()
 		{
-			return [](const String& txt) { return txt[0] == 'f' ? 0.f : 1.f; };
+			return [](const String& txt)
+			{
+				return txt[0] == 'f' ? 0.f : 1.f;
+			};
 		}
 		inline StrToValFunc polarity()
 		{
-			return [](const String& txt) { return txt[0] == '0' ? 0.f : 1.f; };
+			return [](const String& txt)
+			{
+				return txt[0] == '0' ? 0.f : 1.f;
+			};
 		}
 		inline StrToValFunc ms()
 		{
-			return [](const String& txt) { return txt.trimCharactersAtEnd(toString(Unit::Ms)).getFloatValue(); };
+			return [p = parse()](const String& txt)
+			{
+				const auto text = txt.trimCharactersAtEnd(toString(Unit::Ms));
+				const auto val = p(text, 0.f);
+				return val;
+			};
 		}
 		inline StrToValFunc db()
 		{
-			return [](const String& txt) { return txt.trimCharactersAtEnd(toString(Unit::Decibel)).getFloatValue(); };
+			return [p = parse()](const String& txt)
+			{
+				const auto text = txt.trimCharactersAtEnd(toString(Unit::Decibel));
+				const auto val = p(text, 0.f);
+				return val;
+			};
 		}
 	}
 

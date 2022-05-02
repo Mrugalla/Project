@@ -17,6 +17,19 @@ namespace parser
         NumTypes
     };
 
+    inline String toString(Type t)
+    {
+        switch (t)
+        {
+        case Type::Operand: return "oprnd";
+        case Type::X: return "x";
+        case Type::Random: return "rand";
+        case Type::OpBinary: return "opBin";
+        case Type::OpUnary: return "upUn";
+        default: return "invalid";
+        }
+    }
+
     enum class OpUnary
     {
         Asinh,
@@ -61,36 +74,37 @@ namespace parser
 
     static constexpr int NumOpBinary = static_cast<int>(OpBinary::NumOpBinary);
 
-    String toString(OpUnary opUnary)
+    inline String toString(OpUnary opUnary)
     {
         switch (opUnary)
         {
-        case OpUnary::Abs: return "abs";
-        case OpUnary::Cos: return "cos";
-        case OpUnary::Tan: return "tan";
-        case OpUnary::Asin: return "asin";
-        case OpUnary::Acos: return "acos";
-        case OpUnary::Atan: return "atan";
-        case OpUnary::Sinh: return "sinh";
-        case OpUnary::Cosh: return "cosh";
-        case OpUnary::Tanh: return "tanh";
         case OpUnary::Asinh: return "ainh";
         case OpUnary::Acosh: return "acosh";
         case OpUnary::Atanh: return "atanh";
-        case OpUnary::Log2: return "log2";
-        case OpUnary::Log10: return "log10";
-        case OpUnary::Log: return "log";
-        case OpUnary::Sign: return "sign";
-        case OpUnary::Exp: return "exp";
-        case OpUnary::Sqrt: return "sqrt";
         case OpUnary::Floor: return "floor";
-        case OpUnary::Ceil: return "ceil";
+        case OpUnary::Log10: return "log10";
         case OpUnary::Noise: return "noise";
+        case OpUnary::Asin: return "asin";
+        case OpUnary::Acos: return "acos";
+        case OpUnary::Atan: return "atan";
+        case OpUnary::Ceil: return "ceil";
+        case OpUnary::Sign: return "sign";
+        case OpUnary::Sinh: return "sinh";
+        case OpUnary::Sqrt: return "sqrt";
+        case OpUnary::Cosh: return "cosh";
+        case OpUnary::Log2: return "log2";
+        case OpUnary::Tanh: return "tanh";
+        case OpUnary::Abs: return "abs";
+        case OpUnary::Cos: return "cos";
+        case OpUnary::Exp: return "exp";
+        case OpUnary::Sin: return "sin";
+        case OpUnary::Tan: return "tan";
+        case OpUnary::Log: return "log";
         default: return "invalid";
         }
     }
 
-    Char toChar(OpBinary opBinary) noexcept
+    inline Char toChar(OpBinary opBinary) noexcept
     {
         switch (opBinary)
         {
@@ -106,7 +120,7 @@ namespace parser
         }
     }
 
-    OpBinary toOpBinary(Char opBinary) noexcept
+    inline OpBinary toOpBinary(Char opBinary) noexcept
     {
         switch (opBinary)
         {
@@ -122,7 +136,7 @@ namespace parser
         }
     }
 
-    String toString(OpBinary opBinary)
+    inline String toString(OpBinary opBinary)
     {
         auto chr = toChar(opBinary);
         if (chr == '0')
@@ -258,15 +272,14 @@ namespace parser
     struct Token
     {
         Token(Type _type, OpBinary _opBinary, OpUnary _opUnary,
-            float _value, int _precedence, int _associativity, bool _isConstant) :
+            float _value, int _precedence, int _associativity) :
 
             type(_type),
             opBinary(_opBinary),
             opUnary(_opUnary),
             value(_value),
             precedence(_precedence),
-            associativity(_associativity),
-            isConstant(_isConstant)
+            associativity(_associativity)
         {}
 
         Type type;
@@ -274,8 +287,32 @@ namespace parser
         OpUnary opUnary;
         float value;
         int precedence, associativity; // asc: -1 == left to right
-        bool isConstant;
     };
+
+    inline String toString(Token token)
+    {
+        String str(toString(token.type));
+        
+        switch (token.type)
+        {
+        case Type::Random:
+        case Type::Operand:
+            str += ": " + String(token.value);
+            break;
+        case Type::OpBinary:
+            str += ": " + toString(token.opBinary);
+            break;
+        case Type::OpUnary:
+            str += ": " + toString(token.opUnary);
+            break;
+        case Type::X:
+            str += ": x";
+            break;
+        }
+
+        return str + "\nprec: " + String(token.precedence)
+            + " assc: " + String(token.associativity) + "\n";
+    }
 
     namespace makeToken
     {
@@ -288,8 +325,7 @@ namespace parser
                 OpUnary::Sin,
                 0.f,
                 4,
-                1,
-                false
+                1
             };
         }
 
@@ -302,8 +338,7 @@ namespace parser
                 OpUnary::Sin,
                 0.f,
                 getPrecedence(opBinary),
-                getAssociativity(opBinary),
-                false
+                getAssociativity(opBinary)
             };
         }
 
@@ -313,15 +348,14 @@ namespace parser
             {
                 Type::OpUnary,
                 OpBinary::Add,
-                OpUnary::Sin,
+                opUnary,
                 0.f,
                 1,
-                1,
-                false
+                1
             };
         }
 
-        inline Token operand(float value, bool constant = false) noexcept
+        inline Token operand(float value) noexcept
         {
             return
             {
@@ -330,8 +364,7 @@ namespace parser
                 OpUnary::Sin,
                 value,
                 0,
-                0,
-                constant
+                0
             };
         }
 
@@ -344,8 +377,7 @@ namespace parser
                 OpUnary::Sin,
                 0.f,
                 4,
-                1,
-                false
+                1
             };
         }
     }
@@ -470,6 +502,15 @@ namespace parser
         const float operator[](int i) const noexcept { return v0[i]; }
         const String& getMessage() const noexcept { return message; }
 
+        void dbgCurve() const
+        {
+            String str(message + ":\n");
+            for (auto v = 0; v < v0.size() - 1; ++v)
+                str += String(v0[v]) + ", ";
+            str += String(v0[v0.size() - 1]);
+            DBG(str);
+        }
+
     protected:
         Tokens tokens;
         String message;
@@ -480,7 +521,7 @@ namespace parser
         bool tokenize(const String& infx)
         {
             String token;
-            int parenthesisHelper;
+            int parenthesisHelper = 420;
             bool parenthesisInit = false;
             bool parenthesisSearching = false;
             const auto infix = infx.removeCharacters(" ");
@@ -501,7 +542,7 @@ namespace parser
                     if (token[0] == '-')
                     {
                         tokens.push_back(makeToken::opBinary(OpBinary::Multiply));
-                        tokens.push_back(makeToken::operand(-1.f, false));
+                        tokens.push_back(makeToken::operand(-1.f));
                         token.clear();
                     }
                 }
@@ -518,7 +559,7 @@ namespace parser
                 {
                     // check for FUNCTIONS
 
-                    if (!tokenizedOpUnary(infix, i))
+                    if (!tokenizedOpUnary(token, infix, i))
                     {
                         // check for CONSTANTS
 
@@ -580,7 +621,7 @@ namespace parser
                                 if (i == 0)
                                 {
                                     // Y: -9 -.9
-                                    tokens.push_back(makeToken::operand(0.f, false));
+                                    tokens.push_back(makeToken::operand(0.f));
                                     tokens.push_back(makeToken::opBinary(OpBinary::Subtract));
                                     //token += ltr;
                                 }
@@ -593,7 +634,7 @@ namespace parser
                                     {
                                         // Y: rand%-(54pi) 1/-(x)
                                         tokens.push_back(makeToken::opBinary(OpBinary::ParenthesisOpen));
-                                        tokens.push_back(makeToken::operand(-1.f, false));
+                                        tokens.push_back(makeToken::operand(-1.f));
                                         tokens.push_back(makeToken::opBinary(OpBinary::Multiply));
 
                                         parenthesisSearching = true;
@@ -618,14 +659,7 @@ namespace parser
                             }
                             else
                             {
-                                
-                                // operand (number is finished)
-                                if (token.isNotEmpty())
-                                {
-                                    const auto operand = getNumber(token);
-                                    tokens.push_back(makeToken::operand(operand, false));
-                                    token.clear();
-                                }
+                                tokenizeOperand(token);
 
                                 auto opBin = toOpBinary(ltr);
 
@@ -657,7 +691,7 @@ namespace parser
             }
 
             if (token.isNotEmpty())
-                tokens.push_back(makeToken::operand(getNumber(token), false)); //rly?
+                tokens.push_back(makeToken::operand(getNumber(token))); //rly?
 
             for (auto t = 1; t < tokens.size(); ++t)
             {
@@ -683,7 +717,18 @@ namespace parser
             return true;
         }
 
-        bool tokenizedOpUnary(const String& infix, int& i)
+        void tokenizeOperand(String& token)
+        {
+            // operand (number is finished)
+            if (token.isNotEmpty())
+            {
+                const auto operand = getNumber(token);
+                tokens.push_back(makeToken::operand(operand));
+                token.clear();
+            }
+        }
+
+        bool tokenizedOpUnary(String& token, const String& infix, int& i)
         {
             auto opUnary = static_cast<OpUnary>(0);
             auto opUnaryStr = toString(opUnary);
@@ -692,6 +737,10 @@ namespace parser
 
             if (substr == opUnaryStr)
             {
+                tokenizeOperand(token);
+                if (tokens.back().type == Type::Operand)
+                    tokens.push_back(makeToken::opBinary(OpBinary::Multiply));
+
                 tokens.push_back(makeToken::opUnary(opUnary));
                 i += opUnaryStr.length() - 1;
 
@@ -710,6 +759,10 @@ namespace parser
 
                 if (substr == opUnaryStr)
                 {
+                    tokenizeOperand(token);
+                    if (tokens.back().type == Type::Operand)
+                        tokens.push_back(makeToken::opBinary(OpBinary::Multiply));
+
                     tokens.push_back(makeToken::opUnary(opUnary));
                     i += len - 1;
 
@@ -724,19 +777,19 @@ namespace parser
         {
             if (infix.substring(i, i + 3) == "tau")
             {
-                tokens.push_back(makeToken::operand(6.28318530718f, true));
+                tokens.push_back(makeToken::operand(6.28318530718f));
                 i += 2;
                 return true;
             }
             else if (infix.substring(i, i + 2) == "pi")
             {
-                tokens.push_back(makeToken::operand(3.14159265359f, true));
+                tokens.push_back(makeToken::operand(3.14159265359f));
                 ++i;
                 return true;
             }
             else if (infix[i] == 'e')
             {
-                tokens.push_back(makeToken::operand(2.71828182846f, true));
+                tokens.push_back(makeToken::operand(2.71828182846f));
                 return true;
             }
             return false;
@@ -931,6 +984,16 @@ namespace parser
 
             message = "parsed successfully.";
             return true;
+        }
+
+        //
+        void dbgTokens()
+        {
+            String str("T: " + String(tokens.size()) + String("\n\n"));
+            for (auto t = 0; t < tokens.size() - 1; ++t)
+                str += toString(tokens[t]) + "\n";
+            str += toString(tokens[tokens.size() - 1]);
+            DBG(str);
         }
 
     };

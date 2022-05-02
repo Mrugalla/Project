@@ -87,7 +87,7 @@ namespace gui
 					juce::NotificationType::dontSendNotification
 				);
 
-				notify(EvtType::ColourShemeChanged);
+				notify(EvtType::ColourSchemeChanged);
 			});
 			deflt.onClick.push_back([this, numCols]()
 			{
@@ -101,7 +101,7 @@ namespace gui
 					juce::NotificationType::dontSendNotification
 				);
 
-				notify(EvtType::ColourShemeChanged);
+				notify(EvtType::ColourSchemeChanged);
 			});
 
 			addAndMakeVisible(selector);
@@ -160,7 +160,7 @@ namespace gui
 				return;
 
 			Colours::c.set(colIdx, curCol);
-			notify(EvtType::ColourShemeChanged);
+			notify(EvtType::ColourSchemeChanged);
 		}
 
 	protected:

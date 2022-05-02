@@ -103,7 +103,7 @@ namespace gui
 		{
 			return [c](const EvtType type, const void*)
 			{
-				if (type == EvtType::ColourShemeChanged)
+				if (type == EvtType::ColourSchemeChanged)
 				{
 					c->updateCursor();
 					c->repaint();

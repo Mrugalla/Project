@@ -14,7 +14,7 @@ namespace gui
 			{
 				if (type == EvtType::ClickedEmpty ||
 					type == EvtType::ParametrDragged ||
-					type == EvtType::EnterParameterValue)
+					type == EvtType::EnterParametrValue)
 				{
 					pop.setVisible(false);
 				}
@@ -158,7 +158,7 @@ namespace gui
 					}, 6);
 					pop.setButton([&u = utils, &paramtr = parametr]()
 					{
-						u.getEventSystem().notify(EvtType::EnterParameterValue, &paramtr);
+						u.getEventSystem().notify(EvtType::EnterParametrValue, &paramtr);
 					}, 7);
 
 					pop.place(&parametr);

@@ -7,7 +7,7 @@ namespace evt
 {
     enum class Type
     {
-        ColourShemeChanged,
+        ColourSchemeChanged,
         TooltipUpdated,
         ButtonClicked,
         ParametrRightClicked,
@@ -15,7 +15,7 @@ namespace evt
         ClickedEmpty,
         PatchUpdated,
         ComponentAdded,
-        EnterParameterValue,
+        EnterParametrValue,
         NumTypes
     };
 
