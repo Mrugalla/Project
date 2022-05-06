@@ -124,7 +124,7 @@ namespace gui
             case 50: return "I actually come from the future. Don't tell anyone pls.";
             case 51: return "You're mad!";
             case 52: return "Your ad could be here! ;)";
-            case 53: return "What coloursheme does your tune sound like?";
+            case 53: return "What colour-Scheme does your tune sound like?";
             case 54: return "I wish Dyson Spheres existed already!";
             case 55: return "This is going to be so cool! OMG";
             case 56: return "Plants. There should be more of them.";
@@ -260,8 +260,8 @@ namespace gui
             case 186: return "This message was added 2022_03_15 at 18:10! just in case you wanted to know..";
             case 187: return "This is message no 187. Ratatatatatat.";
             case 188: return "Did you ever look at some font like 'This is the font I wanna use for the rest of my life'? Me neither.";
-            case 189: return "";
-            case 190: return "";
+            case 189: return "Rightclick on the power button and lock its parameter to prevent it from being randomized.";
+            case 190: return "idk...";
             case 191: return "";
             case 192: return "";
             case 193: return "";

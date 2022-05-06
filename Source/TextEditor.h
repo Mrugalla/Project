@@ -27,6 +27,22 @@ namespace gui
 			setWantsKeyboardFocus(true);
 		}
 
+		TextEditor(Utils& u, const String& _tooltip, const String& _emptyString) :
+			Comp(u, _tooltip),
+			Timer(),
+			onEscape([]() {}),
+			onReturn([]() {}),
+
+			label(u, ""),
+			emptyString(_emptyString), txt(""),
+			tickIdx(0),
+			drawTick(false)
+		{
+			addAndMakeVisible(label);
+			label.mode = Label::Mode::TextToLabelBounds;
+			setWantsKeyboardFocus(true);
+		}
+
 		void enable()
 		{
 			if (isEnabled())
@@ -47,6 +63,27 @@ namespace gui
 		{
 			stopTimer();
 			setVisible(false);
+		}
+
+		const String& getText() const noexcept
+		{
+			return txt;
+		}
+
+		bool isEmpty() const noexcept
+		{
+			return getText().isEmpty();
+		}
+
+		bool isNotEmpty() const noexcept
+		{
+			return getText().isNotEmpty();
+		}
+
+		void clear()
+		{
+			txt.clear();
+			repaintWithChildren(this);
 		}
 
 		std::function<void()> onEscape, onReturn;
@@ -99,7 +136,7 @@ namespace gui
 		{
 			if (txt.isEmpty())
 			{
-				label.setText(emptyString);
+				label.setText(emptyString + (drawTick ? "|" : ""));
 				label.textCID = ColourID::Hover;
 			}
 			else

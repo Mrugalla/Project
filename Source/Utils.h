@@ -113,6 +113,11 @@ namespace gui
 			return params.data();
 		}
 
+		juce::ValueTree getState() const noexcept
+		{
+			return audioProcessor.state.getState();
+		}
+
 		void assignMIDILearn(PID pID) noexcept
 		{
 			audioProcessor.midiLearn.assignParam(params[pID]);

@@ -17,6 +17,7 @@
 #include "Tooltip.h"
 
 #include <juce_gui_basics/juce_gui_basics.h>
+#include <juce_core/juce_core.h>
 
 #include <array>
 
@@ -46,6 +47,7 @@ namespace gui
             tooltip(utils, "The tooltips bar leads you to wisdom."),
 
             popUpKnobs(utils),
+            popUpButtons(utils),
 
             editorKnobs(utils),
 
@@ -69,6 +71,7 @@ namespace gui
             addAndMakeVisible(tooltip);
             
             addAndMakeVisible(popUpKnobs);
+            addAndMakeVisible(popUpButtons);
 
             addChildComponent(editorKnobs);
 
@@ -140,7 +143,9 @@ namespace gui
         HighLevel highLevel;
 
         Tooltip tooltip;
+
         PopUpKnobs popUpKnobs;
+        PopUpButtons popUpButtons;
 
         TextEditorKnobs editorKnobs;
 
@@ -148,6 +153,8 @@ namespace gui
         Shader shadr;
 
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Editor)
+        //JUCE_LEAK_DETECTOR(Editor)
+        //JUCE_HEAVYWEIGHT_LEAK_DETECTOR(Editor)
 
     private:
         void saveBounds()

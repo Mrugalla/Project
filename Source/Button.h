@@ -47,7 +47,7 @@ namespace gui
 		using OnClick = std::function<void()>;
 		using OnPaint = std::function<void(Graphics&, Button&)>;
 
-		void enableLabel(String&& txt)
+		void enableLabel(const String& txt)
 		{
 			label.setText(txt);
 			label.textCID = ColourID::Interact;
@@ -62,8 +62,10 @@ namespace gui
 			addAndMakeVisible(label);
 		}
 
-		void enableParameterSwitch(PID pID)
+		void enableParameterSwitch(PID _pID)
 		{
+			pID = _pID;
+
 			stopTimer();
 
 			onClick.push_back([param = utils.getParam(pID)]()
@@ -72,9 +74,20 @@ namespace gui
 				param->setValueWithGesture(ts);
 			});
 			
-			onTimer.push_back([this, pID]()
+			onTimer.push_back([this]()
 			{
+				bool shallRepaint = false;
+
 				const auto param = utils.getParam(pID);
+				
+				const auto lckd = param->isLocked();
+				if (locked != lckd)
+				{
+					locked = lckd;
+					label.textCID = locked ? ColourID::Inactive : ColourID::Interact;
+					shallRepaint = true;
+				}
+
 				const auto nTs = param->getValue() > .5f ? 1 : 0;
 				if (toggleState != nTs)
 				{
@@ -82,15 +95,21 @@ namespace gui
 
 					if(toggleTexts.size() > toggleState)
 						label.setText(toggleTexts[toggleState]);
-					repaintWithChildren(this);
+					
+					shallRepaint = true;
 				}
+
+				if(shallRepaint)
+					repaintWithChildren(this);
 			});
 
 			startTimerHz(24);
 		}
 
-		void enableParameter(PID pID, int val)
+		void enableParameter(PID _pID, int val)
 		{
+			pID = _pID;
+
 			stopTimer();
 
 			onClick.push_back([param = utils.getParam(pID), v = static_cast<float>(val)]()
@@ -100,9 +119,20 @@ namespace gui
 				param->setValueWithGesture(param->range.convertTo0to1(ts));
 			});
 
-			onTimer.push_back([this, pID, val]()
+			onTimer.push_back([this, val]()
 			{
+				bool shallRepaint = false;
+
 				const auto param = utils.getParam(pID);
+
+				const auto lckd = param->isLocked();
+				if (locked != lckd)
+				{
+					locked = lckd;
+					label.textCID = locked ? ColourID::Inactive : ColourID::Interact;
+					shallRepaint = true;
+				}
+
 				const auto pVal = std::rint(param->getValueDenorm());
 				const auto nTs = static_cast<int>(pVal);
 				if (toggleState != nTs)
@@ -111,8 +141,12 @@ namespace gui
 
 					if (toggleTexts.size() > toggleState)
 						label.setText(toggleTexts[toggleState]);
-					repaintWithChildren(this);
+					
+					shallRepaint = true;
 				}
+
+				if(shallRepaint)
+					repaintWithChildren(this);
 			});
 
 			startTimerHz(24);
@@ -121,10 +155,13 @@ namespace gui
 		Button(Utils& _utils, String&& _tooltip) :
 			Comp(_utils, _tooltip, makeNotify(this)),
 			onClick(),
+			onRightClick(),
 			onTimer(),
 			onPaint(),
 			blinkyBoy(),
 			toggleState(-1),
+			pID(PID::NumParams),
+			locked(false),
 			label(utils, ""),
 			toggleTexts()
 		{
@@ -133,10 +170,12 @@ namespace gui
 
 		Label& getLabel() noexcept { return label; }
 
-		std::vector<OnClick> onClick, onTimer;
+		std::vector<OnClick> onClick, onRightClick, onTimer;
 		std::vector<OnPaint> onPaint;
 		BlinkyBoy blinkyBoy;
 		int toggleState;
+		PID pID;
+		bool locked;
 	protected:
 		Label label;
 		std::vector<String> toggleTexts;
@@ -172,10 +211,24 @@ namespace gui
 		{
 			if (mouse.mouseWasDraggedSinceMouseDown())
 				return;
-			blinkyBoy.init(this, .25f);
-			for(auto& oc: onClick)
-				oc();
-			notify(EvtType::ButtonClicked, this);
+			
+			if (mouse.mods.isLeftButtonDown())
+			{
+				if (locked)
+					return;
+
+				blinkyBoy.init(this, .25f);
+
+				for (auto& oc : onClick)
+					oc();
+				notify(EvtType::ButtonClicked, this);
+			}
+			else
+			{
+				for (auto& oc : onRightClick)
+					oc();
+				notify(EvtType::ButtonRightClicked, this);
+			}
 		}
 
 		void timerCallback() override
@@ -203,40 +256,40 @@ namespace gui
 		};
 	}
 
-	inline void makeTextButton(Button& b, String&& txt, bool withToggle = false, int targetToggleState = 1)
+	inline void makeTextButton(Button& b, const String& txt, bool withToggle = false, int targetToggleState = 1)
 	{
-		b.enableLabel(std::move(txt));
+		b.enableLabel(txt);
 
 		b.onPaint.push_back([withToggle, targetToggleState](Graphics& g, Button& button)
-			{
-				const auto& utils = button.getUtils();
-				const auto& blinkyBoy = button.blinkyBoy;
+		{
+			const auto& utils = button.getUtils();
+			const auto& blinkyBoy = button.blinkyBoy;
 
-				auto thicc = utils.thicc();
-				const auto thiccHalf = thicc * .5f;
-				const bool isOver = button.isMouseOver();
-				const bool isDown = button.isMouseButtonDown();
-				thicc *= (isOver ? 1.1f : 1.f);
+			auto thicc = utils.thicc();
+			const auto thiccHalf = thicc * .5f;
+			const bool isOver = button.isMouseOver();
+			const bool isDown = button.isMouseButtonDown();
+			thicc *= (isOver ? 1.1f : 1.f);
 
-				const auto area = button.getLocalBounds().toFloat().reduced(thiccHalf);
+			const auto area = button.getLocalBounds().toFloat().reduced(thiccHalf);
 
-				const auto col = blinkyBoy.getInterpolated(Colours::c(ColourID::Bg), juce::Colours::white);
+			const auto col = blinkyBoy.getInterpolated(Colours::c(ColourID::Bg), juce::Colours::white);
 
-				g.setColour(col);
+			g.setColour(col);
+			g.fillRoundedRectangle(area, thicc);
+
+			g.setColour(Colours::c(ColourID::Hover));
+			if (withToggle && button.toggleState == targetToggleState)
 				g.fillRoundedRectangle(area, thicc);
 
-				g.setColour(Colours::c(ColourID::Hover));
-				if (withToggle && button.toggleState == targetToggleState)
-					g.fillRoundedRectangle(area, thicc);
+			g.drawRoundedRectangle(area, thicc, thicc);
 
-				g.drawRoundedRectangle(area, thicc, thicc);
-
-				if (button.isMouseOver())
-				{
+			if (button.isMouseOver())
+			{
+				g.fillRoundedRectangle(area, thicc);
+				if (isDown)
 					g.fillRoundedRectangle(area, thicc);
-					if (isDown)
-						g.fillRoundedRectangle(area, thicc);
-				}
+			}
 		});
 	}
 
@@ -296,7 +349,7 @@ namespace gui
 			if (abortable && button.toggleState == 1 || symbol == ButtonSymbol::Abort)
 				col = Colours::c(ColourID::Abort);
 			else
-				col = Colours::c(ColourID::Interact);
+				col = Colours::c(button.locked ? ColourID::Inactive : ColourID::Interact);
 			g.setColour(col);
 
 			if (symbol == ButtonSymbol::Polarity)
@@ -363,7 +416,6 @@ namespace gui
 
 				const LineF line(centre, centre.withY(y));
 
-				g.setColour(Colours::c(ColourID::Interact));
 				g.drawLine(line, thicc);
 			}
 			else if (symbol == ButtonSymbol::PatchMode)

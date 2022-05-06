@@ -26,18 +26,18 @@ HOW TO USE:
 TO DO:
 
 FormularParser
+	is log and ln working right?
 	make more lightweight
-		maybe remove message string
 		values push_backs in calculate and calculateX needed?
 
 Param
 	...
 
 ParameterRandomizer
-	can randomize power param. better make buttons lockable!
+	...
 
 Comp
-	rewrite all components to not have makeNotify methods anymore but making stuff in constructor
+	...
 
 TextEditor
 	fast repeated "back" hits not registered
@@ -47,14 +47,13 @@ sta::State
 	implement undo/redo
 
 MIDI Learn
-	setValueNotifyHost() uses ScopedLock! needs message thread?
 	1 cc to n parameters?
 	different midi channnels (16 * 128 CCs instead of 128)
 	possible to save and load default state of whole midi learn patch
 
 PopUp
-	implement context menus for
-		Buttons
+	rename to context menu
+	implement context menu(s) for
 		ccMonitor
 
 Label
@@ -74,8 +73,6 @@ Param
 
 Oversampler
 	less cpu demanding (FFT?)
-
-Tutorial at first open
 
 FirstTimeAction
 	thing that only makes lookuptables when the plugin is started the first time

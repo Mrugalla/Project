@@ -4,7 +4,6 @@
 
 #define PPDHasGainIn true
 #define PPDHasHQ true
-#define PPDHasLookahead true
 #define PPDHasUnityGain true && PPDHasGainIn
 
 #define PPDEqualLoudnessMix false
@@ -23,3 +22,5 @@
 #define PPD_GainOut_Min -60.f
 #define PPD_GainOut_Max 6.f
 #define PPD_UnityGainDefault true
+
+#define PPD_DebugFormularParser false

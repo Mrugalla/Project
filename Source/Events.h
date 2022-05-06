@@ -10,6 +10,7 @@ namespace evt
         ColourSchemeChanged,
         TooltipUpdated,
         ButtonClicked,
+        ButtonRightClicked,
         ParametrRightClicked,
         ParametrDragged,
         ClickedEmpty,

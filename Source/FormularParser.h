@@ -1,6 +1,6 @@
 #pragma once
 #include <juce_core/juce_core.h>
-
+#include "config.h"
 
 namespace parser
 {
@@ -54,6 +54,7 @@ namespace parser
         Sin,
         Tan,
         Log,
+        Ln,
         NumOpUnary
     };
 
@@ -100,6 +101,7 @@ namespace parser
         case OpUnary::Sin: return "sin";
         case OpUnary::Tan: return "tan";
         case OpUnary::Log: return "log";
+        case OpUnary::Ln: return "ln";
         default: return "invalid";
         }
     }
@@ -188,9 +190,9 @@ namespace parser
         }
     }
 
-    inline int getAssociativity(OpBinary opUnary) noexcept
+    inline int getAssociativity(OpBinary opBinary) noexcept
     {
-        switch (opUnary)
+        switch (opBinary)
         {
         case OpBinary::Add: return -1;
         case OpBinary::Subtract: return -1;
@@ -410,6 +412,7 @@ namespace parser
             case OpUnary::Tan: return std::tan(a);
             case OpUnary::Tanh: return std::tanh(a);
             case OpUnary::Noise: return juce::Random::getSystemRandom().nextFloat() * a;
+            case OpUnary::Ln: return std::log(a);
             default: return 0.f;
             }
         }
@@ -440,15 +443,17 @@ namespace parser
 
     struct Parser
     {
-        Parser() :
+        Parser(int _resolution = 1) :
             tokens(),
+#if PPD_DebugFormularParser
             message("enter formular!"),
+#endif
             values(),
             v0(),
             v1(),
             res(0)
         {
-            setResolution(1, true);
+            setResolution(_resolution, true);
         }
 
         void setResolution(int r, bool forced = false)
@@ -466,7 +471,9 @@ namespace parser
         {
             if (txt.isEmpty())
             {
+#if PPD_DebugFormularParser
                 message = "enter formular!";
+#endif
                 return false;
             }
 
@@ -479,15 +486,21 @@ namespace parser
 
             if (tokenize(txt))
             {
-                //dbgTokens();
+#if PPD_DebugFormularParser
+                dbgTokens();
+#endif
                 if (toPostfix())
                 {
-                    //dbgTokens();
+#if PPD_DebugFormularParser
+                    dbgTokens();
+#endif
                     if (validate())
                     {
                         if (calculate())
                         {
-                            //dbgCurve();
+#if PPD_DebugFormularParser
+                            dbgCurve();
+#endif
                             return true;
                         }
                     }
@@ -500,11 +513,20 @@ namespace parser
         // GET
         const std::vector<float>& curve() const noexcept { return v0; }
         const float operator[](int i) const noexcept { return v0[i]; }
+
+#if PPD_DebugFormularParser
         const String& getMessage() const noexcept { return message; }
+#else
+        String getMessage() const noexcept { return ""; }
+#endif
 
         void dbgCurve() const
         {
+#if PPD_DebugFormularParser
             String str(message + ":\n");
+#else
+            String str("DBG:\n");
+#endif
             for (auto v = 0; v < v0.size() - 1; ++v)
                 str += String(v0[v]) + ", ";
             str += String(v0[v0.size() - 1]);
@@ -513,7 +535,9 @@ namespace parser
 
     protected:
         Tokens tokens;
+#if PPD_DebugFormularParser
         String message;
+#endif
         std::vector<std::vector<float>> values;
         std::vector<float> v0, v1;
         int res;
@@ -585,7 +609,9 @@ namespace parser
                                             ++decimalsCount;
                                             if (decimalsCount > 1)
                                             {
+#if PPD_DebugFormularParser
                                                 message = "syntax error: weird number.";
+#endif
                                                 return false;
                                             }
                                         }
@@ -602,7 +628,9 @@ namespace parser
                                         if (isOperator(infix.substring(i - 1, i)))
                                         {
                                             // N: *. /.
+#if PPD_DebugFormularParser
                                             message = "syntax error: weird operator.";
+#endif
                                             return false;
                                         }
                                         else
@@ -653,7 +681,9 @@ namespace parser
                                 else
                                 {
                                     // N: 245-
+#if PPD_DebugFormularParser
                                     message = "syntax error: math error.";
+#endif
                                     return false;
                                 }
                             }
@@ -760,8 +790,9 @@ namespace parser
                 if (substr == opUnaryStr)
                 {
                     tokenizeOperand(token);
-                    if (tokens.back().type == Type::Operand)
-                        tokens.push_back(makeToken::opBinary(OpBinary::Multiply));
+                    if(!tokens.empty())
+                        if (tokens.back().type == Type::Operand)
+                            tokens.push_back(makeToken::opBinary(OpBinary::Multiply));
 
                     tokens.push_back(makeToken::opUnary(opUnary));
                     i += len - 1;
@@ -843,7 +874,9 @@ namespace parser
                 }
                 if (!parenthesisOpenFound)
                 {
+#if PPD_DebugFormularParser
                     message = "parenthesis error.";
+#endif
                     return false;
                 }
             }
@@ -886,13 +919,17 @@ namespace parser
             // https://stackoverflow.com/questions/789847/postfix-notation-validation
             if (tokens.empty())
             {
+#if PPD_DebugFormularParser
                 message = "enter formular..";
+#endif
                 return false;
             }
 
             else if (tokens[0].type != Type::Operand && tokens[0].type != Type::X)
             {
+#if PPD_DebugFormularParser
                 message = "math error.";
+#endif
                 return false;
             }
 
@@ -910,7 +947,9 @@ namespace parser
                 
                 if (counter < 0)
                 {
+#if PPD_DebugFormularParser
                     message = "math error.";
+#endif
                     return false;
                 }
 
@@ -921,7 +960,9 @@ namespace parser
                 (tokens[tokens.size() - 1].type != Type::OpUnary &&
                     tokens[tokens.size() - 1].type != Type::OpBinary))
             {
+#if PPD_DebugFormularParser
                 message = "math error.";
+#endif
                 return false;
             }
 
@@ -930,12 +971,12 @@ namespace parser
 
         void calculateX()
         {
-            const auto inc = 2.f / (res - 1.f);
-            auto x = -1.f;
+            const auto resInv = 1.f / static_cast<float>(res);
             for (auto i = 0; i < res; ++i)
             {
+                const auto r = static_cast<float>(i) * resInv;
+                const auto x = 2.f * (r - .5f);
                 values[i].push_back(x);
-                x += inc;
             }
         }
 
@@ -972,7 +1013,9 @@ namespace parser
                     }
                     break;
                 default:
+#if PPD_DebugFormularParser
                     message = "calc error.";
+#endif
                     return false;
                 }
             }
@@ -981,8 +1024,9 @@ namespace parser
                 if (std::isnan(values[i][0])) v0[i] = 0;
                 else v0[i] = values[i][0];
             }
-
+#if PPD_DebugFormularParser
             message = "parsed successfully.";
+#endif
             return true;
         }
 
@@ -998,3 +1042,5 @@ namespace parser
 
     };
 }
+
+#include "configEnd.h"

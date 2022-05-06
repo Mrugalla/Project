@@ -185,4 +185,76 @@ namespace gui
 			init();
 		}
 	};
+
+	class PopUpButtons :
+		public PopUp
+	{
+		Notify makeNotify2(PopUpButtons& popUp)
+		{
+			return [&pop = popUp](EvtType type, const void* stuff)
+			{
+				if (type == EvtType::ButtonRightClicked)
+				{
+					const auto& button = *static_cast<const Button*>(stuff);
+					bool isParameterButton = button.pID != PID::NumParams;
+					if (!isParameterButton)
+						return;
+
+					auto& utils = pop.getUtils();
+
+					pop.setButton([param = utils.getParam(button.pID)]()
+					{
+						juce::Random rand;
+						param->setValueWithGesture(rand.nextFloat());
+					}, 0);
+					pop.setButton([param = utils.getParam(button.pID)]()
+					{
+						const auto val = param->getDefaultValue();
+						param->setValueWithGesture(val);
+					}, 1);
+					pop.setButton([param = utils.getParam(button.pID)]()
+					{
+						param->setDefaultValue(param->getValue());
+					}, 2);
+					pop.setButton([param = utils.getParam(button.pID)]()
+					{
+						param->switchLock();
+					}, 3);
+					pop.setButton([&u = utils, pID = button.pID]()
+					{
+						u.assignMIDILearn(pID);
+					}, 4);
+					pop.setButton([&u = utils, pID = button.pID]()
+					{
+						u.removeMIDILearn(pID);
+					}, 5);
+					pop.setButton([&u = utils, &btn = button]()
+					{
+						u.getEventSystem().notify(EvtType::EnterParametrValue, &btn);
+						// this probably doesn't work yet
+					}, 6);
+
+					pop.place(&button);
+				}
+			};
+		}
+
+	public:
+		PopUpButtons(Utils& u) :
+			PopUp(u)
+		{
+			evts.push_back({ utils.getEventSystem(), makeNotify2(*this) });
+
+			buttons.reserve(7);
+			addButton("Randomize", "Randomize this parameter value.");
+			addButton("Load Default", "Resets this parameter value to its default value.");
+			addButton("Save Default", "Saves this parameter value as its default one.");
+			addButton("Lock / Unlock", "Parameter values are locked into place, even when changing presets.");
+			addButton("MIDI Learn", "Click here to assign this parameter to a hardware control.");
+			addButton("MIDI Unlearn", "Click here to remove this parameter from its hardware control(s).");
+			addButton("Enter Value", "Click here to enter a parameter value with your keyboard");
+
+			init();
+		}
+	};
 }

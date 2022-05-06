@@ -9,7 +9,7 @@ namespace gui
 	{
 		enum class Mode { None, WindowToTextBounds, TextToLabelBounds, NumModes };
 
-		Label(Utils& u, String&& _name, Notify&& _notify = [](EvtType, const void*) {}) :
+		Label(Utils& u, const String& _text, Notify&& _notify = [](EvtType, const void*) {}) :
 			Comp(u, "", std::move(_notify), gui::CursorType::Default),
 			group(),
 			textCID(ColourID::Txt),
@@ -17,7 +17,7 @@ namespace gui
 			font(getFontDosisExtraBold()),
 			minFontHeight(12.f),
 			mode(Mode::WindowToTextBounds),
-			text(_name)
+			text(_text)
 		{
 			font.setHeight(minFontHeight);
 			setInterceptsMouseClicks(false, false);

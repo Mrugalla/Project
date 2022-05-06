@@ -29,9 +29,6 @@ namespace param
 		GainIn,
 #endif
 		Mix,
-#if PPDHasLookahead
-		Lookahead,
-#endif
 		Gain,
 		Polarity,
 #if PPDHasUnityGain
@@ -49,6 +46,7 @@ namespace param
 
 		NumParams
 	};
+
 	static constexpr int NumParams = static_cast<int>(PID::NumParams);
 	static constexpr int MinLowLevelIdx = static_cast<int>(PID::Power) + 1;
 	static constexpr int NumLowLevelParams = NumParams - MinLowLevelIdx;
@@ -72,9 +70,6 @@ namespace param
 		case PID::Gain: return "Gain Out";
 #if PPDHasHQ
 		case PID::HQ: return "HQ";
-#endif
-#if PPDHasLookahead
-		case PID::Lookahead: return "Lookahead";
 #endif
 		case PID::Polarity: return "Polarity";
 #if PPDHasUnityGain
@@ -115,9 +110,6 @@ namespace param
 		case PID::Gain: return "Apply output gain to the wet signal.";
 #if PPDHasHQ
 		case PID::HQ: return "Turn on HQ to apply 2x Oversampling to the signal.";
-#endif
-#if PPDHasLookahead
-		case PID::Lookahead: return "Dial in negative delay to compensate for this plugin's latency.";
 #endif
 		case PID::Polarity: return "Invert the wet signal's polarity.";
 #if PPDHasUnityGain
@@ -702,9 +694,6 @@ namespace param
 			params.push_back(makeParam(PID::GainIn, state, 0.f, makeRange::withCentre(PPD_GainIn_Min, PPD_GainIn_Max, 0.f), Unit::Decibel));
 #endif
 			params.push_back(makeParam(PID::Mix, state));
-#if PPDHasLookahead
-			params.push_back(makeParam(PID::Lookahead, state, 0.f, makeRange::withCentre(0.f, 20.f, 4.f), Unit::Ms));
-#endif
 			params.push_back(makeParam(PID::Gain, state, 0.f, makeRange::withCentre(PPD_GainOut_Min, PPD_GainIn_Max, 0.f), Unit::Decibel));
 			params.push_back(makeParam(PID::Polarity, state, 0.f, makeRange::toggle(), Unit::Polarity));
 #if PPDHasUnityGain

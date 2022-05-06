@@ -124,6 +124,11 @@ namespace sta
 				undoer.redo();
 		}
 
+		ValueTree getState() const noexcept
+		{
+			return state;
+		}
+
 		// DEBUGGING:
 		String toString() const { return state.toXmlString(); }
 		void dbg() const { DBG(toString()); }
@@ -135,6 +140,7 @@ namespace sta
 			else
 				return var->toString();
 		}
+
 	protected:
 		ValueTree state;
 		Undo undoer;

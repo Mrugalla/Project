@@ -1,6 +1,5 @@
 #undef PPDHasGainIn
 #undef PPDHasHQ
-#undef PPDHasLookahead
 #undef PPDHasEditor
 #undef PPDEqualLoudnessMix
 #undef PPDFPSMeters
@@ -15,3 +14,4 @@
 #undef PPDFPSValueBubble
 #undef PPDValueBubbleVisibleTimeMs
 #undef PPDFPSTextEditor
+#undef PPD_DebugFormularParser

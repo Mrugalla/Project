@@ -21,6 +21,7 @@ namespace gui
 
 			setMouseCursor(makeCursor(cursorType));
 		}
+
 		Comp(Utils& _utils, const String& _tooltip, Notify&& _notify, CursorType _cursorType = CursorType::Interact) :
 			utils(_utils),
 			layout(*this),
@@ -55,16 +56,19 @@ namespace gui
 				updateCursor();
 			}
 		}
+
 		void updateCursor()
 		{
 			setMouseCursor(makeCursor(cursorType));
 		}
 
 		const Layout& getLayout() const noexcept { return layout; }
+		
 		void initLayout(const std::vector<int>& xL, const std::vector<int>& yL)
 		{
 			layout.init(xL, yL);
 		}
+		
 		void initLayout(const String& xL, const String& yL)
 		{
 			layout.fromStrings(xL, yL);
@@ -110,6 +114,7 @@ namespace gui
 				}
 			};
 		}
+
 	};
 
 	struct CompWidgetable :
