@@ -13,6 +13,10 @@
     <FILE id="TMwdaE" name="config.h" compile="0" resource="0" file="Source/config.h"/>
     <FILE id="DA5beK" name="configEnd.h" compile="0" resource="0" file="Source/configEnd.h"/>
     <GROUP id="{329F0704-CF49-5A90-357A-72806BBA6C7A}" name="Source">
+      <GROUP id="{E92DF140-D139-51F3-C217-2B6F912F6360}" name="param">
+        <FILE id="XXExev" name="Param.cpp" compile="1" resource="0" file="Source/param/Param.cpp"/>
+        <FILE id="FnwwTy" name="Param.h" compile="0" resource="0" file="Source/param/Param.h"/>
+      </GROUP>
       <GROUP id="{A1DC8406-64F0-570C-C476-FD7F8BC43F40}" name="fonts">
         <GROUP id="{D4EEB393-DA77-341D-54B4-AE2A95F5E3C1}" name="static">
           <FILE id="gejOLh" name="Dosis-Bold.ttf" compile="0" resource="1" file="Source/fonts/Dosis/static/Dosis-Bold.ttf"/>
@@ -37,58 +41,30 @@
         <FILE id="abkRAU" name="nel19.ttf" compile="0" resource="1" file="Source/fonts/nel19.ttf"/>
       </GROUP>
       <GROUP id="{D379AB76-3EAE-A37D-31CD-FC91511F3FC1}" name="arch">
-        <FILE id="aUSWRs" name="FormularParser.h" compile="0" resource="0"
-              file="Source/FormularParser.h"/>
-        <FILE id="L39r3C" name="State.h" compile="0" resource="0" file="Source/State.h"/>
-        <FILE id="bzDhpf" name="Smooth.h" compile="0" resource="0" file="Source/Smooth.h"/>
-        <FILE id="zBYPEZ" name="Range.h" compile="0" resource="0" file="Source/Range.h"/>
-        <FILE id="LyunGe" name="Processor.cpp" compile="1" resource="0" file="Source/Processor.cpp"/>
-        <FILE id="RknCji" name="RealTimePtr.cpp" compile="1" resource="0" file="Source/RealTimePtr.cpp"/>
-        <FILE id="on3opn" name="RealTimePtr.h" compile="0" resource="0" file="Source/RealTimePtr.h"/>
+        <FILE id="OiS45d" name="FormularParser.h" compile="0" resource="0"
+              file="Source/arch/FormularParser.h"/>
+        <FILE id="bgyAlz" name="Range.h" compile="0" resource="0" file="Source/arch/Range.h"/>
+        <FILE id="pjozVu" name="Smooth.cpp" compile="1" resource="0" file="Source/arch/Smooth.cpp"/>
+        <FILE id="kmNwlM" name="Smooth.h" compile="0" resource="0" file="Source/arch/Smooth.h"/>
+        <FILE id="Uad8Jv" name="State.h" compile="0" resource="0" file="Source/arch/State.h"/>
       </GROUP>
-      <GROUP id="{DA435779-5001-4379-F809-3E7C21D55DC0}" name="gui">
-        <FILE id="b0dfsx" name="PatchBrowser.h" compile="0" resource="0" file="Source/PatchBrowser.h"/>
-        <FILE id="ZfS3YX" name="ButtonParameterRandomizer.h" compile="0" resource="0"
-              file="Source/ButtonParameterRandomizer.h"/>
-        <FILE id="EByzgv" name="MIDICCMonitor.h" compile="0" resource="0" file="Source/MIDICCMonitor.h"/>
-        <FILE id="JlSQXw" name="TextEditor.h" compile="0" resource="0" file="Source/TextEditor.h"/>
-        <FILE id="lsz5CB" name="menu.xml" compile="0" resource="1" file="Source/menu.xml"/>
-        <FILE id="dXahJJ" name="Menu.h" compile="0" resource="0" file="Source/Menu.h"/>
-        <FILE id="Bgk68f" name="PopUp.h" compile="0" resource="0" file="Source/PopUp.h"/>
-        <FILE id="n88pLf" name="LowLevel.h" compile="0" resource="0" file="Source/LowLevel.h"/>
-        <FILE id="CWx4m5" name="Shader.h" compile="0" resource="0" file="Source/Shader.h"/>
-        <FILE id="qZsO69" name="Layout.h" compile="0" resource="0" file="Source/Layout.h"/>
-        <FILE id="LuE3Ws" name="Shared.cpp" compile="1" resource="0" file="Source/Shared.cpp"/>
-        <FILE id="VKP98V" name="Shared.h" compile="0" resource="0" file="Source/Shared.h"/>
-        <FILE id="Wxr0h5" name="Button.h" compile="0" resource="0" file="Source/Button.h"/>
-        <FILE id="ZWUUOo" name="Comp.h" compile="0" resource="0" file="Source/Comp.h"/>
-        <FILE id="yuGpdF" name="Events.h" compile="0" resource="0" file="Source/Events.h"/>
-        <FILE id="b2nBhJ" name="Tooltip.h" compile="0" resource="0" file="Source/Tooltip.h"/>
-        <FILE id="e6exEJ" name="Utils.h" compile="0" resource="0" file="Source/Utils.h"/>
-        <FILE id="FgBOrB" name="cursor.png" compile="0" resource="1" file="Source/cursor.png"/>
-        <FILE id="EwDWLA" name="cursorCross.png" compile="0" resource="1" file="Source/cursorCross.png"/>
-        <FILE id="CZ78Bk" name="GUIParams.h" compile="0" resource="0" file="Source/GUIParams.h"/>
-        <FILE id="zPYoPu" name="Label.h" compile="0" resource="0" file="Source/Label.h"/>
-        <FILE id="rS6nW8" name="HighLevel.h" compile="0" resource="0" file="Source/HighLevel.h"/>
-        <FILE id="qFymEs" name="Knob.h" compile="0" resource="0" file="Source/Knob.h"/>
-        <FILE id="WEGEgZ" name="Dial.h" compile="0" resource="0" file="Source/Dial.h"/>
-      </GROUP>
+      <GROUP id="{DA435779-5001-4379-F809-3E7C21D55DC0}" name="gui"/>
       <GROUP id="{6A8CB2D6-E6E3-8D1E-1148-21BD24558A7A}" name="audio">
-        <FILE id="bCXlue" name="MIDILearn.h" compile="0" resource="0" file="Source/MIDILearn.h"/>
-        <FILE id="pB8yhV" name="ProcessSuspend.h" compile="0" resource="0"
-              file="Source/ProcessSuspend.h"/>
-        <FILE id="j7HQYg" name="Bitcrusher.h" compile="0" resource="0" file="Source/Bitcrusher.h"/>
-        <FILE id="x0oUmr" name="EnvelopeFollower.h" compile="0" resource="0"
-              file="Source/EnvelopeFollower.h"/>
-        <FILE id="gTSoWy" name="Meter.h" compile="0" resource="0" file="Source/Meter.h"/>
-        <FILE id="PrzFwa" name="Oversampling.h" compile="0" resource="0" file="Source/Oversampling.h"/>
-        <FILE id="E27l0C" name="MidSide.h" compile="0" resource="0" file="Source/MidSide.h"/>
-        <FILE id="jjxWW5" name="DryWetMix.h" compile="0" resource="0" file="Source/DryWetMix.h"/>
-        <FILE id="LuUACE" name="WHead.h" compile="0" resource="0" file="Source/WHead.h"/>
-        <FILE id="V7S854" name="Rectifier.h" compile="0" resource="0" file="Source/Rectifier.h"/>
+        <FILE id="DT8T5u" name="Bitcrusher.h" compile="0" resource="0" file="Source/audio/Bitcrusher.h"/>
+        <FILE id="KPtX3O" name="DryWetMix.h" compile="0" resource="0" file="Source/audio/DryWetMix.h"/>
+        <FILE id="dgpmul" name="EnvelopeFollower.h" compile="0" resource="0"
+              file="Source/audio/EnvelopeFollower.h"/>
+        <FILE id="TN2ewh" name="Meter.h" compile="0" resource="0" file="Source/audio/Meter.h"/>
+        <FILE id="WFKvT5" name="MIDILearn.h" compile="0" resource="0" file="Source/audio/MIDILearn.h"/>
+        <FILE id="K88rdo" name="MidSide.h" compile="0" resource="0" file="Source/audio/MidSide.h"/>
+        <FILE id="KE2g4j" name="Oversampling.h" compile="0" resource="0" file="Source/audio/Oversampling.h"/>
+        <FILE id="Td7oEO" name="ProcessSuspend.h" compile="0" resource="0"
+              file="Source/audio/ProcessSuspend.h"/>
+        <FILE id="QAmb7f" name="Rectifier.h" compile="0" resource="0" file="Source/audio/Rectifier.h"/>
+        <FILE id="aRvoAX" name="WHead.h" compile="0" resource="0" file="Source/audio/WHead.h"/>
       </GROUP>
-      <FILE id="y2PbSz" name="Param.h" compile="0" resource="0" file="Source/Param.h"/>
       <FILE id="NTRJ33" name="Editor.h" compile="0" resource="0" file="Source/Editor.h"/>
+      <FILE id="LyunGe" name="Processor.cpp" compile="1" resource="0" file="Source/Processor.cpp"/>
       <FILE id="OqTIYY" name="Processor.h" compile="0" resource="0" file="Source/Processor.h"/>
     </GROUP>
   </MAINGROUP>

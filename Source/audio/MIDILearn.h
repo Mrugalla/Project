@@ -3,8 +3,8 @@
 #include <juce_audio_basics/juce_audio_basics.h>
 #include <array>
 
-#include "Param.h"
-#include "State.h"
+#include "../param/Param.h"
+#include "../arch/State.h"
 
 namespace audio
 {
@@ -12,11 +12,6 @@ namespace audio
 
 	class MIDILearn
 	{
-		using Param = param::Param;
-		using Params = param::Params;
-		using State = sta::State;
-		using String = juce::String;
-
 		static constexpr float ValInv = 1.f / 128.f;
 
 		struct CC
@@ -36,7 +31,7 @@ namespace audio
 				p->setValueWithGesture(value);
 			}
 
-			std::atomic<Param*> param;
+			std::atomic<param::Param*> param;
 		};
 
 	public:
@@ -102,15 +97,15 @@ namespace audio
 				}
 			}
 
-			if(c != -1)
+			if (c != -1)
 				ccIdx.store(c);
 		}
 
-		void assignParam(Param* param) noexcept
+		void assignParam(param::Param* param) noexcept
 		{
 			assignableParam.store(param);
 		}
-		void removeParam(Param* param) noexcept
+		void removeParam(param::Param* param) noexcept
 		{
 			for (auto& cc : ccBuf)
 				if (param == cc.param)
@@ -120,13 +115,13 @@ namespace audio
 		std::array<CC, 120> ccBuf;
 		std::atomic<int> ccIdx;
 	protected:
-		std::atomic<Param*> assignableParam;
+		std::atomic<param::Param*> assignableParam;
 		Params& params;
 		State& state;
 
-		String getIDString(int idx) const
+		juce::String getIDString(int idx) const
 		{
-			return "midilearn/cc" + String(idx);
+			return "midilearn/cc" + juce::String(idx);
 		}
 	};
 }

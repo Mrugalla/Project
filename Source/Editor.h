@@ -1,7 +1,9 @@
 #pragma once
-#include "Param.h"
-#include "Processor.h"
 
+//#include "Param.h"
+
+#include "Processor.h"
+/*
 #include "Shared.h"
 #include "Layout.h"
 #include "Utils.h"
@@ -20,7 +22,7 @@
 #include <juce_core/juce_core.h>
 
 #include <array>
-
+*/
 #include "config.h"
 
 namespace gui
@@ -30,14 +32,15 @@ namespace gui
     using MouseWheel = juce::MouseWheelDetails;
 
     struct Editor :
-        public juce::AudioProcessorEditor,
-        public Timer
+        public juce::AudioProcessorEditor//,
+        //public Timer
     {
         static constexpr int MinWidth = 100, MinHeight = 100;
 
-        Editor(Processor& p) :
+        Editor(audio::Processor& p) :
             juce::AudioProcessorEditor(p),
-            audioProcessor(p),
+            audioProcessor(p)/*,
+            
             layout(*this),
             utils(*this, p),
 
@@ -53,7 +56,9 @@ namespace gui
 
             bypassed(false),
             shadr(bypassed)
+            */
         {
+            /*
             setComponentEffect(&shadr);
 
             setMouseCursor(makeCursor(CursorType::Default));
@@ -76,6 +81,7 @@ namespace gui
             addChildComponent(editorKnobs);
 
             startTimerHz(12);
+            */
             setOpaque(true);
             setResizable(true, true);
             {
@@ -85,7 +91,7 @@ namespace gui
                 setSize(w, h);
             }
         }
-
+        /*
         ~Editor()
         {
             setComponentEffect(nullptr);
@@ -134,8 +140,11 @@ namespace gui
         void mouseWheelMove(const Mouse&, const MouseWheel&) override
         {}
 
-        Processor& audioProcessor;
+        */
+
+        audio::Processor& audioProcessor;
     protected:
+        /*
         Layout layout;
         Utils utils;
 
@@ -151,12 +160,14 @@ namespace gui
 
         bool bypassed;
         Shader shadr;
+        */
 
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Editor)
         //JUCE_LEAK_DETECTOR(Editor)
         //JUCE_HEAVYWEIGHT_LEAK_DETECTOR(Editor)
 
     private:
+        /*
         void saveBounds()
         {
             const auto w = getWidth();
@@ -175,6 +186,7 @@ namespace gui
                 repaintWithChildren(this);
             }
         }
+        */
     };
 }
 

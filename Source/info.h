@@ -25,6 +25,17 @@ HOW TO USE:
 
 TO DO:
 
+Code Cleanup
+	make cpp files to help intellisense
+		currently in the middle of that, so gui is non-existent.
+		some problem in MIDILearn with param::toPID()
+
+PatchBrowser
+	sortable bar
+		looks too much like buttons
+		cant switch between asc and desc yet
+	actually serialize patches
+
 FormularParser
 	is log and ln working right?
 	make more lightweight
@@ -40,7 +51,8 @@ Comp
 	...
 
 TextEditor
-	fast repeated "back" hits not registered
+	minimize > back > click > tick doesn't move > 2nd click > does move
+	fast repeated "back" hits not always registered
 
 sta::State
 	contains valueTree as well as ApplicationProperties for max workflow!
