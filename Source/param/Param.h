@@ -53,7 +53,7 @@ namespace param
 
 	inline String toString(PID);
 
-	inline PID toPID(const String&);
+	PID toPID(const String&);
 
 	inline String toTooltip(PID);
 

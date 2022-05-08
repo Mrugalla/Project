@@ -15,190 +15,56 @@ namespace sta
 		using Proc = juce::AudioProcessor;
 
 	public:
-		State() :
-			state("state"),
-			undoer()
-		{
-		}
+		State();
 
-		void savePatch(const Proc& p, juce::MemoryBlock& destData) const
-		{
-			std::unique_ptr<juce::XmlElement> xml(state.createXml());
-			p.copyXmlToBinary(*xml, destData);
-		}
-		void savePatch(juce::File& xmlFile) const
-		{
-			if (!xmlFile.hasFileExtension(".xml")) return;
-			if (xmlFile.existsAsFile())
-				xmlFile.deleteFile();
-			xmlFile.create();
-			xmlFile.appendText(state.toXmlString());
-		}
+		void savePatch(const Proc&, juce::MemoryBlock&) const;
 
-		void loadPatch(const XML& xmlState)
-		{
-			if (xmlState.get() != nullptr)
-				if (xmlState->hasTagName(state.getType()))
-					state = juce::ValueTree::fromXml(*xmlState);
-		}
-		void loadPatch(const Proc& p, const void* data, int sizeInBytes)
-		{
-			loadPatch(p.getXmlFromBinary(data, sizeInBytes));
-		}
-		void loadPatch(const char* data, int sizeInBytes)
-		{
-			loadPatch(juce::XmlDocument::parse(String(data, sizeInBytes)));
-		}
-		void loadPatch(const juce::File& xmlFile)
-		{
-			if (!xmlFile.hasFileExtension(".xml")) return;
-			if (!xmlFile.existsAsFile()) return;
-			const auto xml = XMLDoc::parse(xmlFile);
-			if (xml == nullptr) return;
-			if (!xml->hasTagName(state.getType())) return;
-			state = ValueTree::fromXml(*xml);
-		}
+		void savePatch(juce::File&) const;
 
-		void set(String&& key, String&& id, Var&& val, bool undoable = true)
-		{
-			if (undoable)
-			{
-				undoer.beginNewTransaction();
-				setProperty(toID(key), toID(id), std::move(val), state, &undoer);
-			}
-			else
-				setProperty(toID(key), toID(id), std::move(val), state, nullptr);
-		}
-		void set(String&& key, const String& id, Var&& val, bool undoable = true)
-		{
-			if (undoable)
-			{
-				undoer.beginNewTransaction();
-				setProperty(toID(key), toID(id), std::move(val), state, &undoer);
-			}
-			else
-				setProperty(toID(key), toID(id), std::move(val), state, nullptr);
-		}
-		void set(const String& key, String&& id, Var&& val, bool undoable = true)
-		{
-			if (undoable)
-			{
-				undoer.beginNewTransaction();
-				setProperty(toID(key), toID(id), std::move(val), state, &undoer);
-			}
-			else
-				setProperty(toID(key), toID(id), std::move(val), state, nullptr);
-		}
-		void set(const String& key, const String& id, Var&& val, bool undoable = true)
-		{
-			if (undoable)
-			{
-				undoer.beginNewTransaction();
-				setProperty(toID(key), toID(id), std::move(val), state, &undoer);
-			}
-			else
-				setProperty(toID(key), toID(id), std::move(val), state, nullptr);
-		}
+		void loadPatch(const XML&);
 
-		const Var* get(String&& key, String&& id) const
-		{
-			return getProperty(key, toID(id), state);
-		}
-		const Var* get(String&& key, const String& id) const
-		{
-			return getProperty(key, toID(id), state);
-		}
-		const Var* get(const String& key, const String& id) const
-		{
-			return getProperty(key, toID(id), state);
-		}
+		void loadPatch(const Proc&, const void* /*data*/ , int /*sizeInBytes*/);
 
-		void undo()
-		{
-			if (undoer.canUndo())
-				undoer.undo();
-		}
-		void redo()
-		{
-			if (undoer.canRedo())
-				undoer.redo();
-		}
+		void loadPatch(const char* /*data*/, int /*sizeInBytes*/);
 
-		ValueTree getState() const noexcept
-		{
-			return state;
-		}
+		void loadPatch(const juce::File&);
+
+		void set(String&& /*key*/, String&& /*id*/, Var&&, bool /*undoable*/ = true);
+
+		void set(String&& /*key*/, const String& /*id*/, Var&&, bool /*undoable*/ = true);
+
+		void set(const String& /*key*/, String&& /*id*/, Var&&, bool /*undoable*/ = true);
+
+		void set(const String& /*key*/, const String& /*id*/, Var&&, bool /*undoable*/ = true);
+
+		const Var* get(String&& /*key*/, String&& /*id*/) const;
+
+		const Var* get(String&& /*key*/, const String& /*id*/) const;
+
+		const Var* get(const String& /*key*/, const String& /*id*/) const;
+
+		void undo();
+
+		void redo();
+
+		ValueTree getState() const noexcept;
 
 		// DEBUGGING:
-		String toString() const { return state.toXmlString(); }
-		void dbg() const { DBG(toString()); }
-		String toString(String&& key, String&& id) const
-		{
-			const auto var = get(std::move(key), std::move(id));
-			if (var == nullptr)
-				return "invalid request";
-			else
-				return var->toString();
-		}
+		String toString() const;
+
+		void dbg() const;
+
+		String toString(String&& /*key*/, String&& /*id*/) const;
 
 	protected:
 		ValueTree state;
 		Undo undoer;
 
 	private:
-		String toID(const String& txt) const
-		{
-			return txt.removeCharacters(" ").toLowerCase();
-		}
+		String toID(const String& /*txt*/) const;
 
-		void setProperty(const String& key, const String& id, Var&& val, ValueTree knot, Undo* mngr)
-		{
-			if (knot.getType().toString() == key)
-				knot.setProperty(id, val, mngr);
-			else if (!key.contains("/"))
-			{
-				auto child = knot.getChildWithName(key);
-				if (!child.isValid())
-				{
-					child = ValueTree(key);
-					knot.appendChild(child, nullptr);
-				}
-				setProperty(key, id, std::move(val), child, mngr);
-			}
-			else
-				for (auto i = 0; i < key.length(); ++i)
-					if (key[i] == '/')
-					{
-						const auto childName = key.substring(0, i);
-						auto child = knot.getChildWithName(childName);
-						if (!child.isValid())
-						{
-							child = ValueTree(childName);
-							knot.appendChild(child, nullptr);
-						}
-						return setProperty(key.substring(i + 1), id, std::move(val), child, mngr);
-					}
-		}
-		const Var* getProperty(const String& key, const String& id, ValueTree knot) const
-		{
-			if (key.contains("/"))
-			{
-				for (auto i = 0; i < key.length(); ++i)
-					if (key[i] == '/')
-					{
-						const auto childName = key.substring(0, i);
-						const auto child = knot.getChildWithName(childName);
-						if (!child.isValid())
-							return nullptr;
-						return getProperty(key.substring(i + 1), id, child);
-					}
-			}
-			const auto child = knot.getChildWithName(toID(key));
-			if (!child.isValid())
-				return nullptr;
-			if (child.hasProperty(id))
-				return &child.getProperty(id);
-			return nullptr;
-		}
+		void setProperty(const String& /*key*/, const String& /*id*/, Var&&, ValueTree /*knot*/, Undo*);
+
+		const Var* getProperty(const String& /*key*/, const String& /*id*/, ValueTree /*knot*/) const;
 	};
 }

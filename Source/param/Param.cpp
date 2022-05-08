@@ -42,7 +42,7 @@ inline param::String param::toString(PID pID)
 	}
 }
 
-inline param::PID param::toPID(const String& id)
+param::PID param::toPID(const String& id)
 {
 	for (auto i = 0; i < NumParams; ++i)
 	{

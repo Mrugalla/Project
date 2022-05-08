@@ -8,10 +8,6 @@
               pluginVSTNumMidiInputs="1" pluginVST3Category="Fx" cppLanguageStandard="latest"
               pluginName="Project">
   <MAINGROUP id="c82PPq" name="Project">
-    <FILE id="oha5Fi" name="outtakes.txt" compile="0" resource="1" file="Source/outtakes.txt"/>
-    <FILE id="bEUJ6d" name="info.h" compile="0" resource="0" file="Source/info.h"/>
-    <FILE id="TMwdaE" name="config.h" compile="0" resource="0" file="Source/config.h"/>
-    <FILE id="DA5beK" name="configEnd.h" compile="0" resource="0" file="Source/configEnd.h"/>
     <GROUP id="{329F0704-CF49-5A90-357A-72806BBA6C7A}" name="Source">
       <GROUP id="{E92DF140-D139-51F3-C217-2B6F912F6360}" name="param">
         <FILE id="XXExev" name="Param.cpp" compile="1" resource="0" file="Source/param/Param.cpp"/>
@@ -46,6 +42,7 @@
         <FILE id="bgyAlz" name="Range.h" compile="0" resource="0" file="Source/arch/Range.h"/>
         <FILE id="pjozVu" name="Smooth.cpp" compile="1" resource="0" file="Source/arch/Smooth.cpp"/>
         <FILE id="kmNwlM" name="Smooth.h" compile="0" resource="0" file="Source/arch/Smooth.h"/>
+        <FILE id="YTNuOW" name="State.cpp" compile="1" resource="0" file="Source/arch/State.cpp"/>
         <FILE id="Uad8Jv" name="State.h" compile="0" resource="0" file="Source/arch/State.h"/>
       </GROUP>
       <GROUP id="{DA435779-5001-4379-F809-3E7C21D55DC0}" name="gui"/>
@@ -55,6 +52,7 @@
         <FILE id="dgpmul" name="EnvelopeFollower.h" compile="0" resource="0"
               file="Source/audio/EnvelopeFollower.h"/>
         <FILE id="TN2ewh" name="Meter.h" compile="0" resource="0" file="Source/audio/Meter.h"/>
+        <FILE id="vVTypK" name="MIDILearn.cpp" compile="1" resource="0" file="Source/audio/MIDILearn.cpp"/>
         <FILE id="WFKvT5" name="MIDILearn.h" compile="0" resource="0" file="Source/audio/MIDILearn.h"/>
         <FILE id="K88rdo" name="MidSide.h" compile="0" resource="0" file="Source/audio/MidSide.h"/>
         <FILE id="KE2g4j" name="Oversampling.h" compile="0" resource="0" file="Source/audio/Oversampling.h"/>
@@ -67,6 +65,10 @@
       <FILE id="LyunGe" name="Processor.cpp" compile="1" resource="0" file="Source/Processor.cpp"/>
       <FILE id="OqTIYY" name="Processor.h" compile="0" resource="0" file="Source/Processor.h"/>
     </GROUP>
+    <FILE id="oha5Fi" name="outtakes.txt" compile="0" resource="1" file="Source/outtakes.txt"/>
+    <FILE id="bEUJ6d" name="info.h" compile="0" resource="0" file="Source/info.h"/>
+    <FILE id="TMwdaE" name="config.h" compile="0" resource="0" file="Source/config.h"/>
+    <FILE id="DA5beK" name="configEnd.h" compile="0" resource="0" file="Source/configEnd.h"/>
   </MAINGROUP>
   <JUCEOPTIONS JUCE_STRICT_REFCOUNTEDPOINTER="1" JUCE_VST3_CAN_REPLACE_VST2="0"
                JUCE_ENABLE_REPAINT_DEBUGGING="0"/>
