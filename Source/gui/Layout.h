@@ -1,22 +1,8 @@
 #pragma once
-#include <array>
-#include <juce_graphics/juce_graphics.h>
-#include <juce_gui_basics/juce_gui_basics.h>
+#include "Using.h"
 
 namespace gui
 {
-	using Component = juce::Component;
-	using Path = juce::Path;
-	using Stroke = juce::PathStrokeType;
-	using Point = juce::Point<int>;
-	using PointF = juce::Point<float>;
-	using Bounds = juce::Rectangle<int>;
-	using BoundsF = juce::Rectangle<float>;
-	using Line = juce::Line<int>;
-	using LineF = juce::Line<float>;
-	using Affine = juce::AffineTransform;
-	using Just = juce::Justification;
-
 	inline BoundsF maxQuadIn(const BoundsF& b) noexcept
 	{
 		const auto minDimen = std::min(b.getWidth(), b.getHeight());

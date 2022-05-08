@@ -10,6 +10,8 @@
 #include "../Processor.h"
 #include "../param/Param.h"
 
+#include <array>
+
 namespace gui
 {
     using Colour = juce::Colour;
@@ -32,6 +34,8 @@ namespace gui
     using Line = juce::Line<int>;
     using LineF = juce::Line<float>;
     using Image = juce::Image;
+    using Stroke = juce::PathStrokeType;
+    using Affine = juce::AffineTransform;
 
     using Component = juce::Component;
     using Processor = audio::Processor;
