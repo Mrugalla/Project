@@ -1,7 +1,7 @@
 #include "Param.h"
 #include "../config.h"
 
-inline param::String param::toID(const String& name)
+param::String param::toID(const String& name)
 {
 	return name.removeCharacters(" ").toLowerCase();
 }
@@ -13,7 +13,7 @@ param::PID param::ll(PID pID, int offset) noexcept
 	return static_cast<PID>(i);
 }
 
-inline param::String param::toString(PID pID)
+param::String param::toString(PID pID)
 {
 	switch (pID)
 	{
@@ -53,7 +53,7 @@ param::PID param::toPID(const String& id)
 	return PID::NumParams;
 }
 
-inline param::String param::toTooltip(PID pID)
+param::String param::toTooltip(PID pID)
 {
 	switch (pID)
 	{
@@ -80,7 +80,7 @@ inline param::String param::toTooltip(PID pID)
 	}
 }
 
-inline param::String param::toString(Unit pID)
+param::String param::toString(Unit pID)
 {
 	switch (pID)
 	{
@@ -299,7 +299,7 @@ param::String param::Param::getIDString() const
 	return "params/" + toID(toString(id));
 }
 
-inline float param::Param::biased(float start, float end, float bias/*[0,1]*/, float x) const noexcept
+float param::Param::biased(float start, float end, float bias/*[0,1]*/, float x) const noexcept
 {
 	const auto r = end - start;
 	if (r == 0.f)
@@ -310,9 +310,9 @@ inline float param::Param::biased(float start, float end, float bias/*[0,1]*/, f
 	return start + aR * x / (aM - x + a2 * x);
 }
 
-inline std::function<float(param::String, const float/*altVal*/)> param::strToVal::parse()
+std::function<float(param::String, const float/*altVal*/)> param::strToVal::parse()
 {
-	return[](const String& txt, const float altVal)
+	return [](const String& txt, const float altVal)
 	{
 		parser::Parser parse;
 		if (parse(txt))
@@ -322,9 +322,9 @@ inline std::function<float(param::String, const float/*altVal*/)> param::strToVa
 	};
 }
 
-inline param::StrToValFunc param::strToVal::power()
+param::StrToValFunc param::strToVal::power()
 {
-	return[p = parse()](const String& txt)
+	return [p = parse()](const String& txt)
 	{
 		const auto text = txt.trimCharactersAtEnd(toString(Unit::Power));
 		const auto val = p(text, 0.f);
@@ -332,9 +332,9 @@ inline param::StrToValFunc param::strToVal::power()
 	};
 }
 
-inline param::StrToValFunc param::strToVal::solo()
+param::StrToValFunc param::strToVal::solo()
 {
-	return[p = parse()](const String& txt)
+	return [p = parse()](const String& txt)
 	{
 		const auto text = txt.trimCharactersAtEnd(toString(Unit::Solo));
 		const auto val = p(text, 0.f);
@@ -342,9 +342,9 @@ inline param::StrToValFunc param::strToVal::solo()
 	};
 }
 
-inline param::StrToValFunc param::strToVal::mute()
+param::StrToValFunc param::strToVal::mute()
 {
-	return[p = parse()](const String& txt)
+	return [p = parse()](const String& txt)
 	{
 		const auto text = txt.trimCharactersAtEnd(toString(Unit::Mute));
 		const auto val = p(text, 0.f);
@@ -352,9 +352,9 @@ inline param::StrToValFunc param::strToVal::mute()
 	};
 }
 
-inline param::StrToValFunc param::strToVal::percent()
+param::StrToValFunc param::strToVal::percent()
 {
-	return[p = parse()](const String& txt)
+	return [p = parse()](const String& txt)
 	{
 		const auto text = txt.trimCharactersAtEnd(toString(Unit::Percent));
 		const auto val = p(text, 0.f);
@@ -362,9 +362,9 @@ inline param::StrToValFunc param::strToVal::percent()
 	};
 }
 
-inline param::StrToValFunc param::strToVal::hz()
+param::StrToValFunc param::strToVal::hz()
 {
-	return[p = parse()](const String& txt)
+	return [p = parse()](const String& txt)
 	{
 		const auto text = txt.trimCharactersAtEnd(toString(Unit::Hz));
 		const auto val = p(text, 0.f);
@@ -372,9 +372,9 @@ inline param::StrToValFunc param::strToVal::hz()
 	};
 }
 
-inline param::StrToValFunc param::strToVal::phase()
+param::StrToValFunc param::strToVal::phase()
 {
-	return[p = parse()](const String& txt)
+	return [p = parse()](const String& txt)
 	{
 		const auto text = txt.trimCharactersAtEnd(toString(Unit::Degree));
 		const auto val = p(text, 0.f);
@@ -382,9 +382,9 @@ inline param::StrToValFunc param::strToVal::phase()
 	};
 }
 
-inline param::StrToValFunc param::strToVal::oct()
+param::StrToValFunc param::strToVal::oct()
 {
-	return[p = parse()](const String& txt)
+	return [p = parse()](const String& txt)
 	{
 		const auto text = txt.trimCharactersAtEnd(toString(Unit::Octaves));
 		const auto val = p(text, 0.f);
@@ -392,9 +392,9 @@ inline param::StrToValFunc param::strToVal::oct()
 	};
 }
 
-inline param::StrToValFunc param::strToVal::oct2()
+param::StrToValFunc param::strToVal::oct2()
 {
-	return[p = parse()](const String& txt)
+	return [p = parse()](const String& txt)
 	{
 		const auto text = txt.trimCharactersAtEnd(toString(Unit::Octaves));
 		const auto val = p(text, 0.f);
@@ -402,9 +402,9 @@ inline param::StrToValFunc param::strToVal::oct2()
 	};
 }
 
-inline param::StrToValFunc param::strToVal::semi()
+param::StrToValFunc param::strToVal::semi()
 {
-	return[p = parse()](const String& txt)
+	return [p = parse()](const String& txt)
 	{
 		const auto text = txt.trimCharactersAtEnd(toString(Unit::Semi));
 		const auto val = p(text, 0.f);
@@ -412,9 +412,9 @@ inline param::StrToValFunc param::strToVal::semi()
 	};
 }
 
-inline param::StrToValFunc param::strToVal::fine()
+param::StrToValFunc param::strToVal::fine()
 {
-	[p = parse()] (const String& txt)
+	return [p = parse()] (const String& txt)
 	{
 		const auto text = txt.trimCharactersAtEnd(toString(Unit::Fine));
 		const auto val = p(text, 0.f);
@@ -422,9 +422,9 @@ inline param::StrToValFunc param::strToVal::fine()
 	};
 }
 
-inline param::StrToValFunc param::strToVal::ratio()
+param::StrToValFunc param::strToVal::ratio()
 {
-	return[p = parse()](const String& txt)
+	return [p = parse()](const String& txt)
 	{
 		const auto text = txt.trimCharactersAtEnd(toString(Unit::Ratio));
 		const auto val = p(text, 0.f);
@@ -432,7 +432,7 @@ inline param::StrToValFunc param::strToVal::ratio()
 	};
 }
 
-inline param::StrToValFunc param::strToVal::lrms()
+param::StrToValFunc param::strToVal::lrms()
 {
 	return [](const String& txt)
 	{
@@ -440,7 +440,7 @@ inline param::StrToValFunc param::strToVal::lrms()
 	};
 }
 
-inline param::StrToValFunc param::strToVal::freeSync()
+param::StrToValFunc param::strToVal::freeSync()
 {
 	return [](const String& txt)
 	{
@@ -448,7 +448,7 @@ inline param::StrToValFunc param::strToVal::freeSync()
 	};
 }
 
-inline param::StrToValFunc param::strToVal::polarity()
+param::StrToValFunc param::strToVal::polarity()
 {
 	return [](const String& txt)
 	{
@@ -456,7 +456,7 @@ inline param::StrToValFunc param::strToVal::polarity()
 	};
 }
 
-inline param::StrToValFunc param::strToVal::ms()
+param::StrToValFunc param::strToVal::ms()
 {
 	return[p = parse()](const String& txt)
 	{
@@ -466,7 +466,7 @@ inline param::StrToValFunc param::strToVal::ms()
 	};
 }
 
-inline param::StrToValFunc param::strToVal::db()
+param::StrToValFunc param::strToVal::db()
 {
 	return[p = parse()](const String& txt)
 	{
@@ -476,62 +476,62 @@ inline param::StrToValFunc param::strToVal::db()
 	};
 }
 
-inline param::ValToStrFunc param::valToStr::mute()
+param::ValToStrFunc param::valToStr::mute()
 {
 	return [](float v) { return v > .5f ? "Mute" : "Not Mute"; };
 }
 
-inline param::ValToStrFunc param::valToStr::solo()
+param::ValToStrFunc param::valToStr::solo()
 {
 	return [](float v) { return v > .5f ? "Solo" : "Not Solo"; };
 }
 
-inline param::ValToStrFunc param::valToStr::power()
+param::ValToStrFunc param::valToStr::power()
 {
 	return [](float v) { return v > .5f ? "Enabled" : "Disabled"; };
 }
 
-inline param::ValToStrFunc param::valToStr::percent()
+param::ValToStrFunc param::valToStr::percent()
 {
 	return [](float v) { return String(std::floor(v * 100.f)) + " " + toString(Unit::Percent); };
 }
 
-inline param::ValToStrFunc param::valToStr::hz()
+param::ValToStrFunc param::valToStr::hz()
 {
 	return [](float v) { return String(v).substring(0, 4) + " " + toString(Unit::Hz); };
 }
 
-inline param::ValToStrFunc param::valToStr::phase()
+param::ValToStrFunc param::valToStr::phase()
 {
 	return [](float v) { return String(std::floor(v * 180.f)) + " " + toString(Unit::Degree); };
 }
 
-inline param::ValToStrFunc param::valToStr::phase360()
+param::ValToStrFunc param::valToStr::phase360()
 {
 	return [](float v) { return String(std::floor(v * 360.f)) + " " + toString(Unit::Degree); };
 }
 
-inline param::ValToStrFunc param::valToStr::oct()
+param::ValToStrFunc param::valToStr::oct()
 {
 	return [](float v) { return String(std::floor(v)) + " " + toString(Unit::Octaves); };
 }
 
-inline param::ValToStrFunc param::valToStr::oct2()
+param::ValToStrFunc param::valToStr::oct2()
 {
 	return [](float v) { return String(std::floor(v / 12.f)) + " " + toString(Unit::Octaves); };
 }
 
-inline param::ValToStrFunc param::valToStr::semi()
+param::ValToStrFunc param::valToStr::semi()
 {
 	return [](float v) { return String(std::floor(v)) + " " + toString(Unit::Semi); };
 }
 
-inline param::ValToStrFunc param::valToStr::fine()
+param::ValToStrFunc param::valToStr::fine()
 {
 	return [](float v) { return String(std::floor(v * 100.f)) + " " + toString(Unit::Fine); };
 }
 
-inline param::ValToStrFunc param::valToStr::ratio()
+param::ValToStrFunc param::valToStr::ratio()
 {
 	return [](float v)
 	{
@@ -540,37 +540,37 @@ inline param::ValToStrFunc param::valToStr::ratio()
 	};
 }
 
-inline param::ValToStrFunc param::valToStr::lrms()
+param::ValToStrFunc param::valToStr::lrms()
 {
 	return [](float v) { return v > .5f ? String("m/s") : String("l/r"); };
 }
 
-inline param::ValToStrFunc param::valToStr::freeSync()
+param::ValToStrFunc param::valToStr::freeSync()
 {
 	return [](float v) { return v > .5f ? String("sync") : String("free"); };
 }
 
-inline param::ValToStrFunc param::valToStr::polarity()
+param::ValToStrFunc param::valToStr::polarity()
 {
 	return [](float v) { return v > .5f ? String("on") : String("off"); };
 }
 
-inline param::ValToStrFunc param::valToStr::ms()
+param::ValToStrFunc param::valToStr::ms()
 {
 	return [](float v) { return String(std::floor(v * 10.f) * .1f) + " " + toString(Unit::Ms); };
 }
 
-inline param::ValToStrFunc param::valToStr::db()
+param::ValToStrFunc param::valToStr::db()
 {
 	return [](float v) { return String(std::floor(v * 100.f) * .01f) + " " + toString(Unit::Decibel); };
 }
 
-inline param::ValToStrFunc param::valToStr::empty()
+param::ValToStrFunc param::valToStr::empty()
 {
 	return [](float) { return String(""); };
 }
 
-inline param::Param* param::makeParam(PID id, State& state,
+param::Param* param::makeParam(PID id, State& state,
 	float valDenormDefault, const Range& range,
 	Unit unit, bool isLocked)
 {

@@ -1,6 +1,6 @@
 // pre processor defines
 
-#define PPDHasEditor false
+#define PPDHasEditor true
 
 #define PPDHasGainIn true
 #define PPDHasHQ true

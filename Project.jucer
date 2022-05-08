@@ -9,6 +9,8 @@
               pluginName="Project">
   <MAINGROUP id="c82PPq" name="Project">
     <GROUP id="{329F0704-CF49-5A90-357A-72806BBA6C7A}" name="Source">
+      <FILE id="efuGkR" name="cursor.png" compile="0" resource="1" file="Source/cursor.png"/>
+      <FILE id="qZlLSW" name="cursorCross.png" compile="0" resource="1" file="Source/cursorCross.png"/>
       <GROUP id="{E92DF140-D139-51F3-C217-2B6F912F6360}" name="param">
         <FILE id="XXExev" name="Param.cpp" compile="1" resource="0" file="Source/param/Param.cpp"/>
         <FILE id="FnwwTy" name="Param.h" compile="0" resource="0" file="Source/param/Param.h"/>
@@ -45,7 +47,34 @@
         <FILE id="YTNuOW" name="State.cpp" compile="1" resource="0" file="Source/arch/State.cpp"/>
         <FILE id="Uad8Jv" name="State.h" compile="0" resource="0" file="Source/arch/State.h"/>
       </GROUP>
-      <GROUP id="{DA435779-5001-4379-F809-3E7C21D55DC0}" name="gui"/>
+      <GROUP id="{DA435779-5001-4379-F809-3E7C21D55DC0}" name="gui">
+        <FILE id="zTbLRz" name="Button.h" compile="0" resource="0" file="Source/gui/Button.h"/>
+        <FILE id="RLeAMG" name="ButtonParameterRandomizer.h" compile="0" resource="0"
+              file="Source/gui/ButtonParameterRandomizer.h"/>
+        <FILE id="pHAdw5" name="Comp.cpp" compile="1" resource="0" file="Source/gui/Comp.cpp"/>
+        <FILE id="Z2a0vb" name="Comp.h" compile="0" resource="0" file="Source/gui/Comp.h"/>
+        <FILE id="EZG0Qq" name="Dial.h" compile="0" resource="0" file="Source/gui/Dial.h"/>
+        <FILE id="DLeXXg" name="Events.cpp" compile="1" resource="0" file="Source/gui/Events.cpp"/>
+        <FILE id="osl8rb" name="Events.h" compile="0" resource="0" file="Source/gui/Events.h"/>
+        <FILE id="j4v7NC" name="GUIParams.h" compile="0" resource="0" file="Source/gui/GUIParams.h"/>
+        <FILE id="OWKIP1" name="HighLevel.h" compile="0" resource="0" file="Source/gui/HighLevel.h"/>
+        <FILE id="CxGHoH" name="Knob.h" compile="0" resource="0" file="Source/gui/Knob.h"/>
+        <FILE id="GzecOv" name="Label.h" compile="0" resource="0" file="Source/gui/Label.h"/>
+        <FILE id="Tkv1VE" name="Layout.h" compile="0" resource="0" file="Source/gui/Layout.h"/>
+        <FILE id="nafNZh" name="LowLevel.h" compile="0" resource="0" file="Source/gui/LowLevel.h"/>
+        <FILE id="BxLTdw" name="Menu.h" compile="0" resource="0" file="Source/gui/Menu.h"/>
+        <FILE id="vdDLoX" name="menu.xml" compile="0" resource="1" file="Source/gui/menu.xml"/>
+        <FILE id="xF73OU" name="MIDICCMonitor.h" compile="0" resource="0" file="Source/gui/MIDICCMonitor.h"/>
+        <FILE id="xFPkHy" name="PatchBrowser.h" compile="0" resource="0" file="Source/gui/PatchBrowser.h"/>
+        <FILE id="jVz2jo" name="PopUp.h" compile="0" resource="0" file="Source/gui/PopUp.h"/>
+        <FILE id="F2ls2a" name="Shader.h" compile="0" resource="0" file="Source/gui/Shader.h"/>
+        <FILE id="AX6z30" name="Shared.cpp" compile="1" resource="0" file="Source/gui/Shared.cpp"/>
+        <FILE id="nGyzNx" name="Shared.h" compile="0" resource="0" file="Source/gui/Shared.h"/>
+        <FILE id="iAvJ89" name="TextEditor.h" compile="0" resource="0" file="Source/gui/TextEditor.h"/>
+        <FILE id="K98dkP" name="Tooltip.h" compile="0" resource="0" file="Source/gui/Tooltip.h"/>
+        <FILE id="BhJK0N" name="Using.h" compile="0" resource="0" file="Source/gui/Using.h"/>
+        <FILE id="XInD6O" name="Utils.h" compile="0" resource="0" file="Source/gui/Utils.h"/>
+      </GROUP>
       <GROUP id="{6A8CB2D6-E6E3-8D1E-1148-21BD24558A7A}" name="audio">
         <FILE id="DT8T5u" name="Bitcrusher.h" compile="0" resource="0" file="Source/audio/Bitcrusher.h"/>
         <FILE id="KPtX3O" name="DryWetMix.h" compile="0" resource="0" file="Source/audio/DryWetMix.h"/>

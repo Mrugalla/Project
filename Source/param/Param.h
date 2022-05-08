@@ -17,7 +17,7 @@ namespace param
 {
 	using String = juce::String;
 
-	inline String toID(const String&);
+	String toID(const String&);
 
 	enum class PID
 	{
@@ -51,11 +51,11 @@ namespace param
 
 	PID ll(PID, int/*offset*/) noexcept;
 
-	inline String toString(PID);
+	String toString(PID);
 
 	PID toPID(const String&);
 
-	inline String toTooltip(PID);
+	String toTooltip(PID);
 
 	enum class Unit
 	{
@@ -79,7 +79,7 @@ namespace param
 
 	using CharPtr = juce::CharPointer_UTF8;
 
-	inline String toString(Unit);
+	String toString(Unit);
 
 	using ValToStrFunc = std::function<String(float)>;
 	using StrToValFunc = std::function<float(const String&)>;
@@ -172,54 +172,54 @@ namespace param
 	private:
 		String getIDString() const;
 
-		inline float biased(float /*start*/, float /*end*/, float /*bias [0,1]*/, float /*x*/) const noexcept;
+		float biased(float /*start*/, float /*end*/, float /*bias [0,1]*/, float /*x*/) const noexcept;
 	};
 
 	namespace strToVal
 	{
-		inline std::function<float(String, const float/*altVal*/)> parse();
+		std::function<float(String, const float/*altVal*/)> parse();
 
-		inline StrToValFunc power();
-		inline StrToValFunc solo();
-		inline StrToValFunc mute();
-		inline StrToValFunc percent();
-		inline StrToValFunc hz();
-		inline StrToValFunc phase();
-		inline StrToValFunc oct();
-		inline StrToValFunc oct2();
-		inline StrToValFunc semi();
-		inline StrToValFunc fine();
-		inline StrToValFunc ratio();
-		inline StrToValFunc lrms();
-		inline StrToValFunc freeSync();
-		inline StrToValFunc polarity();
-		inline StrToValFunc ms();
-		inline StrToValFunc db();
+		StrToValFunc power();
+		StrToValFunc solo();
+		StrToValFunc mute();
+		StrToValFunc percent();
+		StrToValFunc hz();
+		StrToValFunc phase();
+		StrToValFunc oct();
+		StrToValFunc oct2();
+		StrToValFunc semi();
+		StrToValFunc fine();
+		StrToValFunc ratio();
+		StrToValFunc lrms();
+		StrToValFunc freeSync();
+		StrToValFunc polarity();
+		StrToValFunc ms();
+		StrToValFunc db();
 	}
 
 	namespace valToStr
 	{
-		inline ValToStrFunc mute();
-		inline ValToStrFunc solo();
-		inline ValToStrFunc power();
-		inline ValToStrFunc percent();
-		inline ValToStrFunc hz();
-		inline ValToStrFunc phase();
-		inline ValToStrFunc phase360();
-		inline ValToStrFunc oct();
-		inline ValToStrFunc oct2();
-		inline ValToStrFunc semi();
-		inline ValToStrFunc fine();
-		inline ValToStrFunc ratio();
-		inline ValToStrFunc lrms();
-		inline ValToStrFunc freeSync();
-		inline ValToStrFunc polarity();
-		inline ValToStrFunc ms();
-		inline ValToStrFunc db();
-		inline ValToStrFunc empty();
+		ValToStrFunc mute();
+		ValToStrFunc solo();
+		ValToStrFunc power();
+		ValToStrFunc percent();
+		ValToStrFunc hz();
+		ValToStrFunc phase();
+		ValToStrFunc phase360();
+		ValToStrFunc oct();
+		ValToStrFunc oct2();
+		ValToStrFunc semi();
+		ValToStrFunc fine();
+		ValToStrFunc ratio();
+		ValToStrFunc lrms();
+		ValToStrFunc freeSync();
+		ValToStrFunc polarity();
+		ValToStrFunc ms();
+		ValToStrFunc db();
+		ValToStrFunc empty();
 	}
 
-	inline Param* makeParam(PID, State&,
+	Param* makeParam(PID, State&,
 		float /*valDenormDefault*/ = 1.f, const Range& = Range(0.f, 1.f),
 		Unit = Unit::Percent, bool /*isLocked*/ = false);
 

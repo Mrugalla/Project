@@ -1,28 +1,28 @@
 #pragma once
 
-//#include "Param.h"
+#include "param/Param.h"
 
 #include "Processor.h"
-/*
-#include "Shared.h"
-#include "Layout.h"
-#include "Utils.h"
 
-#include "Shader.h"
+#include "gui/Shared.h"
+#include "gui/Layout.h"
+#include "gui/Utils.h"
 
-#include "PopUp.h"
-#include "TextEditor.h"
-#include "Knob.h"
-#include "HighLevel.h"
-#include "LowLevel.h"
+#include "gui/Shader.h"
 
-#include "Tooltip.h"
+#include "gui/PopUp.h"
+#include "gui/TextEditor.h"
+#include "gui/Knob.h"
+#include "gui/HighLevel.h"
+#include "gui/LowLevel.h"
+
+#include "gui/Tooltip.h"
 
 #include <juce_gui_basics/juce_gui_basics.h>
 #include <juce_core/juce_core.h>
 
 #include <array>
-*/
+
 #include "config.h"
 
 namespace gui
@@ -32,14 +32,14 @@ namespace gui
     using MouseWheel = juce::MouseWheelDetails;
 
     struct Editor :
-        public juce::AudioProcessorEditor//,
-        //public Timer
+        public juce::AudioProcessorEditor,
+        public Timer
     {
         static constexpr int MinWidth = 100, MinHeight = 100;
 
         Editor(audio::Processor& p) :
             juce::AudioProcessorEditor(p),
-            audioProcessor(p)/*,
+            audioProcessor(p),
             
             layout(*this),
             utils(*this, p),
@@ -56,9 +56,9 @@ namespace gui
 
             bypassed(false),
             shadr(bypassed)
-            */
+            
         {
-            /*
+            
             setComponentEffect(&shadr);
 
             setMouseCursor(makeCursor(CursorType::Default));
@@ -81,7 +81,7 @@ namespace gui
             addChildComponent(editorKnobs);
 
             startTimerHz(12);
-            */
+            
             setOpaque(true);
             setResizable(true, true);
             {
@@ -91,7 +91,7 @@ namespace gui
                 setSize(w, h);
             }
         }
-        /*
+        
         ~Editor()
         {
             setComponentEffect(nullptr);
@@ -140,11 +140,11 @@ namespace gui
         void mouseWheelMove(const Mouse&, const MouseWheel&) override
         {}
 
-        */
+        
 
         audio::Processor& audioProcessor;
     protected:
-        /*
+        
         Layout layout;
         Utils utils;
 
@@ -160,14 +160,14 @@ namespace gui
 
         bool bypassed;
         Shader shadr;
-        */
+        
 
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Editor)
         //JUCE_LEAK_DETECTOR(Editor)
         //JUCE_HEAVYWEIGHT_LEAK_DETECTOR(Editor)
 
     private:
-        /*
+        
         void saveBounds()
         {
             const auto w = getWidth();
@@ -186,7 +186,7 @@ namespace gui
                 repaintWithChildren(this);
             }
         }
-        */
+        
     };
 }
 

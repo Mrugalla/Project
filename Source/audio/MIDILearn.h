@@ -8,8 +8,6 @@
 
 namespace audio
 {
-	
-
 	class MIDILearn
 	{
 		using MIDIBuf = juce::MidiBuffer;
