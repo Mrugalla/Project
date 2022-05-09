@@ -514,6 +514,15 @@ void gui::makeSymbolButton(Button& b, ButtonSymbol symbol, int targetToggleState
 	});
 }
 
+void gui::makeToggleButton(Button& b, const String& txt)
+{
+	makeTextButton(b, txt, true);
+	b.onClick.push_back([&button = b]()
+	{
+		button.toggleState = !button.toggleState;
+	});
+}
+
 void gui::makeParameterSwitchButton(Button& b, PID pID, String&& txt)
 {
 	makeTextButton(b, std::move(txt), true);

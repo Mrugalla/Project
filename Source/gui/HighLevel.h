@@ -1,10 +1,7 @@
 #pragma once
-#include "Comp.h"
-#include "Button.h"
 #include "ButtonParameterRandomizer.h"
 #include "PatchBrowser.h"
 #include "Knob.h"
-#include "Dial.h"
 #include "Menu.h"
 #include "MIDICCMonitor.h"
 #include "LowLevel.h"

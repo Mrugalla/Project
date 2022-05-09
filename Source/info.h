@@ -31,6 +31,8 @@ Code Cleanup
 		some problem in MIDILearn with param::toPID()
 
 PatchBrowser
+	search bar
+		make case insensitive
 	sortable bar
 		looks too much like buttons
 		cant switch between asc and desc yet
@@ -62,6 +64,11 @@ MIDI Learn
 	1 cc to n parameters?
 	different midi channnels (16 * 128 CCs instead of 128)
 	possible to save and load default state of whole midi learn patch
+
+ScrollBar
+	finish
+	make vertical
+	have own header/cpp
 
 PopUp
 	rename to context menu

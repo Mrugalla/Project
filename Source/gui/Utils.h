@@ -156,4 +156,15 @@ namespace gui
 		EventSystem eventSystem;
 		Evt evt;
 	};
+
+	inline void appendRandomString(String& str, Random& rand, int length, const String& legalChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+	{
+		const auto max = static_cast<float>(legalChars.length() - 1);
+
+		for (auto i = 0; i < length; ++i)
+		{
+			auto idx = static_cast<int>(rand.nextFloat() * max);
+			str += legalChars[idx];
+		}
+	}
 }

@@ -9,8 +9,10 @@
 
 #include "../Processor.h"
 #include "../param/Param.h"
+#include "../arch/State.h"
 
 #include <array>
+#include <functional>
 
 namespace gui
 {
@@ -36,6 +38,7 @@ namespace gui
     using Image = juce::Image;
     using Stroke = juce::PathStrokeType;
     using Affine = juce::AffineTransform;
+    using Random = juce::Random;
 
     using Component = juce::Component;
     using Processor = audio::Processor;

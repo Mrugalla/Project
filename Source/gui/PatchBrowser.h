@@ -1,10 +1,5 @@
 #pragma once
 #include "Button.h"
-#include "../arch/State.h"
-
-#include <vector>
-#include <memory>
-#include <functional>
 
 namespace gui
 {
@@ -113,8 +108,6 @@ namespace gui
 
 		PatchList(Utils& u, Tags& _tags) :
 			Comp(u, "", CursorType::Default),
-			sortByName(u, "click here to sort patches by name."),
-			sortByAuthor(u, "click here to sort patches by author."),
 			patches(),
 			filterString(""),
 			tags(_tags),
@@ -125,64 +118,14 @@ namespace gui
 				{ 1 }
 			);
 
-			addAndMakeVisible(sortByName);
-			addAndMakeVisible(sortByAuthor);
-
-			makeTextButton(sortByName, "name", true);
-			makeTextButton(sortByAuthor, "author", true);
-			
-			sortByName.onClick.push_back([&]()
+			Random rand;
+			for (auto i = 0; i < 100; ++i)
 			{
-				auto sortFunc = [&ts = sortByName.toggleState](const SharedPatch& a, const SharedPatch& b)
-				{
-					DBG(ts);
-					if (ts)
-						return a->name.getText().compareNatural(b->name.getText()) < 0;
-					else
-						return a->name.getText().compareNatural(b->name.getText()) > 0;
-				};
-
-				std::sort(patches.begin(), patches.end(), sortFunc);
-
-				updateShown();
-			});
-
-			sortByAuthor.onClick.push_back([&]()
-			{
-				auto sortFunc = [&ts = sortByName.toggleState](const SharedPatch& a, const SharedPatch& b)
-				{
-					if(ts)
-						return a->author.getText().compareNatural(b->author.getText()) < 0;
-					else
-						return a->author.getText().compareNatural(b->author.getText()) > 0;
-				};
-
-				std::sort(patches.begin(), patches.end(), sortFunc);
-
-				updateShown();
-			});
-
-			{
-				auto& nLabel = sortByName.getLabel();
-				auto& authLabel = sortByAuthor.getLabel();
-
-				nLabel.textCID = ColourID::Hover;
-				authLabel.textCID = nLabel.textCID;
-
-				nLabel.font = getFontDosisMedium();
-				authLabel.font = nLabel.font;
-
-				nLabel.just = Just::centredLeft;
-				authLabel.just = nLabel.just;
-
-				nLabel.mode = Label::Mode::TextToLabelBounds;
-				authLabel.mode = nLabel.mode;
+				String strA, strB;
+				appendRandomString(strA, rand, 12);
+				appendRandomString(strB, rand, 12);
+				save(strA, strB);
 			}
-
-			save("init", "factory");
-			save("spectacular patch", "factory");
-			save("infectuous rabbithole", "factory");
-			save("normiecore balancer preset", "factory");
 		}
 
 		bool save(const String& _name, const String& _author)
@@ -272,6 +215,296 @@ namespace gui
 		}
 
 	protected:
+		Patches patches;
+		String filterString;
+		Tags& tags;
+		SharedPatch selected;
+
+		void resized() override
+		{
+			auto y = static_cast<float>(getY());
+			const auto x = 0.f;
+			auto w = static_cast<float>(getWidth());
+			auto h = utils.thicc() * RelHeight;
+
+			for (auto p = 0; p < patches.size(); ++p)
+			{
+				auto& patch = patches[p];
+
+				if (patch->isVisible())
+				{
+					patch->setBounds(BoundsF(x, y, w, h).toNearestInt());
+					y += h;
+				}
+			}
+
+			const auto nHeight = static_cast<int>(h);
+			if (nHeight > getHeight())
+				setSize(getWidth(), nHeight);
+		}
+
+		void paint(Graphics& g) override
+		{
+			if (patches.empty())
+			{
+				g.setColour(Colours::c(ColourID::Abort));
+				g.setFont(getFontLobster().withHeight(24.f));
+				g.drawFittedText(
+					"sry, this browser does not contain patches yet...",
+					getLocalBounds(),
+					Just::centred,
+					1
+				);
+				return;
+			}
+
+			paintList(g);
+		}
+
+		void paintList(Graphics& g)
+		{
+			auto x = 0.f;
+			auto y = static_cast<float>(getY());
+			auto w = static_cast<float>(getWidth());
+			auto r = utils.thicc() * RelHeight;
+
+			g.setColour(Colours::c(ColourID::Txt).withAlpha(.1f));
+			for (auto i = 0; i < patches.size(); ++i)
+			{
+				if (i % 2 == 0)
+					g.fillRect(x, y, w, r);
+
+				const auto ptch = patches[i];
+
+				if (ptch->isVisible())
+				{
+					if (selected == ptch)
+					{
+						g.setColour(Colours::c(ColourID::Interact));
+						g.drawRect(x, y, w, r);
+						g.setColour(Colours::c(ColourID::Txt).withAlpha(.1f));
+					}
+					y += r;
+				}
+			}
+		}
+
+		void updateShown()
+		{
+			bool considerTags = tags.size() != 0;
+			bool considerString = filterString.isNotEmpty();
+
+			if(!considerTags && !considerString)
+				for (auto& patch : patches)
+					patch->setVisible(true);
+			else
+			{
+				for (auto& patch : patches)
+				{
+					patch->setVisible(false);
+				}
+
+				if(considerString)
+					for (auto& patch : patches)
+					{
+						const auto& patchName = patch->name.getText();
+						if (patchName.contains(filterString))
+							patch->setVisible(true);
+					}
+
+				if(considerTags)
+					for (auto& patch : patches)
+					{
+						for (const auto& tag : tags)
+						{
+							if (patch->has(tag))
+								patch->setVisible(true);
+						}
+					}
+			}
+
+			resized();
+			repaintWithChildren(getParentComponent());
+		}
+	};
+
+	struct PatchListScrollable :
+		public CompScrollable
+	{
+		PatchListScrollable(Utils& u, Comp& _comp) :
+			CompScrollable(u, _comp)
+		{}
+	};
+
+	struct PatchList2 :
+		public Comp
+	{
+		static constexpr float RelHeight = 10.f;
+
+		PatchList2(Utils& u, Tags& _tags) :
+			Comp(u, "", CursorType::Default),
+			sortByName(u, "click here to sort patches by name."),
+			sortByAuthor(u, "click here to sort patches by author."),
+			patches(),
+			filterString(""),
+			tags(_tags),
+			selected(nullptr)
+		{
+			layout.init(
+				{ 1, 8, 8, 1 },
+				{ 1 }
+			);
+
+			addAndMakeVisible(sortByName);
+			addAndMakeVisible(sortByAuthor);
+
+			makeToggleButton(sortByName, "name");
+			makeToggleButton(sortByAuthor, "author");
+
+			sortByName.onClick.push_back([&]()
+				{
+					auto sortFunc = [&ts = sortByName.toggleState](const SharedPatch& a, const SharedPatch& b)
+					{
+						if (ts)
+							return a->name.getText().compareNatural(b->name.getText()) > 0;
+						else
+							return a->name.getText().compareNatural(b->name.getText()) < 0;
+					};
+
+					std::sort(patches.begin(), patches.end(), sortFunc);
+
+					updateShown();
+				});
+
+			sortByAuthor.onClick.push_back([&]()
+				{
+					auto sortFunc = [&ts = sortByName.toggleState](const SharedPatch& a, const SharedPatch& b)
+					{
+						if (ts)
+							return a->author.getText().compareNatural(b->author.getText()) > 0;
+						else
+							return a->author.getText().compareNatural(b->author.getText()) < 0;
+					};
+
+					std::sort(patches.begin(), patches.end(), sortFunc);
+
+					updateShown();
+				});
+
+			{
+				auto& nLabel = sortByName.getLabel();
+				auto& authLabel = sortByAuthor.getLabel();
+
+				nLabel.textCID = ColourID::Hover;
+				authLabel.textCID = nLabel.textCID;
+
+				nLabel.font = getFontDosisMedium();
+				authLabel.font = nLabel.font;
+
+				nLabel.just = Just::centredLeft;
+				authLabel.just = nLabel.just;
+
+				nLabel.mode = Label::Mode::TextToLabelBounds;
+				authLabel.mode = nLabel.mode;
+			}
+
+			Random rand;
+			for (auto i = 0; i < 200; ++i)
+			{
+				String strA, strB;
+				appendRandomString(strA, rand, 12);
+				appendRandomString(strB, rand, 12);
+				save(strA, strB);
+			}
+		}
+
+		bool save(const String& _name, const String& _author)
+		{
+			// check if patch already exists (accept overwrite?)
+			for (const auto& patch : patches)
+				if (patch->isSame(_name, _author))
+					return false;
+
+			patches.push_back(std::make_shared<Patch>(
+				utils,
+				_name,
+				_author
+				));
+
+			selected = patches.back();
+
+			selected->onClick.push_back([&, thisPatch = std::weak_ptr<Patch>(selected)]()
+			{
+				auto locked = thisPatch.lock();
+
+				if (locked == nullptr)
+					return;
+
+				selected = locked;
+				updateShown();
+			});
+
+			addAndMakeVisible(*selected);
+			updateShown();
+
+			return true;
+		}
+
+		void removeSelected()
+		{
+			if (selected == nullptr)
+				return;
+
+			for (auto i = 0; i < patches.size(); ++i)
+			{
+				auto ptch = patches[i];
+				if (ptch == selected)
+				{
+					if (ptch->isRemovable())
+					{
+						removeChildComponent(ptch.get());
+						patches.erase(patches.begin() + i);
+						selected.reset();
+						updateShown();
+						return;
+					}
+				}
+			}
+		}
+
+		SharedPatch getSelectedPatch() const noexcept
+		{
+			if (selected == nullptr || patches.empty())
+				return nullptr;
+			return selected;
+		}
+
+		void show(const String& containedString)
+		{
+			if (filterString == containedString)
+				return;
+
+			filterString = containedString;
+
+			updateShown();
+		}
+
+		void show(const Identifier& _tag, bool isAdded)
+		{
+			if (isAdded)
+				tags.push_back(_tag);
+			else
+				for (auto t = 0; t < tags.size(); ++t)
+					if (tags[t] == _tag)
+					{
+						tags.erase(tags.begin() + t);
+						break;
+					}
+
+			updateShown();
+		}
+
+	protected:
 		Button sortByName, sortByAuthor;
 		Patches patches;
 		String filterString;
@@ -296,7 +529,7 @@ namespace gui
 				x = layout.getX(2);
 				sortByAuthor.setBounds(BoundsF(x, y, w, h).toNearestInt());
 			}
-			
+
 			y += h;
 			const auto x = 0.f;
 			auto w = static_cast<float>(getWidth());
@@ -354,7 +587,7 @@ namespace gui
 				{
 					const auto ptch = patches[i];
 
-					if (ptch->isVisible())
+					if (ptch->isVisible() && ptch->getY() < getHeight())
 					{
 						if (selected == ptch)
 						{
@@ -376,7 +609,7 @@ namespace gui
 			bool considerTags = tags.size() != 0;
 			bool considerString = filterString.isNotEmpty();
 
-			if(!considerTags && !considerString)
+			if (!considerTags && !considerString)
 				for (auto& patch : patches)
 					patch->setVisible(true);
 			else
@@ -386,7 +619,7 @@ namespace gui
 					patch->setVisible(false);
 				}
 
-				if(considerString)
+				if (considerString)
 					for (auto& patch : patches)
 					{
 						const auto& patchName = patch->name.getText();
@@ -394,7 +627,7 @@ namespace gui
 							patch->setVisible(true);
 					}
 
-				if(considerTags)
+				if (considerTags)
 					for (auto& patch : patches)
 					{
 						for (const auto& tag : tags)
@@ -538,10 +771,11 @@ namespace gui
 			saveButton(u, "Click here to save this patch."),
 			removeButton(u, "Click here to remove this patch."),
 			searchBar(u, "Define a name or search for a patch.", "Init.."),
-			patchList(u, tags)
+			patchList(u, tags),
+			patchListScrollable(u, patchList)
 		{
 			layout.init(
-				{ 1, 2, 2, 34, 2, 2, 1 },
+				{ 1, 2, 34, 2, 2, 1 },
 				{ 1, 2, 34, 1 }
 			);
 
@@ -580,7 +814,7 @@ namespace gui
 			addAndMakeVisible(saveButton);
 			addAndMakeVisible(removeButton);
 			addAndMakeVisible(searchBar);
-			addAndMakeVisible(patchList);
+			addAndMakeVisible(patchListScrollable);
 
 			setOpaque(true);
 		}
@@ -608,9 +842,7 @@ namespace gui
 			g.setColour(Colour(0x44ffffff));
 			//layout.paint(g);
 
-			layout.label(g, "v", 2, 1, 1, 1, true);
-			//layout.label(g, "tags/filters/categories etc", 1, 2, 3, 2, false);
-			layout.label(g, "s\nc\nr\no\nl\nl", 5, 2, 1, 3, false);
+			//layout.label(g, "s\nc\nr\no\nl\nl", 4, 2, 1, 3, false);
 		}
 
 		void resized() override
@@ -618,17 +850,15 @@ namespace gui
 			layout.resized();
 
 			layout.place(closeButton, 1, 1, 1, 1, true);
-			layout.place(saveButton, 4, 1, 1, 1, true);
-			layout.place(removeButton, 5, 1, 1, 1, true);
+			layout.place(saveButton, 3, 1, 1, 1, true);
+			layout.place(removeButton, 4, 1, 1, 1, true);
 
-			layout.place(searchBar, 3, 1, 2, 1, false);
-			layout.place(patchList, 1, 2, 3, 2, false);
+			layout.place(searchBar, 2, 1, 2, 1, false);
+			layout.place(patchListScrollable, 1, 2, 4, 2, false);
 		}
 
 		void timerCallback() override
 		{
-			// update patch(es') infos if needed..
-			
 			patchList.show(searchBar.getText());
 		}
 
@@ -646,6 +876,7 @@ namespace gui
 		Button saveButton, removeButton;
 		TextEditor searchBar;
 		PatchList patchList;
+		PatchListScrollable patchListScrollable;
 	};
 
 	struct ButtonPatchBrowser :

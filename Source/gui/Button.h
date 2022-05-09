@@ -3,6 +3,7 @@
 
 namespace gui
 {
+
 	struct BlinkyBoy :
 		public Timer
 	{
@@ -80,6 +81,8 @@ namespace gui
 	};
 
 	void makeSymbolButton(Button&, ButtonSymbol, int /*targetToggleState*/ = 1);
+
+	void makeToggleButton(Button&, const String&);
 
 	void makeParameterSwitchButton(Button&, PID, String&& /*text*/);
 
