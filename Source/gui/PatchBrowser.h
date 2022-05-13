@@ -762,11 +762,11 @@ namespace gui
 	};
 
 	struct PatchBrowser :
-		public Comp,
+		public CompScreenshotable,
 		public Timer
 	{
 		PatchBrowser(Utils& u) :
-			Comp(u, "", CursorType::Default),
+			CompScreenshotable(u),
 			Timer(),
 			tags(),
 			closeButton(u, "Click here to close the browser."),
@@ -816,6 +816,20 @@ namespace gui
 			addAndMakeVisible(removeButton);
 			addAndMakeVisible(searchBar);
 			addAndMakeVisible(patchList);
+
+			onScreenshotFX.push_back([](Graphics& g, Image& img)
+				{
+					imgPP::blur(img, g, 7);
+
+					for (auto y = 0; y < img.getHeight(); ++y)
+						for (auto x = 0; x < img.getWidth(); ++x)
+							img.setPixelAt
+							(x, y,
+								img.getPixelAt(x, y)
+								.withMultipliedSaturation(.4f)
+								.withMultipliedBrightness(.4f)
+							);
+				});
 		}
 
 		void setVisible(bool e) override
@@ -823,6 +837,7 @@ namespace gui
 			if (e)
 			{
 				notify(EvtType::BrowserOpened);
+				takeScreenshot();
 				Comp::setVisible(e);
 				searchBar.enable();
 				startTimerHz(12);
@@ -836,8 +851,9 @@ namespace gui
 			}
 		}
 
-		void paint(Graphics&) override
+		void paint(Graphics& g) override
 		{
+			CompScreenshotable::paint(g);
 			//g.fillAll(Colour(0xff000000));
 
 			//g.setColour(Colour(0x44ffffff));
@@ -848,6 +864,8 @@ namespace gui
 
 		void resized() override
 		{
+			CompScreenshotable::resized();
+
 			layout.resized();
 
 			layout.place(closeButton, 1, 1, 1, 1, true);

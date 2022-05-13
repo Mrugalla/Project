@@ -180,4 +180,48 @@ namespace gui
 		ScrollBar scrollBar;
 		float xScrollOffset, yScrollOffset;
 	};
+
+	struct CompScreenshotable :
+		public Comp
+	{
+		using PPFunc = std::function<void(Graphics&, Image&)>;
+
+		CompScreenshotable(Utils& u) :
+			Comp(u, "", CursorType::Default),
+			screenshotImage(Image::RGB, 1, 1, false),
+			onScreenshotFX()
+		{
+			setOpaque(true);
+		}
+
+		void resized() override
+		{
+			screenshotImage = screenshotImage.rescaled(
+				getWidth(),
+				getHeight(),
+				Graphics::lowResamplingQuality
+			);
+			screenshotImage.clear(getLocalBounds(), Colours::c(ColourID::Bg));
+		}
+
+		void paint(Graphics& g) override
+		{
+			g.drawImageAt(screenshotImage, 0, 0, false);
+		}
+		
+		void takeScreenshot()
+		{
+			screenshotImage = utils.pluginTop.createComponentSnapshot(
+				getBounds(),
+				true
+			);
+			Graphics g{ screenshotImage };
+			for (auto& ossfx : onScreenshotFX)
+				ossfx(g, screenshotImage);
+		}
+
+	protected:
+		Image screenshotImage;
+		std::vector<PPFunc> onScreenshotFX;
+	};
 }

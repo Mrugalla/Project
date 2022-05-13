@@ -10,12 +10,10 @@ namespace gui
     {
         LowLevel(Utils& u) :
             Comp(u, "", CursorType::Default),
-            shadr(u, *this),
             crushGain(u, "Crush Gain", PID::CrushGain),
             dummyParam(u, "Dummy Param", PID::AnotherDummyParam)
         {
-            setComponentEffect(&shadr);
-
+            
             layout.init(
                 { 30, 10, 10, 30 },
                 { 30, 10, 10, 30 }
@@ -26,7 +24,6 @@ namespace gui
         }
 
     protected:
-        ShaderLowLevel shadr;
         Knob crushGain, dummyParam;
         
         void paint(Graphics&) override {}

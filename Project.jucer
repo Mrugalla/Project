@@ -65,6 +65,7 @@
         <FILE id="CxGHoH" name="Knob.h" compile="0" resource="0" file="Source/gui/Knob.h"/>
         <FILE id="L8eIEs" name="Label.cpp" compile="1" resource="0" file="Source/gui/Label.cpp"/>
         <FILE id="GzecOv" name="Label.h" compile="0" resource="0" file="Source/gui/Label.h"/>
+        <FILE id="J6YyVX" name="Layout.cpp" compile="1" resource="0" file="Source/gui/Layout.cpp"/>
         <FILE id="Tkv1VE" name="Layout.h" compile="0" resource="0" file="Source/gui/Layout.h"/>
         <FILE id="nafNZh" name="LowLevel.h" compile="0" resource="0" file="Source/gui/LowLevel.h"/>
         <FILE id="BxLTdw" name="Menu.h" compile="0" resource="0" file="Source/gui/Menu.h"/>
@@ -72,6 +73,7 @@
         <FILE id="xF73OU" name="MIDICCMonitor.h" compile="0" resource="0" file="Source/gui/MIDICCMonitor.h"/>
         <FILE id="xFPkHy" name="PatchBrowser.h" compile="0" resource="0" file="Source/gui/PatchBrowser.h"/>
         <FILE id="jVz2jo" name="PopUp.h" compile="0" resource="0" file="Source/gui/PopUp.h"/>
+        <FILE id="vprnlz" name="Shader.cpp" compile="1" resource="0" file="Source/gui/Shader.cpp"/>
         <FILE id="F2ls2a" name="Shader.h" compile="0" resource="0" file="Source/gui/Shader.h"/>
         <FILE id="AX6z30" name="Shared.cpp" compile="1" resource="0" file="Source/gui/Shared.cpp"/>
         <FILE id="nGyzNx" name="Shared.h" compile="0" resource="0" file="Source/gui/Shared.h"/>

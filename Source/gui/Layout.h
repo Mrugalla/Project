@@ -3,252 +3,66 @@
 
 namespace gui
 {
-	inline BoundsF maxQuadIn(const BoundsF& b) noexcept
-	{
-		const auto minDimen = std::min(b.getWidth(), b.getHeight());
-		const auto x = b.getX() + .5f * (b.getWidth() - minDimen);
-		const auto y = b.getY() + .5f * (b.getHeight() - minDimen);
-		return { x, y, minDimen, minDimen };
-	}
+	BoundsF maxQuadIn(const BoundsF&) noexcept;
 
-	inline void repaintWithChildren(Component* comp)
-	{
-		if (comp == nullptr)
-			return;
-		comp->repaint();
-		for (auto c = 0; c < comp->getNumChildComponents(); ++c)
-			repaintWithChildren(comp->getChildComponent(c));
-	}
+	void repaintWithChildren(Component*);
 
-	inline std::unique_ptr<juce::XmlElement> loadXML(const char* data, const int sizeInBytes)
-	{
-		return juce::XmlDocument::parse(String(data, sizeInBytes));
-	}
+	std::unique_ptr<juce::XmlElement> loadXML(const char*, const int);
 
 	class Layout
 	{
-		using Bounds = juce::Rectangle<float>;
-		using BoundsInt = juce::Rectangle<int>;
 	public:
-		Layout(const Component& _comp) :
-			comp(_comp),
-			rXRaw(),
-			rYRaw(),
-			rX(),
-			rY()
-		{
-		}
-		void init(const std::vector<int>& xDist, const std::vector<int>& yDist)
-		{
-			const auto numCols = xDist.size();
-			const auto numRows = yDist.size();
-			rXRaw.reserve(numCols + 2);
-			rYRaw.reserve(numRows + 2);
-			
-			rXRaw.emplace_back(0.f);
-			rYRaw.emplace_back(0.f);
+		Layout(const Component&);
 
-			{ // normalize input values Cols
-				auto sum = 0.f;
-				for (auto i = 0; i < numCols; ++i)
-				{
-					rXRaw.emplace_back(static_cast<float>(xDist[i]));
-					sum += static_cast<float>(xDist[i]);
-				}
-				const auto g = 1.f / sum;
-				for (auto& i : rXRaw)
-					i *= g;
-			}
-			{ // normalize input values Rows
-				auto sum = 0.f;
-				for (auto i = 0; i < numRows; ++i)
-				{
-					rYRaw.emplace_back(static_cast<float>(yDist[i]));
-					sum += static_cast<float>(yDist[i]);
-				}
-				const auto g = 1.f / sum;
-				for (auto& i : rYRaw)
-					i *= g;
-			}
+		void init(const std::vector<int>& /*xDist*/, const std::vector<int>& /*yDist*/);
 
-			rXRaw.emplace_back(0.f);
-			rYRaw.emplace_back(0.f);
+		void fromStrings(const String& /*xDist*/, const String& /*yDist*/);
 
-			for (auto x = 1; x < rXRaw.size(); ++x)
-				rXRaw[x] += rXRaw[x - 1];
-			for (auto y = 1; y < rYRaw.size(); ++y)
-				rYRaw[y] += rYRaw[y - 1];
-
-			rX = rXRaw;
-			rY = rYRaw;
-		}
-		void fromStrings(const String& xStr, const String& yStr)
-		{
-			std::vector<int> xDist, yDist;
-
-			int sIdx = 0;
-			for (auto i = 0; i < xStr.length(); ++i)
-			{
-				if (xStr[i] == ';')
-				{
-					xDist.push_back(xStr.substring(sIdx, i).getIntValue());
-					++i;
-					sIdx = i;
-				}
-			}
-			xDist.push_back(xStr.substring(sIdx).getIntValue());
-			sIdx = 0;
-			for (auto i = 0; i < yStr.length(); ++i)
-			{
-				if (yStr[i] == ';')
-				{
-					yDist.push_back(yStr.substring(sIdx, i).getIntValue());
-					++i;
-					sIdx = i;
-				}
-			}
-			yDist.push_back(yStr.substring(sIdx).getIntValue());
-
-			init(xDist, yDist);
-		}
-
-		void resized() noexcept
-		{
-			const auto bounds = comp.getLocalBounds().toFloat();
-			for (auto x = 0; x < rX.size(); ++x)
-				rX[x] = rXRaw[x] * bounds.getWidth();
-			for (auto y = 0; y < rY.size(); ++y)
-				rY[y] = rYRaw[y] * bounds.getHeight();
-			for (auto& x : rX)
-				x += bounds.getX();
-			for (auto& y : rY)
-				y += bounds.getY();
-		}
+		void resized() noexcept;
 
 		template<typename X, typename Y>
-		PointF operator()(X x, Y y) const noexcept
-		{
-			return { getX(x), getY(y) };
-		}
+		PointF operator()(X, Y) const noexcept;
+
 		template<typename PointType>
-		PointF operator()(PointType pt) const noexcept
-		{
-			return { getX(pt.x), getY(pt.y) };
-		}
-		template<typename X, typename Y>
-		Bounds operator()(X x, Y y, X width, Y height, bool isQuad = false) const noexcept
-		{
-			const auto x0 = getX(x);
-			const auto y0 = getY(y);
+		PointF operator()(PointType) const noexcept;
 
-			Bounds nBounds(x0, y0, getX(x + width) - x0, getY(y + height) - y0);
-			return isQuad ? maxQuadIn(nBounds) : nBounds;
-		}
+		template<typename X, typename Y>
+		BoundsF operator()(X, Y, X, Y, bool /*isQuad*/ = false) const noexcept;
 
 		template<typename PointType0, typename PointType1>
-		LineF getLine(PointType0 p0, PointType1 p1) const noexcept
-		{
-			return { getX(p0.x), getY(p0.y), getX(p1.x), getY(p1.y) };
-		}
+		LineF getLine(PointType0, PointType1) const noexcept;
+
 		template<typename X0, typename Y0, typename X1, typename Y1>
-		LineF getLine(X0 x0, Y0 y0, X1 x1, Y1 y1) const noexcept
-		{
-			return { getX(x0), getY(y0), getX(x1), getY(y1) };
-		}
+		LineF getLine(X0, Y0, X1, Y1) const noexcept;
 
-		Bounds bottom(bool isQuad = false) const noexcept
-		{
-			const auto w = rX.back();
-			const auto y = getY(static_cast<int>(rY.size() - 3));
-			const auto h = getY(static_cast<int>(rY.size() - 2)) - y;
-			Bounds nBounds(0.f, y, w, h);
-			return isQuad ? maxQuadIn(nBounds) : nBounds;
-		}
-		Bounds top(bool isQuad = false) const noexcept
-		{
-			const auto w = rX.back();
-			const auto h = getY(1);
-			Bounds nBounds(0.f, 0.f, w, h);
-			return isQuad ? maxQuadIn(nBounds) : nBounds;
-		}
-		Bounds right(bool isQuad = false) const noexcept
-		{
-			const auto y = 0.f;
-			const auto x = getX(static_cast<int>(rX.size() - 3));
-			const auto w = getX(static_cast<int>(rX.size() - 2)) - x;
-			const auto h = rY.back();
+		BoundsF bottom(bool /*isQuad*/ = false) const noexcept;
 
-			Bounds nBounds(x, y, w, h);
-			return isQuad ? maxQuadIn(nBounds) : nBounds;
-		}
+		BoundsF top(bool /*isQuad*/ = false) const noexcept;
 
-		float getX(int i) const noexcept { return rX[i]; }
-		float getY(int i) const noexcept { return rY[i]; }
-		float getX(float i) const noexcept
-		{
-			const auto f = std::floor(i);
-			const auto iF = static_cast<int>(f);
-			const auto iC = iF + 1;
-			const auto x = i - f;
+		BoundsF right(bool /*isQuad*/ = false) const noexcept;
 
-			const auto xF = getX(iF);
-			const auto xC = getX(iC);
+		float getX(int) const noexcept;
+		float getY(int) const noexcept;
+		float getX(float) const noexcept;
 
-			return xF + x * (xC - xF);
-		}
-		float getY(float i) const noexcept
-		{
-			const auto f = std::floor(i);
-			const auto iF = static_cast<int>(f);
-			const auto iC = iF + 1;
-			const auto y = i - f;
+		float getY(float) const noexcept;
 
-			const auto yF = getY(iF);
-			const auto yC = getY(iC);
-
-			return yF + y * (yC - yF);
-		}
 		template<typename X>
-		float getW(X i) const noexcept
-		{
-			return getX(i + static_cast<X>(1)) - getX(i);
-		}
+		float getW(X) const noexcept;
+
 		template<typename Y>
-		float getH(Y i) const noexcept
-		{
-			return getY(i + static_cast<Y>(1)) - getY(i);
-		}
+		float getH(Y) const noexcept;
 
 		template<typename X, typename Y>
-		void place(Component& childComp, X x, Y y, X width = static_cast<X>(1), Y height = static_cast<Y>(1), bool isQuad = false) const noexcept
-		{
-			const auto cBounds = this->operator()(x, y, width, height);
-			if (!isQuad)
-				childComp.setBounds(cBounds.toNearestInt());
-			else
-				childComp.setBounds(maxQuadIn(cBounds).toNearestInt());
-		}
+		void place(Component&, X, Y y, X = static_cast<X>(1), Y = static_cast<Y>(1), bool /*isQuad*/ = false) const noexcept;
+
 		template<typename X, typename Y>
-		void place(Component* childComp, X x, Y y, X width = static_cast<X>(1), Y height = static_cast<Y>(1), bool isQuad = false) const noexcept
-		{
-			if (childComp == nullptr) return;
-			place(*childComp, x, y, width, height, isQuad);
-		}
+		void place(Component*, X, Y, X = static_cast<X>(1), Y  = static_cast<Y>(1), bool /*isQuad*/ = false) const noexcept;
 		
-		void paint(Graphics& g)
-		{
-			for (auto x = 0; x < rX.size(); ++x)
-				g.drawVerticalLine(static_cast<int>(rX[x]), rY[0], static_cast<float>(comp.getBottom()));
-			for (auto y = 0; y < rY.size(); ++y)
-				g.drawHorizontalLine(static_cast<int>(rY[y]), rX[0], static_cast<float>(comp.getRight()));
-		}
+		void paint(Graphics&);
+
 		template<typename X, typename Y>
-		void label(Graphics& g, String&& txt, X x, Y y, X width = static_cast<X>(1), Y height = static_cast<Y>(1), bool isQuad = false)
-		{
-			const auto bounds = operator()(x, y, width, height, isQuad);
-			g.drawRect(bounds);
-			g.drawFittedText(txt, bounds.toNearestInt(), Just::centred, 1);
-		}
+		void label(Graphics&, String&&, X, Y, X = static_cast<X>(1), Y = static_cast<Y>(1), bool /*isQuad*/ = false);
 
 	protected:
 		const Component& comp;
@@ -256,112 +70,29 @@ namespace gui
 		std::vector<float> rYRaw, rY;
 	};
 
-	inline void make(Path& path, const Layout& layout, std::vector<Point>&& points)
-	{
-		path.startNewSubPath(layout(points[0]));
-		for (auto i = 1; i < points.size(); ++i)
-			path.lineTo(layout(points[i]));
-	}
+	void make(Path&, const Layout&, std::vector<Point>&&);
 
-	inline void drawHorizontalLine(Graphics& g, int y, float left, float right, int thicc = 1)
-	{
-		g.drawHorizontalLine(y, left, right);
-		for (auto t = 1; t < thicc; ++t)
-		{
-			g.drawHorizontalLine(y + t, left, right);
-			g.drawHorizontalLine(y - t, left, right);
-		}
-	}
+	void drawHorizontalLine(Graphics&, int /*y*/, float /*left*/, float /*right*/, int /*thicc*/ = 1);
 	
-	inline void drawVerticalLine(Graphics& g, int x, float top, float bottom, int thicc = 1)
-	{
-		g.drawVerticalLine(x, top, bottom);
-		for (auto t = 1; t < thicc; ++t)
-		{
-			g.drawVerticalLine(x + t, top, bottom);
-			g.drawVerticalLine(x - t, top, bottom);
-		}
-	}
+	void drawVerticalLine(Graphics&, int /*x*/, float /*top*/, float /*bottom*/, int /*thicc*/ = 1);
 
-	inline void drawRectEdges(Graphics& g, const BoundsF& bounds,
-		float edgeWidth, float edgeHeight, juce::PathStrokeType st)
-	{
-		const auto x = bounds.getX();
-		const auto y = bounds.getY();
-		const auto right = bounds.getRight();
-		const auto bottom = bounds.getBottom();
+	void drawRectEdges(Graphics&, const BoundsF&,
+		float /*edgeWidth*/, float /*edgeHeight*/, Stroke);
 
-		const auto xPlusEdge = x + edgeWidth;
-		const auto yPlusEdge = y + edgeHeight;
-		const auto rightMinusEdge = right - edgeWidth;
-		const auto bottomMinusEdge = bottom - edgeHeight;
+	void drawRectEdges(Graphics&, const BoundsF&,
+		float /*edgeWidth*/, Stroke);
 
-		Path path;
-		path.startNewSubPath(x, yPlusEdge);
-		path.lineTo(x, y);
-		path.lineTo(xPlusEdge, y);
-
-		path.startNewSubPath(x, bottomMinusEdge);
-		path.lineTo(x, bottom);
-		path.lineTo(xPlusEdge, bottom);
-
-		path.startNewSubPath(rightMinusEdge, bottom);
-		path.lineTo(right, bottom);
-		path.lineTo(right, bottomMinusEdge);
-
-		path.startNewSubPath(right, yPlusEdge);
-		path.lineTo(right, y);
-		path.lineTo(rightMinusEdge, y);
-
-		g.strokePath(path, st);
-	}
-
-	inline void drawRectEdges(Graphics& g, const BoundsF& bounds,
-		float edgeWidth, juce::PathStrokeType st)
-	{
-		drawRectEdges(g, bounds, edgeWidth, edgeWidth, st);
-	}
-
-	inline void drawHeadLine(Graphics& g, const BoundsF& bounds, const String& txt)
-	{
-		g.drawFittedText(txt, bounds.toNearestInt(), Just::centredTop, 1);
-	}
+	void drawHeadLine(Graphics&, const BoundsF&, const String&);
 
 	template<class ArrayCompPtr>
-	inline void distributeVertically(const Component& parent, ArrayCompPtr& compArray)
-	{
-		const auto w = static_cast<float>(parent.getWidth());
-		const auto h = static_cast<float>(parent.getHeight());
-		const auto x = 0.f;
-
-		auto y = 0.f;
-
-		const auto cH = h / static_cast<float>(compArray.size());
-
-		for (auto& cmp : compArray)
-		{
-			cmp->setBounds(BoundsF(x, y, w, cH).toNearestInt());
-			y += cH;
-		}
-	}
+	void distributeVertically(const Component&, ArrayCompPtr&);
 
 	template<class SizeType>
-	inline void distributeVertically(const Component& parent, Component* compArray, SizeType size)
+	void distributeVertically(const Component&, Component*, SizeType);
+
+	namespace imgPP
 	{
-		const auto w = static_cast<float>(parent.getWidth());
-		const auto h = static_cast<float>(parent.getHeight());
-		const auto x = 0.f;
-
-		auto y = 0.f;
-
-		const auto cH = h / static_cast<float>(size);
-
-		for (auto i = 0; i < size; ++i)
-		{
-			auto& cmp = compArray[i];
-			cmp.setBounds(BoundsF(x, y, w, cH).toNearestInt());
-			y += cH;
-		}
+		void blur(Image&, Graphics&, int /*its*/ = 3) noexcept;
 	}
 }
 
