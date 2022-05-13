@@ -137,7 +137,7 @@ gui::BoundsF gui::Layout::operator()(X x, Y y, X width, Y height, bool isQuad) c
 	const auto x0 = getX(x);
 	const auto y0 = getY(y);
 
-	Bounds nBounds(x0, y0, getX(x + width) - x0, getY(y + height) - y0);
+	BoundsF nBounds(x0, y0, getX(x + width) - x0, getY(y + height) - y0);
 	return isQuad ? maxQuadIn(nBounds) : nBounds;
 }
 
@@ -249,7 +249,7 @@ void gui::Layout::paint(Graphics& g)
 }
 
 template<typename X, typename Y>
-void gui::Layout::label(Graphics& g, String&& txt, X x, Y y, X width, Y height, bool isQuad)
+void gui::Layout::label(Graphics& g, String&& txt, X x, Y y, X width, Y height, bool isQuad) const
 {
 	const auto bounds = operator()(x, y, width, height, isQuad);
 	g.drawRect(bounds);
@@ -402,3 +402,57 @@ void gui::imgPP::blur(Image& img, Graphics& g, int its) noexcept
 
 	g.drawImageAt(img, 0, 0, false);
 }
+
+
+template void gui::Layout::label<int, int>(Graphics&, String&&, int, int, int, int, bool) const;
+template void gui::Layout::label<float, int>(Graphics&, String&&, float, int, float, int, bool) const;
+template void gui::Layout::label<int, float>(Graphics&, String&&, int, float, int, float, bool) const;
+template void gui::Layout::label<float, float>(Graphics&, String&&, float, float, float, float, bool) const;
+
+template gui::PointF gui::Layout::operator()<int, int>(int, int) const;
+template gui::PointF gui::Layout::operator()<float, int>(float, int) const;
+template gui::PointF gui::Layout::operator()<int, float>(int, float) const;
+template gui::PointF gui::Layout::operator()<float, float>(float, float) const;
+
+template gui::PointF gui::Layout::operator()<gui::Point>(Point) const;
+template gui::PointF gui::Layout::operator()<gui::PointF>(PointF) const;
+
+template gui::LineF gui::Layout::getLine<gui::Point, gui::Point> (Point, Point) const;
+template gui::LineF gui::Layout::getLine<gui::PointF, gui::Point> (PointF, Point) const;
+template gui::LineF gui::Layout::getLine<gui::Point, gui::PointF> (Point, PointF) const;
+template gui::LineF gui::Layout::getLine<gui::PointF, gui::PointF> (PointF, PointF) const;
+
+template gui::LineF gui::Layout::getLine<int, int>(int, int, int, int) const;
+template gui::LineF gui::Layout::getLine<int, float>(int, float, int, float) const;
+template gui::LineF gui::Layout::getLine<float, int>(float, int, float, int) const;
+template gui::LineF gui::Layout::getLine<float, float>(float, float, float, float) const;
+
+template gui::BoundsF gui::Layout::operator()<int, int>(int, int, int, int, bool) const;
+template gui::BoundsF gui::Layout::operator()<float, int>(float, int, float, int, bool) const;
+template gui::BoundsF gui::Layout::operator()<int, float>(int, float, int, float, bool) const;
+template gui::BoundsF gui::Layout::operator()<float, float>(float, float, float, float, bool) const;
+
+template void gui::Layout::place<int, int>(Component&, int, int, int, int, bool) const;
+template void gui::Layout::place<float, int>(Component&, float, int, float, int, bool) const;
+template void gui::Layout::place<int, float>(Component&, int, float, int, float, bool) const;
+template void gui::Layout::place<float, float>(Component&, float, float, float, float, bool) const;
+template void gui::Layout::place<int, int>(Component*, int, int, int, int, bool) const;
+template void gui::Layout::place<float, int>(Component*, float, int, float, int, bool) const;
+template void gui::Layout::place<int, float>(Component*, int, float, int, float, bool) const;
+template void gui::Layout::place<float, float>(Component*, float, float, float, float, bool) const;
+
+
+/*
+#define TEMPLATE(type1, type2) \
+template void gui::Layout::place<type1, type2>(Component&, type1, type2, type1, type2, bool);
+template void gui::Layout::label<type1, type2>(Graphics&, String&&, type1, type2, type1, type2, bool) const;
+template gui::BoundsF gui::Layout::operator() < int, int > (int, int, int, int, bool) const;
+template gui::PointF gui::Layout::operator() < int, int > (int, int) const;
+
+TEMPLATE(int, int)
+TEMPLATE(float, int)
+TEMPLATE(int, float)
+TEMPLATE(float, float)
+
+#undef TEMPLATE
+*/

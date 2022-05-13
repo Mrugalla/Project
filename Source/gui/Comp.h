@@ -141,19 +141,23 @@ namespace gui
 				Comp::mouseEnter(mouse);
 				repaint();
 			}
+
 			void mouseDown(const Mouse& mouse) override
 			{
 				updateHandlePos(mouse.position.y);
 			}
+
 			void mouseDrag(const Mouse& mouse) override
 			{
 				updateHandlePos(mouse.position.y);
 				repaint();
 			}
+
 			void mouseUp(const Mouse&) override
 			{
 				repaint();
 			}
+
 			void mouseExit(const Mouse&) override
 			{
 				repaint();

@@ -62,7 +62,7 @@ namespace gui
 		void paint(Graphics&);
 
 		template<typename X, typename Y>
-		void label(Graphics&, String&&, X, Y, X = static_cast<X>(1), Y = static_cast<Y>(1), bool /*isQuad*/ = false);
+		void label(Graphics&, String&&, X, Y, X = static_cast<X>(1), Y = static_cast<Y>(1), bool /*isQuad*/ = false) const;
 
 	protected:
 		const Component& comp;
