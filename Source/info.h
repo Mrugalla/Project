@@ -25,12 +25,16 @@ HOW TO USE:
 
 TO DO:
 
+Shader
+	blur on browser open only for low level component pls
+	less expensive blur algorithm
+
 Code Cleanup
 	make cpp files to help intellisense
-		currently in the middle of that, so gui is non-existent.
-		some problem in MIDILearn with param::toPID()
 
 PatchBrowser
+	don't load all existing patches into memory, but only the visible one(e)
+		or unique_ptr for heap
 	search bar
 		make case insensitive
 	sortable bar

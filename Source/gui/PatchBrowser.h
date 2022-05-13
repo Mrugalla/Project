@@ -102,24 +102,25 @@ namespace gui
 	using Patches = Patch::Patches;
 
 	struct PatchList :
-		public Comp
+		public CompScrollable
 	{
 		static constexpr float RelHeight = 10.f;
 
 		PatchList(Utils& u, Tags& _tags) :
-			Comp(u, "", CursorType::Default),
+			CompScrollable(u),
 			patches(),
 			filterString(""),
 			tags(_tags),
-			selected(nullptr)
+			selected(nullptr),
+			listBounds()
 		{
 			layout.init(
-				{ 1, 8, 8, 1 },
+				{ 21, 1 },
 				{ 1 }
 			);
 
 			Random rand;
-			for (auto i = 0; i < 100; ++i)
+			for (auto i = 0; i < 1000; ++i)
 			{
 				String strA, strB;
 				appendRandomString(strA, rand, 12);
@@ -219,13 +220,23 @@ namespace gui
 		String filterString;
 		Tags& tags;
 		SharedPatch selected;
+		BoundsF listBounds;
+		float maxHeight;
 
 		void resized() override
 		{
-			auto y = static_cast<float>(getY());
-			const auto x = 0.f;
-			auto w = static_cast<float>(getWidth());
-			auto h = utils.thicc() * RelHeight;
+			layout.resized();
+
+			layout.place(scrollBar, 1, 0, 1, 1);
+
+			listBounds = layout(0, 0, 1, 1);
+
+			const auto x = listBounds.getX();
+			const auto w = listBounds.getWidth();
+			const auto h = utils.thicc() * RelHeight;
+			maxHeight = h * static_cast<float>(patches.size()) - listBounds.getHeight();
+
+			auto y = listBounds.getY() - yScrollOffset * maxHeight;
 
 			for (auto p = 0; p < patches.size(); ++p)
 			{
@@ -237,10 +248,6 @@ namespace gui
 					y += h;
 				}
 			}
-
-			const auto nHeight = static_cast<int>(h);
-			if (nHeight > getHeight())
-				setSize(getWidth(), nHeight);
 		}
 
 		void paint(Graphics& g) override
@@ -263,20 +270,23 @@ namespace gui
 
 		void paintList(Graphics& g)
 		{
-			auto x = 0.f;
-			auto y = static_cast<float>(getY());
-			auto w = static_cast<float>(getWidth());
+			auto x = listBounds.getX();
+			auto y = listBounds.getY() - yScrollOffset * maxHeight;
+			auto w = listBounds.getWidth();
+			auto btm = listBounds.getBottom();
 			auto r = utils.thicc() * RelHeight;
 
 			g.setColour(Colours::c(ColourID::Txt).withAlpha(.1f));
 			for (auto i = 0; i < patches.size(); ++i)
 			{
+				if (y >= btm)
+					return;
 				if (i % 2 == 0)
 					g.fillRect(x, y, w, r);
 
 				const auto ptch = patches[i];
 
-				if (ptch->isVisible())
+				if (ptch->isVisible() && y >= 0.f)
 				{
 					if (selected == ptch)
 					{
@@ -284,8 +294,8 @@ namespace gui
 						g.drawRect(x, y, w, r);
 						g.setColour(Colours::c(ColourID::Txt).withAlpha(.1f));
 					}
-					y += r;
 				}
+				y += r;
 			}
 		}
 
@@ -326,14 +336,6 @@ namespace gui
 			resized();
 			repaintWithChildren(getParentComponent());
 		}
-	};
-
-	struct PatchListScrollable :
-		public CompScrollable
-	{
-		PatchListScrollable(Utils& u, Comp& _comp) :
-			CompScrollable(u, _comp)
-		{}
 	};
 
 	struct PatchList2 :
@@ -771,8 +773,7 @@ namespace gui
 			saveButton(u, "Click here to save this patch."),
 			removeButton(u, "Click here to remove this patch."),
 			searchBar(u, "Define a name or search for a patch.", "Init.."),
-			patchList(u, tags),
-			patchListScrollable(u, patchList)
+			patchList(u, tags)
 		{
 			layout.init(
 				{ 1, 2, 34, 2, 2, 1 },
@@ -814,32 +815,32 @@ namespace gui
 			addAndMakeVisible(saveButton);
 			addAndMakeVisible(removeButton);
 			addAndMakeVisible(searchBar);
-			addAndMakeVisible(patchListScrollable);
-
-			setOpaque(true);
+			addAndMakeVisible(patchList);
 		}
 
 		void setVisible(bool e) override
 		{
 			if (e)
 			{
+				notify(EvtType::BrowserOpened);
 				Comp::setVisible(e);
 				searchBar.enable();
 				startTimerHz(12);
 			}
 			else
 			{
+				notify(EvtType::BrowserClosed);
 				stopTimer();
 				searchBar.disable();
 				Comp::setVisible(e);
 			}
 		}
 
-		void paint(Graphics& g) override
+		void paint(Graphics&) override
 		{
-			g.fillAll(Colour(0xff000000));
+			//g.fillAll(Colour(0xff000000));
 
-			g.setColour(Colour(0x44ffffff));
+			//g.setColour(Colour(0x44ffffff));
 			//layout.paint(g);
 
 			//layout.label(g, "s\nc\nr\no\nl\nl", 4, 2, 1, 3, false);
@@ -854,7 +855,7 @@ namespace gui
 			layout.place(removeButton, 4, 1, 1, 1, true);
 
 			layout.place(searchBar, 2, 1, 2, 1, false);
-			layout.place(patchListScrollable, 1, 2, 4, 2, false);
+			layout.place(patchList, 1, 2, 4, 2, false);
 		}
 
 		void timerCallback() override
@@ -876,7 +877,6 @@ namespace gui
 		Button saveButton, removeButton;
 		TextEditor searchBar;
 		PatchList patchList;
-		PatchListScrollable patchListScrollable;
 	};
 
 	struct ButtonPatchBrowser :

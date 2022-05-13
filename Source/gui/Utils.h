@@ -56,14 +56,6 @@ namespace gui
 
 	class Utils
 	{
-		Notify makeNotify(Utils* u)
-		{
-			return [u](const EvtType, const void*)
-			{
-				
-			};
-		}
-
 		static constexpr float DragSpeed = .5f;
 	public:
 		Utils(Component& _pluginTop, Processor& _audioProcessor) :
@@ -71,7 +63,7 @@ namespace gui
 			audioProcessor(_audioProcessor),
 			params(audioProcessor.params),
 			eventSystem(),
-			evt(eventSystem, makeNotify(this))
+			evt(eventSystem)
 		{
 			Colours::c.init(audioProcessor.props.getUserSettings());
 		}

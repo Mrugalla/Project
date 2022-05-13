@@ -32,8 +32,7 @@ namespace gui
     using MouseWheel = juce::MouseWheelDetails;
 
     struct Editor :
-        public juce::AudioProcessorEditor,
-        public Timer
+        public juce::AudioProcessorEditor
     {
         static constexpr int MinWidth = 100, MinHeight = 100;
 
@@ -55,10 +54,9 @@ namespace gui
             editorKnobs(utils),
 
             bypassed(false),
-            shadr(bypassed)
+            shadr(utils, *this)
             
         {
-            
             setComponentEffect(&shadr);
 
             setMouseCursor(makeCursor(CursorType::Default));
@@ -79,8 +77,6 @@ namespace gui
             addAndMakeVisible(popUpButtons);
 
             addChildComponent(editorKnobs);
-
-            startTimerHz(12);
             
             setOpaque(true);
             setResizable(true, true);
@@ -176,17 +172,6 @@ namespace gui
             user->setValue("gui/width", w);
             user->setValue("gui/height", h);
         }
-
-        void timerCallback() override
-        {
-            auto b = utils.getParam(PID::Power)->getValue() < .5f;
-            if (bypassed != b)
-            {
-                bypassed = b;
-                repaintWithChildren(this);
-            }
-        }
-        
     };
 }
 

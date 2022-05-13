@@ -16,6 +16,8 @@ namespace evt
         PatchUpdated,
         ComponentAdded,
         EnterParametrValue,
+        BrowserOpened,
+        BrowserClosed,
         NumTypes
     };
 
