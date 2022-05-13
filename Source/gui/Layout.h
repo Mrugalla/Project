@@ -85,10 +85,41 @@ namespace gui
 	void drawHeadLine(Graphics&, const BoundsF&, const String&);
 
 	template<class ArrayCompPtr>
-	void distributeVertically(const Component&, ArrayCompPtr&);
+	inline void distributeVertically(const Component& parent, ArrayCompPtr& compArray)
+	{
+		const auto w = static_cast<float>(parent.getWidth());
+		const auto h = static_cast<float>(parent.getHeight());
+		const auto x = 0.f;
+
+		auto y = 0.f;
+
+		const auto cH = h / static_cast<float>(compArray.size());
+
+		for (auto& cmp : compArray)
+		{
+			cmp->setBounds(BoundsF(x, y, w, cH).toNearestInt());
+			y += cH;
+		}
+	}
 
 	template<class SizeType>
-	void distributeVertically(const Component&, Component*, SizeType);
+	inline void distributeVertically(const Component& parent, Component* compArray, SizeType size)
+	{
+		const auto w = static_cast<float>(parent.getWidth());
+		const auto h = static_cast<float>(parent.getHeight());
+		const auto x = 0.f;
+
+		auto y = 0.f;
+
+		const auto cH = h / static_cast<float>(size);
+
+		for (auto i = 0; i < size; ++i)
+		{
+			auto& cmp = compArray[i];
+			cmp.setBounds(BoundsF(x, y, w, cH).toNearestInt());
+			y += cH;
+		}
+	}
 
 	namespace imgPP
 	{
