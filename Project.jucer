@@ -91,6 +91,8 @@
         <FILE id="vVTypK" name="MIDILearn.cpp" compile="1" resource="0" file="Source/audio/MIDILearn.cpp"/>
         <FILE id="WFKvT5" name="MIDILearn.h" compile="0" resource="0" file="Source/audio/MIDILearn.h"/>
         <FILE id="K88rdo" name="MidSide.h" compile="0" resource="0" file="Source/audio/MidSide.h"/>
+        <FILE id="RFsXKN" name="NullNoiseSynth.h" compile="0" resource="0"
+              file="Source/audio/NullNoiseSynth.h"/>
         <FILE id="KE2g4j" name="Oversampling.h" compile="0" resource="0" file="Source/audio/Oversampling.h"/>
         <FILE id="Td7oEO" name="ProcessSuspend.h" compile="0" resource="0"
               file="Source/audio/ProcessSuspend.h"/>

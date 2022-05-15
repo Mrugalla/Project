@@ -369,10 +369,10 @@ namespace gui
 	}
 
 
-	template void Layout::label<int, int>(Graphics&, String&&, int, int, int, int, bool) const noexcept;
-	template void Layout::label<float, int>(Graphics&, String&&, float, int, float, int, bool) const noexcept;
-	template void Layout::label<int, float>(Graphics&, String&&, int, float, int, float, bool) const noexcept;
-	template void Layout::label<float, float>(Graphics&, String&&, float, float, float, float, bool) const noexcept;
+	template void Layout::label<int, int>(Graphics&, String&&, int, int, int, int, bool) const;
+	template void Layout::label<float, int>(Graphics&, String&&, float, int, float, int, bool) const;
+	template void Layout::label<int, float>(Graphics&, String&&, int, float, int, float, bool) const;
+	template void Layout::label<float, float>(Graphics&, String&&, float, float, float, float, bool) const;
 
 	template PointF Layout::operator()<int, int>(int, int) const noexcept;
 	template PointF Layout::operator()<float, int>(float, int) const noexcept;

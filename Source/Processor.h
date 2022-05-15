@@ -29,6 +29,7 @@ namespace audio
 #include "audio/Meter.h"
 #include "audio/Rectifier.h"
 #include "audio/Bitcrusher.h"
+#include "audio/NullNoiseSynth.h"
 
 #include "config.h"
 
@@ -118,6 +119,8 @@ private:
         void loadPatch();
 
         juce::AudioProcessorEditor* createEditor() override;
+
+        NullNoiseSynth nullNoiseSynth;
     };
 }
 
