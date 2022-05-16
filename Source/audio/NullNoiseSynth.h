@@ -26,50 +26,37 @@ namespace audio
 
 			auto& stream = *inputStream.get();
 
-			validPos.reserve(stream.getTotalLength() / sizeof(float));
-
+			validPos.reserve(1024);
+			
 			while (!stream.isExhausted())
 			{
-				auto smpl = stream.readFloatBigEndian();
+				const auto pos = stream.getPosition();
+				const auto smpl = stream.readFloatBigEndian();
 				if (!std::isnan(smpl) && !std::isinf(smpl))
 				{
-					validPos.emplace_back(stream.getPosition() - sizeof(float));
-					++writeHead;
+					if(smpl > -1.f && smpl < 1.f)
+					{
+						const auto absSmpl = std::abs(smpl);
+						if (absSmpl > .000001f)
+						{
+							validPos.push_back(pos);
+						}
+					}
 				}
 			}
-
-			validPos.resize(writeHead);
-			writeHead = 0;
 
 			for (auto n = 0; n < noise.capacity(); ++n)
 			{
 				stream.setPosition(validPos[writeHead]);
 
 				auto smpl = stream.readFloatBigEndian();
-				smpl = std::fmod(smpl, 2.f) - 1.f;
-
+				
 				noise.emplace_back(smpl);
 
 				++writeHead;
 				if (writeHead == validPos.size())
 					writeHead = 0;
 			}
-
-			/*
-			for(auto n = 0; n < noise.capacity(); ++n)
-			{
-				if (stream.isExhausted())
-					stream.setPosition(stream.getTotalLength() - stream.getPosition());
-
-				auto smpl = stream.readFloatBigEndian();
-				if (std::isnan(smpl) || std::isinf(smpl))
-					smpl = 0.f;
-				else
-					smpl = std::fmod(smpl, 2.f) - 1.f;
-
-				noise.emplace_back(smpl);
-			}
-			*/
 
 			startTimer(static_cast<int>(1000.f / 25.f));
 		}
@@ -118,30 +105,13 @@ namespace audio
 				stream.setPosition(validPos[writeHead]);
 
 				auto smpl = stream.readFloatBigEndian();
-				smpl = std::fmod(smpl, 2.f) - 1.f;
-
+				
 				noise[n] = smpl;
 
 				++writeHead;
 				if (writeHead == validPos.size())
 					writeHead = 0;
 			}
-
-			/*
-			for (auto n = 0; n < noise.size(); ++n)
-			{
-				if (stream.isExhausted())
-					stream.setPosition(stream.getTotalLength() - stream.getPosition());
-
-				auto smpl = noise[n] * stream.readFloatBigEndian();
-				if (std::isnan(smpl) || std::isinf(smpl))
-					smpl = 0.f;
-				else
-					smpl = std::fmod(smpl, 2.f) - 1.f;
-
-				noise[n] = smpl;
-			}
-			*/
 		}
 	};
 }
@@ -149,4 +119,6 @@ namespace audio
 /*
 this synth makes crappy noise from data that is used in a wrong way.
 it's a fun side project. contributions are welcome
+
+todo: save and load buffer indexes after first opened plugin
 */
