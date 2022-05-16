@@ -10,23 +10,53 @@ namespace audio
 	struct NullNoiseSynth :
 		public juce::HighResolutionTimer
 	{
-		//using Host = juce::PluginHostType;
 		using File = juce::File;
 		using UniqueStream = std::unique_ptr<juce::FileInputStream>;
 		using SpecLoc = File::SpecialLocationType;
 
 		NullNoiseSynth() :
 			HighResolutionTimer(),
-			//inputStream(File(Host::getHostPath()).createInputStream()),
 			inputStream(File::getSpecialLocation(SpecLoc::currentApplicationFile).createInputStream()),
+			validPos(),
 			noise(),
+			writeHead(0),
 			readHead(0)
 		{
-			noise.reserve(2205);
+			noise.reserve(441);
 
 			auto& stream = *inputStream.get();
 
+			validPos.reserve(stream.getTotalLength() / sizeof(float));
+
+			while (!stream.isExhausted())
+			{
+				auto smpl = stream.readFloatBigEndian();
+				if (!std::isnan(smpl) && !std::isinf(smpl))
+				{
+					validPos.emplace_back(stream.getPosition() - sizeof(float));
+					++writeHead;
+				}
+			}
+
+			validPos.resize(writeHead);
+			writeHead = 0;
+
 			for (auto n = 0; n < noise.capacity(); ++n)
+			{
+				stream.setPosition(validPos[writeHead]);
+
+				auto smpl = stream.readFloatBigEndian();
+				smpl = std::fmod(smpl, 2.f) - 1.f;
+
+				noise.emplace_back(smpl);
+
+				++writeHead;
+				if (writeHead == validPos.size())
+					writeHead = 0;
+			}
+
+			/*
+			for(auto n = 0; n < noise.capacity(); ++n)
 			{
 				if (stream.isExhausted())
 					stream.setPosition(stream.getTotalLength() - stream.getPosition());
@@ -39,6 +69,7 @@ namespace audio
 
 				noise.emplace_back(smpl);
 			}
+			*/
 
 			startTimer(static_cast<int>(1000.f / 25.f));
 		}
@@ -65,19 +96,38 @@ namespace audio
 			for (auto s = 0; s < numSamples; ++s)
 			{
 				smpls[s] = noise[readHead];
-				readHead = (readHead + 1) % noise.size();
+
+				++readHead;
+				if (readHead == noise.size())
+					readHead = 0;
 			}
 		}
 
 	protected:
 		UniqueStream inputStream;
+		std::vector<int> validPos;
 		std::vector<float> noise;
-		int readHead;
+		int writeHead, readHead;
 
 		void hiResTimerCallback() override
 		{
 			auto& stream = *inputStream.get();
 
+			for (auto n = 0; n < noise.size(); ++n)
+			{
+				stream.setPosition(validPos[writeHead]);
+
+				auto smpl = stream.readFloatBigEndian();
+				smpl = std::fmod(smpl, 2.f) - 1.f;
+
+				noise[n] = smpl;
+
+				++writeHead;
+				if (writeHead == validPos.size())
+					writeHead = 0;
+			}
+
+			/*
 			for (auto n = 0; n < noise.size(); ++n)
 			{
 				if (stream.isExhausted())
@@ -91,6 +141,7 @@ namespace audio
 
 				noise[n] = smpl;
 			}
+			*/
 		}
 	};
 }
