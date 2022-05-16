@@ -8,21 +8,44 @@
 namespace audio
 {
 	struct NullNoiseSynth :
-		public juce::Timer
+		public juce::HighResolutionTimer
 	{
-		using Host = juce::PluginHostType;
+		//using Host = juce::PluginHostType;
 		using File = juce::File;
 		using UniqueStream = std::unique_ptr<juce::FileInputStream>;
+		using SpecLoc = File::SpecialLocationType;
 
 		NullNoiseSynth() :
-			Timer(),
-			inputStream(File(Host::getHostPath()).createInputStream()),
+			HighResolutionTimer(),
+			//inputStream(File(Host::getHostPath()).createInputStream()),
+			inputStream(File::getSpecialLocation(SpecLoc::currentApplicationFile).createInputStream()),
 			noise(),
 			readHead(0)
 		{
-			noise.resize(2205, 0.f);
+			noise.reserve(2205);
 
-			startTimerHz(24);
+			auto& stream = *inputStream.get();
+
+			for (auto n = 0; n < noise.capacity(); ++n)
+			{
+				if (stream.isExhausted())
+					stream.setPosition(stream.getTotalLength() - stream.getPosition());
+
+				auto smpl = stream.readFloatBigEndian();
+				if (std::isnan(smpl) || std::isinf(smpl))
+					smpl = 0.f;
+				else
+					smpl = std::fmod(smpl, 2.f) - 1.f;
+
+				noise.emplace_back(smpl);
+			}
+
+			startTimer(static_cast<int>(1000.f / 25.f));
+		}
+
+		~NullNoiseSynth()
+		{
+			stopTimer();
 		}
 
 		void operator()(float** samples, int numChannels, int numSamples) noexcept
@@ -31,19 +54,27 @@ namespace audio
 			{
 				auto smpls = samples[ch];
 				
-				for (auto s = 0; s < numSamples; ++s)
-				{
-					smpls[s] = noise[readHead];
-					readHead = (readHead + 1) % noise.size();
-				}
+				operator()(smpls, numSamples);
 			}
 		}
 
+		void operator()(float* samples, int numSamples) noexcept
+		{
+			auto smpls = samples;
+
+			for (auto s = 0; s < numSamples; ++s)
+			{
+				smpls[s] = noise[readHead];
+				readHead = (readHead + 1) % noise.size();
+			}
+		}
+
+	protected:
 		UniqueStream inputStream;
 		std::vector<float> noise;
 		int readHead;
 
-		void timerCallback() override
+		void hiResTimerCallback() override
 		{
 			auto& stream = *inputStream.get();
 
@@ -52,7 +83,7 @@ namespace audio
 				if (stream.isExhausted())
 					stream.setPosition(stream.getTotalLength() - stream.getPosition());
 
-				auto smpl = stream.readFloatBigEndian();
+				auto smpl = noise[n] * stream.readFloatBigEndian();
 				if (std::isnan(smpl) || std::isinf(smpl))
 					smpl = 0.f;
 				else
