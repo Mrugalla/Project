@@ -1,5 +1,4 @@
 #pragma once
-#include "PopUp.h"
 #include "GUIParams.h"
 
 #include "../config.h"

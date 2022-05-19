@@ -48,6 +48,8 @@
         <FILE id="Uad8Jv" name="State.h" compile="0" resource="0" file="Source/arch/State.h"/>
       </GROUP>
       <GROUP id="{DA435779-5001-4379-F809-3E7C21D55DC0}" name="gui">
+        <FILE id="r0E4Jm" name="Utils.cpp" compile="1" resource="0" file="Source/gui/Utils.cpp"/>
+        <FILE id="j9keEG" name="Tooltip.cpp" compile="1" resource="0" file="Source/gui/Tooltip.cpp"/>
         <FILE id="yFkICM" name="Button.cpp" compile="1" resource="0" file="Source/gui/Button.cpp"/>
         <FILE id="zTbLRz" name="Button.h" compile="0" resource="0" file="Source/gui/Button.h"/>
         <FILE id="nCFkt7" name="ButtonParameterRandomizer.cpp" compile="1"
@@ -72,7 +74,8 @@
         <FILE id="vdDLoX" name="menu.xml" compile="0" resource="1" file="Source/gui/menu.xml"/>
         <FILE id="xF73OU" name="MIDICCMonitor.h" compile="0" resource="0" file="Source/gui/MIDICCMonitor.h"/>
         <FILE id="xFPkHy" name="PatchBrowser.h" compile="0" resource="0" file="Source/gui/PatchBrowser.h"/>
-        <FILE id="jVz2jo" name="PopUp.h" compile="0" resource="0" file="Source/gui/PopUp.h"/>
+        <FILE id="jVz2jo" name="ContextMenu.h" compile="0" resource="0" file="Source/gui/ContextMenu.h"/>
+        <FILE id="GEITEP" name="ContextMenu.cpp" compile="1" resource="0" file="Source/gui/ContextMenu.cpp"/>
         <FILE id="vprnlz" name="Shader.cpp" compile="1" resource="0" file="Source/gui/Shader.cpp"/>
         <FILE id="F2ls2a" name="Shader.h" compile="0" resource="0" file="Source/gui/Shader.h"/>
         <FILE id="AX6z30" name="Shared.cpp" compile="1" resource="0" file="Source/gui/Shared.cpp"/>

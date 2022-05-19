@@ -79,15 +79,20 @@ namespace gui
 		struct ScrollBar :
 			public Comp
 		{
+			static constexpr float SensitiveDrag = .2f;
+			static constexpr float WheelDefaultSpeed = .1f;
+			static constexpr float WheelInertia = .9f;
+
 			ScrollBar(Utils& u, CompScrollable& _scrollable) :
 				Comp(u, "Drag / Mousewheel to scroll."),
-				scrollable(_scrollable),
-				handleSize(1.f)
+				scrollable(_scrollable)
 			{
+				setBufferedToImage(true);
 			}
 
 			void resized() override
 			{
+				/*
 				const auto numChildren = scrollable.getNumChildComponents();
 				const auto h = static_cast<float>(getHeight());
 
@@ -101,6 +106,8 @@ namespace gui
 						maxBottom = btm;
 				}
 
+				auto handleSize = scrollable.actualHeight;
+
 				if (maxBottom == 0.f)
 				{
 					handleSize = 1.f;
@@ -108,32 +115,39 @@ namespace gui
 				}
 
 				handleSize = std::max(.02f, std::min(h / maxBottom, 1.f));
+				*/
 			}
-
-			bool isNeeded() const noexcept { return handleSize < 1.f; }
 		protected:
 			CompScrollable& scrollable;
-			float handleSize;
 
 			void paint(Graphics& g) override
 			{
-				const auto thicc = utils.thicc();
+				if (scrollable.actualHeight == 0.f)
+					return;
+
 				const auto w = static_cast<float>(getWidth());
 				const auto h = static_cast<float>(getHeight());
 
-				const auto handleHeight = h * handleSize;
-				const auto handleY = (h - handleHeight) * scrollable.yScrollOffset;
+				const auto handleSize = 1.f - scrollable.actualHeight / h;
+				
+				if (handleSize < 1.f)
+				{
+					const auto thicc = utils.thicc;
+					
+					const auto handleHeight = h * handleSize;
+					const auto handleY = (h - handleHeight) * scrollable.yScrollOffset;
 
-				const auto bounds = BoundsF(0.f, handleY, w, handleHeight).reduced(thicc);
+					const auto bounds = BoundsF(0.f, handleY, w, handleHeight).reduced(thicc);
 
-				g.setColour(Colours::c(ColourID::Hover));
-				if (isMouseOver())
-					g.fillRoundedRectangle(bounds, thicc);
-				if (isMouseButtonDown())
-					g.fillRoundedRectangle(bounds, thicc);
+					g.setColour(Colours::c(ColourID::Hover));
+					if (isMouseOver())
+						g.fillRoundedRectangle(bounds, thicc);
+					if (isMouseButtonDown())
+						g.fillRoundedRectangle(bounds, thicc);
 
-				g.setColour(Colours::c(ColourID::Interact));
-				g.drawRoundedRectangle(bounds, thicc, thicc);
+					g.setColour(Colours::c(ColourID::Interact));
+					g.drawRoundedRectangle(bounds, thicc, thicc);
+				}
 			}
 
 			void mouseEnter(const Mouse& mouse) override
@@ -150,7 +164,6 @@ namespace gui
 			void mouseDrag(const Mouse& mouse) override
 			{
 				updateHandlePos(mouse.position.y);
-				repaint();
 			}
 
 			void mouseUp(const Mouse&) override
@@ -163,26 +176,50 @@ namespace gui
 				repaint();
 			}
 
+			void mouseWheelMove(const Mouse& mouse, const juce::MouseWheelDetails& wheel) override
+			{
+				const auto reversed = wheel.isReversed ? -1.f : 1.f;
+				const bool isTrackPad = wheel.deltaY * wheel.deltaY < .0549316f;
+				auto dragY = 0.f;
+				if (isTrackPad)
+				{
+					dragY = reversed * wheel.deltaY;
+				}
+				else
+				{
+					const auto deltaYPos = wheel.deltaY > 0.f ? 1.f : -1.f;
+					dragY = reversed * WheelDefaultSpeed * deltaYPos;
+				}
+				if (mouse.mods.isShiftDown())
+					dragY *= SensitiveDrag;
+
+				const auto h = static_cast<float>(getHeight());
+				updateHandlePos((scrollable.yScrollOffset - dragY) * h);
+			}
+
 			void updateHandlePos(float y)
 			{
 				const auto h = static_cast<float>(getHeight());
 				scrollable.yScrollOffset = juce::jlimit(0.f, 1.f, y / h);
 
 				getParentComponent()->resized();
+				repaint();
 			}
 		};
 
 		CompScrollable(Utils& u) :
 			Comp(u, "", CursorType::Default),
 			scrollBar(u, *this),
-			xScrollOffset(0.f), yScrollOffset(0.f)
+			xScrollOffset(0.f),
+			yScrollOffset(0.f),
+			actualHeight(1.f)
 		{
 			addAndMakeVisible(scrollBar);
 		}
 
 	protected:
 		ScrollBar scrollBar;
-		float xScrollOffset, yScrollOffset;
+		float xScrollOffset, yScrollOffset, actualHeight;
 	};
 
 	struct CompScreenshotable :

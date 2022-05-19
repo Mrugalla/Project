@@ -120,7 +120,6 @@ private:
 
         juce::AudioProcessorEditor* createEditor() override;
 
-        NullNoiseSynth nullNoiseSynth;
     };
 }
 

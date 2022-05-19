@@ -65,7 +65,7 @@ void gui::Label::updateTextBounds()
 
 	else if (mode == Mode::TextToLabelBounds)
 	{
-		const auto thicc = utils.thicc();
+		const auto thicc = utils.thicc;
 
 		float maxStrWidth = 0.f;
 		{

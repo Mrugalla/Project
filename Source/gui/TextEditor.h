@@ -123,7 +123,7 @@ namespace gui
 
 		void paint(Graphics& g) override
 		{
-			const auto thicc = utils.thicc();
+			const auto thicc = utils.thicc;
 			g.setColour(Colours::c(ColourID::Hover));
 			g.drawRoundedRectangle(getLocalBounds().toFloat(), thicc, thicc);
 		}
@@ -271,7 +271,7 @@ namespace gui
 
 		void paint(Graphics& g) override
 		{
-			const auto thicc = utils.thicc();
+			const auto thicc = utils.thicc;
 			g.setColour(Colours::c(ColourID::Darken));
 			g.fillRoundedRectangle(getLocalBounds().toFloat(), thicc);
 

@@ -26,11 +26,11 @@ HOW TO USE:
 TO DO:
 
 Shader
-	blur on browser open only for low level component pls
-	less expensive blur algorithm
+	..
 
-Code Cleanup
-	make cpp files to help intellisense
+ScrollBar
+	some things still not handled by scrollbarcomp alone
+	make drag behaviour not relative to actualHeight, but only to height
 
 PatchBrowser
 	don't load all existing patches into memory, but only the visible one(e)
@@ -39,7 +39,6 @@ PatchBrowser
 		make case insensitive
 	sortable bar
 		looks too much like buttons
-		cant switch between asc and desc yet
 	actually serialize patches
 
 FormularParser

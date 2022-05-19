@@ -263,11 +263,9 @@ void audio::Processor::processBlock(AudioBuffer& buffer, juce::MidiBuffer& midi)
 void audio::Processor::processBlockCustom(float** samples, int numChannels, int numSamples) noexcept
 {
     {
-        //const auto crushGain = params[PID::CrushGain]->getValModDenorm();
-
-        //crush(samples, numChannels, numSamples, crushGain);
+        const auto crushGain = params[PID::CrushGain]->getValModDenorm();
+        crush(samples, numChannels, numSamples, crushGain);
     }
-    nullNoiseSynth(samples, numChannels, numSamples);
 }
 
 void audio::Processor::releaseResources() {}

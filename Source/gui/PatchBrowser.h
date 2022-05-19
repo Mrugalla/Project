@@ -105,6 +105,7 @@ namespace gui
 		public CompScrollable
 	{
 		static constexpr float RelHeight = 10.f;
+		using SortFunc = std::function<bool(const SharedPatch& a, const SharedPatch& b)>;
 
 		PatchList(Utils& u, Tags& _tags) :
 			CompScrollable(u),
@@ -120,7 +121,7 @@ namespace gui
 			);
 
 			Random rand;
-			for (auto i = 0; i < 1000; ++i)
+			for (auto i = 0; i < 17; ++i)
 			{
 				String strA, strB;
 				appendRandomString(strA, rand, 12);
@@ -215,13 +216,19 @@ namespace gui
 			updateShown();
 		}
 
+		void sort(const SortFunc& sortFunc)
+		{
+			std::sort(patches.begin(), patches.end(), sortFunc);
+
+			updateShown();
+		}
+
 	protected:
 		Patches patches;
 		String filterString;
 		Tags& tags;
 		SharedPatch selected;
 		BoundsF listBounds;
-		float maxHeight;
 
 		void resized() override
 		{
@@ -233,10 +240,10 @@ namespace gui
 
 			const auto x = listBounds.getX();
 			const auto w = listBounds.getWidth();
-			const auto h = utils.thicc() * RelHeight;
-			maxHeight = h * static_cast<float>(patches.size()) - listBounds.getHeight();
+			const auto h = utils.thicc * RelHeight;
+			actualHeight = h * static_cast<float>(patches.size()) - listBounds.getHeight();
 
-			auto y = listBounds.getY() - yScrollOffset * maxHeight;
+			auto y = listBounds.getY() - yScrollOffset * actualHeight;
 
 			for (auto p = 0; p < patches.size(); ++p)
 			{
@@ -271,10 +278,10 @@ namespace gui
 		void paintList(Graphics& g)
 		{
 			auto x = listBounds.getX();
-			auto y = listBounds.getY() - yScrollOffset * maxHeight;
+			auto y = listBounds.getY() - yScrollOffset * actualHeight;
 			auto w = listBounds.getWidth();
 			auto btm = listBounds.getBottom();
-			auto r = utils.thicc() * RelHeight;
+			auto r = utils.thicc * RelHeight;
 
 			g.setColour(Colours::c(ColourID::Txt).withAlpha(.1f));
 			for (auto i = 0; i < patches.size(); ++i)
@@ -338,59 +345,54 @@ namespace gui
 		}
 	};
 
-	struct PatchList2 :
+	struct PatchListSortable :
 		public Comp
 	{
-		static constexpr float RelHeight = 10.f;
-
-		PatchList2(Utils& u, Tags& _tags) :
+		PatchListSortable(Utils& u, Tags& tags) :
 			Comp(u, "", CursorType::Default),
+			patchList(u, tags),
 			sortByName(u, "click here to sort patches by name."),
-			sortByAuthor(u, "click here to sort patches by author."),
-			patches(),
-			filterString(""),
-			tags(_tags),
-			selected(nullptr)
+			sortByAuthor(u, "click here to sort patches by author.")
 		{
 			layout.init(
-				{ 1, 8, 8, 1 },
-				{ 1 }
+				{ 21, 1 },
+				{ 2, 34 }
 			);
 
 			addAndMakeVisible(sortByName);
 			addAndMakeVisible(sortByAuthor);
 
-			makeToggleButton(sortByName, "name");
-			makeToggleButton(sortByAuthor, "author");
+			makeTextButton(sortByName, "name");
+			makeTextButton(sortByAuthor, "author");
 
 			sortByName.onClick.push_back([&]()
 				{
+					sortByName.toggleState = sortByName.toggleState == 0 ? 1 : 0;
+
 					auto sortFunc = [&ts = sortByName.toggleState](const SharedPatch& a, const SharedPatch& b)
 					{
-						if (ts)
+						if (ts == 1)
 							return a->name.getText().compareNatural(b->name.getText()) > 0;
 						else
 							return a->name.getText().compareNatural(b->name.getText()) < 0;
 					};
 
-					std::sort(patches.begin(), patches.end(), sortFunc);
-
-					updateShown();
+					patchList.sort(sortFunc);
 				});
 
 			sortByAuthor.onClick.push_back([&]()
 				{
-					auto sortFunc = [&ts = sortByName.toggleState](const SharedPatch& a, const SharedPatch& b)
+					sortByAuthor.toggleState = sortByAuthor.toggleState == 0 ? 1 : 0;
+
+					auto sortFunc = [&ts = sortByAuthor.toggleState](const SharedPatch& a, const SharedPatch& b)
 					{
-						if (ts)
+						if (ts == 1)
 							return a->author.getText().compareNatural(b->author.getText()) > 0;
 						else
 							return a->author.getText().compareNatural(b->author.getText()) < 0;
 					};
 
-					std::sort(patches.begin(), patches.end(), sortFunc);
-
-					updateShown();
+					patchList.sort(sortFunc);
 				});
 
 			{
@@ -410,239 +412,58 @@ namespace gui
 				authLabel.mode = nLabel.mode;
 			}
 
-			Random rand;
-			for (auto i = 0; i < 200; ++i)
-			{
-				String strA, strB;
-				appendRandomString(strA, rand, 12);
-				appendRandomString(strB, rand, 12);
-				save(strA, strB);
-			}
+			addAndMakeVisible(patchList);
 		}
 
 		bool save(const String& _name, const String& _author)
 		{
-			// check if patch already exists (accept overwrite?)
-			for (const auto& patch : patches)
-				if (patch->isSame(_name, _author))
-					return false;
-
-			patches.push_back(std::make_shared<Patch>(
-				utils,
-				_name,
-				_author
-				));
-
-			selected = patches.back();
-
-			selected->onClick.push_back([&, thisPatch = std::weak_ptr<Patch>(selected)]()
-			{
-				auto locked = thisPatch.lock();
-
-				if (locked == nullptr)
-					return;
-
-				selected = locked;
-				updateShown();
-			});
-
-			addAndMakeVisible(*selected);
-			updateShown();
-
-			return true;
+			return patchList.save(_name, _author);
 		}
 
 		void removeSelected()
 		{
-			if (selected == nullptr)
-				return;
-
-			for (auto i = 0; i < patches.size(); ++i)
-			{
-				auto ptch = patches[i];
-				if (ptch == selected)
-				{
-					if (ptch->isRemovable())
-					{
-						removeChildComponent(ptch.get());
-						patches.erase(patches.begin() + i);
-						selected.reset();
-						updateShown();
-						return;
-					}
-				}
-			}
+			patchList.removeSelected();
 		}
 
 		SharedPatch getSelectedPatch() const noexcept
 		{
-			if (selected == nullptr || patches.empty())
-				return nullptr;
-			return selected;
+			return patchList.getSelectedPatch();
 		}
 
 		void show(const String& containedString)
 		{
-			if (filterString == containedString)
-				return;
-
-			filterString = containedString;
-
-			updateShown();
+			patchList.show(containedString);
 		}
 
 		void show(const Identifier& _tag, bool isAdded)
 		{
-			if (isAdded)
-				tags.push_back(_tag);
-			else
-				for (auto t = 0; t < tags.size(); ++t)
-					if (tags[t] == _tag)
-					{
-						tags.erase(tags.begin() + t);
-						break;
-					}
-
-			updateShown();
+			patchList.show(_tag, isAdded);
 		}
 
 	protected:
+		PatchList patchList;
 		Button sortByName, sortByAuthor;
-		Patches patches;
-		String filterString;
-		Tags& tags;
-		SharedPatch selected;
 
 		void resized() override
 		{
 			layout.resized();
 
-			if (patches.empty())
-				return;
-
-			auto y = 0.f;
-			auto h = utils.thicc() * RelHeight;
-
+			auto buttonArea = layout(0, 0, 1, 1);
 			{
-				auto w = layout.getW(1);
-				auto x = layout.getX(1);
-				sortByName.setBounds(BoundsF(x, y, w, h).toNearestInt());
+				auto x = buttonArea.getX();
+				auto y = buttonArea.getY();
+				auto w = buttonArea.getWidth() / 2.f;
+				auto h = buttonArea.getHeight();
 
-				x = layout.getX(2);
+				sortByName.setBounds(BoundsF(x, y, w, h).toNearestInt());
+				x += w;
 				sortByAuthor.setBounds(BoundsF(x, y, w, h).toNearestInt());
 			}
 
-			y += h;
-			const auto x = 0.f;
-			auto w = static_cast<float>(getWidth());
-
-			// show patches that are visible
-			// in respect to scrollbar position
-
-			for (auto p = 0; p < patches.size(); ++p)
-			{
-				auto& patch = patches[p];
-
-				if (patch->isVisible())
-				{
-					patch->setBounds(BoundsF(x, y, w, h).toNearestInt());
-					y += h;
-				}
-			}
+			layout.place(patchList, 0, 1, 2, 1, false);
 		}
 
-		void paint(Graphics& g) override
-		{
-			if (patches.empty())
-			{
-				g.setColour(Colours::c(ColourID::Abort));
-				g.setFont(getFontLobster().withHeight(24.f));
-				g.drawFittedText(
-					"sry, this browser does not contain patches yet...",
-					getLocalBounds(),
-					Just::centred,
-					1
-				);
-				return;
-			}
-
-			paintList(g);
-		}
-
-		void paintList(Graphics& g)
-		{
-			auto x = 0.f;
-			auto y = 0.f;
-			auto w = static_cast<float>(getWidth());
-			auto h = static_cast<float>(getHeight());
-			auto r = utils.thicc() * RelHeight;
-
-			y += r;
-
-			g.setColour(Colours::c(ColourID::Txt).withAlpha(.1f));
-			for (auto i = 0; i < patches.size(); ++i)
-			{
-				if (i % 2 == 0)
-					g.fillRect(x, y, w, r);
-
-				if (y >= 0.f)
-				{
-					const auto ptch = patches[i];
-
-					if (ptch->isVisible() && ptch->getY() < getHeight())
-					{
-						if (selected == ptch)
-						{
-							g.setColour(Colours::c(ColourID::Interact));
-							g.drawRect(x, y, w, r);
-							g.setColour(Colours::c(ColourID::Txt).withAlpha(.1f));
-						}
-
-						y += r;
-						if (y > h)
-							return;
-					}
-				}
-			}
-		}
-
-		void updateShown()
-		{
-			bool considerTags = tags.size() != 0;
-			bool considerString = filterString.isNotEmpty();
-
-			if (!considerTags && !considerString)
-				for (auto& patch : patches)
-					patch->setVisible(true);
-			else
-			{
-				for (auto& patch : patches)
-				{
-					patch->setVisible(false);
-				}
-
-				if (considerString)
-					for (auto& patch : patches)
-					{
-						const auto& patchName = patch->name.getText();
-						if (patchName.contains(filterString))
-							patch->setVisible(true);
-					}
-
-				if (considerTags)
-					for (auto& patch : patches)
-					{
-						for (const auto& tag : tags)
-						{
-							if (patch->has(tag))
-								patch->setVisible(true);
-						}
-					}
-			}
-
-			resized();
-			repaintWithChildren(getParentComponent());
-		}
+		void paint(Graphics&) override {}
 	};
 
 	struct PatchInspector :
@@ -690,7 +511,7 @@ namespace gui
 
 		void paint(Graphics& g) override
 		{
-			const auto thicc = utils.thicc();
+			const auto thicc = utils.thicc;
 			g.setColour(Colours::c(ColourID::Hover));
 			g.drawRoundedRectangle(getLocalBounds().toFloat(), thicc, thicc);
 			g.setFont(getFontDosisMedium().withHeight(24.f));
@@ -858,8 +679,6 @@ namespace gui
 
 			//g.setColour(Colour(0x44ffffff));
 			//layout.paint(g);
-
-			//layout.label(g, "s\nc\nr\no\nl\nl", 4, 2, 1, 3, false);
 		}
 
 		void resized() override
@@ -872,7 +691,7 @@ namespace gui
 			layout.place(saveButton, 3, 1, 1, 1, true);
 			layout.place(removeButton, 4, 1, 1, 1, true);
 
-			layout.place(searchBar, 2, 1, 2, 1, false);
+			layout.place(searchBar, 2, 1, 1, 1, false);
 			layout.place(patchList, 1, 2, 4, 2, false);
 		}
 
@@ -894,8 +713,9 @@ namespace gui
 		Button closeButton;
 		Button saveButton, removeButton;
 		TextEditor searchBar;
-		PatchList patchList;
+		PatchListSortable patchList;
 	};
+
 
 	struct ButtonPatchBrowser :
 		public Button
@@ -920,4 +740,5 @@ namespace gui
 	protected:
 		PatchBrowser& browser;
 	};
+
 }

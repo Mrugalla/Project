@@ -155,7 +155,7 @@ void gui::Button::resized()
 {
 	if (label.isVisible())
 	{
-		const auto thicc = utils.thicc();
+		const auto thicc = utils.thicc;
 		const auto thicc4 = thicc * 2.f;
 		const auto bounds = getLocalBounds().toFloat().reduced(thicc4);
 
@@ -228,7 +228,7 @@ void gui::makeTextButton(Button& b, const String& txt, bool withToggle, int targ
 			const auto& utils = button.getUtils();
 			const auto& blinkyBoy = button.blinkyBoy;
 
-			auto thicc = utils.thicc();
+			auto thicc = utils.thicc;
 			const auto thiccHalf = thicc * .5f;
 			const bool isOver = button.isMouseOver();
 			const bool isDown = button.isMouseButtonDown();
@@ -272,7 +272,7 @@ void gui::makeSymbolButton(Button& b, ButtonSymbol symbol, int targetToggleState
 		const auto& utils = button.getUtils();
 		const auto& blinkyBoy = button.blinkyBoy;
 
-		auto thicc = utils.thicc();
+		auto thicc = utils.thicc;
 		const bool isOver = button.isMouseOver();
 		const bool isDown = button.isMouseButtonDown();
 		thicc *= (isOver ? 1.1f : 1.f);

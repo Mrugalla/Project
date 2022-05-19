@@ -39,7 +39,7 @@ namespace audio
 						const auto absSmpl = std::abs(smpl);
 						if (absSmpl > .000001f)
 						{
-							validPos.push_back(pos);
+							validPos.push_back(static_cast<int>(pos));
 						}
 					}
 				}
@@ -117,6 +117,7 @@ namespace audio
 }
 
 /*
+
 this synth makes crappy noise from data that is used in a wrong way.
 it's a fun side project. contributions are welcome
 

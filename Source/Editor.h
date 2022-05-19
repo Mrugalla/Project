@@ -10,7 +10,7 @@
 
 #include "gui/Shader.h"
 
-#include "gui/PopUp.h"
+#include "gui/ContextMenu.h"
 #include "gui/TextEditor.h"
 #include "gui/Knob.h"
 #include "gui/HighLevel.h"
@@ -48,8 +48,8 @@ namespace gui
 
             tooltip(utils, "The tooltips bar leads you to wisdom."),
 
-            popUpKnobs(utils),
-            popUpButtons(utils),
+            contextMenuKnobs(utils),
+            contextMenuButtons(utils),
 
             editorKnobs(utils),
 
@@ -73,8 +73,8 @@ namespace gui
 
             addAndMakeVisible(tooltip);
             
-            addAndMakeVisible(popUpKnobs);
-            addAndMakeVisible(popUpButtons);
+            addAndMakeVisible(contextMenuKnobs);
+            addAndMakeVisible(contextMenuButtons);
 
             addChildComponent(editorKnobs);
             
@@ -105,6 +105,8 @@ namespace gui
             if (getHeight() < MinHeight)
                 return setSize(getWidth(), MinHeight);
 
+            utils.resized();
+
             layout.resized();
 
             layout.place(lowLevel, 1, 0, 1, 1, false);
@@ -112,7 +114,7 @@ namespace gui
 
             tooltip.setBounds(layout.bottom().toNearestInt());
 
-            const auto thicc = utils.thicc();
+            const auto thicc = utils.thicc;
             editorKnobs.setBounds(0, 0, static_cast<int>(thicc * 42.f), static_cast<int>(thicc * 12.f));
 
             saveBounds();
@@ -149,8 +151,8 @@ namespace gui
 
         Tooltip tooltip;
 
-        PopUpKnobs popUpKnobs;
-        PopUpButtons popUpButtons;
+        ContextMenuKnobs contextMenuKnobs;
+        ContextMenuButtons contextMenuButtons;
 
         TextEditorKnobs editorKnobs;
 
@@ -161,7 +163,6 @@ namespace gui
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(Editor)
         //JUCE_LEAK_DETECTOR(Editor)
         //JUCE_HEAVYWEIGHT_LEAK_DETECTOR(Editor)
-
     private:
         
         void saveBounds()

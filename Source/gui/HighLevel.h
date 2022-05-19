@@ -148,7 +148,7 @@ namespace gui
 			
 			g.fillRect(layout.right());
 
-			const auto thicc = utils.thicc();
+			const auto thicc = utils.thicc;
 			const auto thicc3 = thicc * 3.f;
 			const Stroke stroke(thicc, Stroke::JointStyle::curved, Stroke::EndCapStyle::rounded);
 

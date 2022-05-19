@@ -33,7 +33,7 @@ gui::Parametr::ModDial::State gui::Parametr::ModDial::getState() const noexcept 
 
 void gui::Parametr::ModDial::resized()
 {
-    const auto thicc = utils.thicc();
+    const auto thicc = utils.thicc;
     label.setBounds(getLocalBounds().toFloat().reduced(thicc * .5f).toNearestInt());
 }
 

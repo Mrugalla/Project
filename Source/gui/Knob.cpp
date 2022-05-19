@@ -65,7 +65,7 @@ void gui::Knob::timerCallback()
 
 void gui::Knob::paint(juce::Graphics& g)
 {
-    const auto thicc = utils.thicc();
+    const auto thicc = utils.thicc;
     const auto thicc2 = thicc * 2.f;
     const auto thicc3 = thicc * 3.f;
     Stroke strokeType(thicc, Stroke::JointStyle::curved, Stroke::EndCapStyle::rounded);
@@ -178,7 +178,7 @@ void gui::Knob::paint(juce::Graphics& g)
 
 void gui::Knob::resized()
 {
-    const auto thicc = utils.thicc();
+    const auto thicc = utils.thicc;
 
     layout.resized();
 
