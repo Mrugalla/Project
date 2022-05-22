@@ -1,5 +1,5 @@
 #pragma once
-#include "Label.h"
+#include "Button.h"
 
 #include <functional>
 
@@ -16,9 +16,12 @@ namespace gui
 			Timer(),
 			onEscape([]() {}),
 			onReturn([]() {}),
+			onType([](){}),
+			onRemove([](){}),
 
 			label(u, ""),
 			emptyString(_emptyString), txt(""),
+			blinkyBoy(),
 			tickIdx(0),
 			drawTick(false)
 		{
@@ -32,9 +35,12 @@ namespace gui
 			Timer(),
 			onEscape([]() {}),
 			onReturn([]() {}),
+			onType([]() {}),
+			onRemove([]() {}),
 
 			label(u, ""),
 			emptyString(_emptyString), txt(""),
+			blinkyBoy(),
 			tickIdx(0),
 			drawTick(false)
 		{
@@ -71,6 +77,14 @@ namespace gui
 			return txt;
 		}
 
+		void setText(const String& str)
+		{
+			if (txt == str)
+				return;
+			txt = str;
+			updateLabel();
+		}
+
 		bool isEmpty() const noexcept
 		{
 			return getText().isEmpty();
@@ -87,10 +101,11 @@ namespace gui
 			repaintWithChildren(this);
 		}
 
-		std::function<void()> onEscape, onReturn;
+		std::function<void()> onEscape, onReturn, onType, onRemove;
 	protected:
 		Label label;
 		String emptyString, txt;
+		BlinkyBoy blinkyBoy;
 		int tickIdx;
 		bool drawTick;
 
@@ -124,7 +139,8 @@ namespace gui
 		void paint(Graphics& g) override
 		{
 			const auto thicc = utils.thicc;
-			g.setColour(Colours::c(ColourID::Hover));
+			auto col = blinkyBoy.getInterpolated(Colours::c(ColourID::Hover), Colours::c(ColourID::Interact));
+			g.setColour(col);
 			g.drawRoundedRectangle(getLocalBounds().toFloat(), thicc, thicc);
 		}
 
@@ -169,6 +185,7 @@ namespace gui
 			if (key == key.returnKey)
 			{
 				onReturn();
+				blinkyBoy.init(this, .25f);
 				return true;
 			}
 			if (key == key.leftKey)
@@ -189,6 +206,7 @@ namespace gui
 			}
 			if (key == key.backspaceKey)
 			{
+				onRemove();
 				txt = txt.substring(0, tickIdx - 1) + txt.substring(tickIdx);
 				if (tickIdx > 0)
 					--tickIdx;
@@ -208,6 +226,7 @@ namespace gui
 			++tickIdx;
 			drawTick = true;
 			updateLabel();
+			onType();
 			return true;
 		}
 	};

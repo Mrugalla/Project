@@ -23,6 +23,9 @@ namespace gui
 
 	juce::MouseCursor makeCursor(CursorType);
 
+	void hideCursor();
+	void showCursor(const Component&, const Point* = nullptr);
+
 	class Utils
 	{
 		static constexpr float DragSpeed = .5f;

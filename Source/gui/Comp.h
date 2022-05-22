@@ -80,74 +80,51 @@ namespace gui
 			public Comp
 		{
 			static constexpr float SensitiveDrag = .2f;
-			static constexpr float WheelDefaultSpeed = .1f;
-			static constexpr float WheelInertia = .9f;
+			static constexpr float WheelDefaultSpeed = 12.f;
 
 			ScrollBar(Utils& u, CompScrollable& _scrollable) :
 				Comp(u, "Drag / Mousewheel to scroll."),
-				scrollable(_scrollable)
+				scrollable(_scrollable),
+				dragXY(0.f)
 			{
 				setBufferedToImage(true);
 			}
 
-			void resized() override
+			bool needed() const noexcept
 			{
-				/*
-				const auto numChildren = scrollable.getNumChildComponents();
-				const auto h = static_cast<float>(getHeight());
-
-				auto maxBottom = h;
-				for (auto c = 0; c < numChildren; ++c)
-				{
-					const auto child = scrollable.getChildComponent(c);
-					const auto btm = static_cast<float>(child->getBottom());
-
-					if (maxBottom < btm)
-						maxBottom = btm;
-				}
-
-				auto handleSize = scrollable.actualHeight;
-
-				if (maxBottom == 0.f)
-				{
-					handleSize = 1.f;
-					return repaint();
-				}
-
-				handleSize = std::max(.02f, std::min(h / maxBottom, 1.f));
-				*/
+				return scrollable.actualHeight > static_cast<float>(getHeight());
 			}
+
 		protected:
 			CompScrollable& scrollable;
+			float dragXY;
 
 			void paint(Graphics& g) override
 			{
-				if (scrollable.actualHeight == 0.f)
+				if (!needed())
 					return;
 
-				const auto w = static_cast<float>(getWidth());
-				const auto h = static_cast<float>(getHeight());
+				const auto w = static_cast<float>(scrollable.getWidth());
+				const auto h = static_cast<float>(scrollable.getHeight());
 
-				const auto handleSize = 1.f - scrollable.actualHeight / h;
-				
-				if (handleSize < 1.f)
-				{
-					const auto thicc = utils.thicc;
-					
-					const auto handleHeight = h * handleSize;
-					const auto handleY = (h - handleHeight) * scrollable.yScrollOffset;
+				const auto thicc = utils.thicc;
 
-					const auto bounds = BoundsF(0.f, handleY, w, handleHeight).reduced(thicc);
+				auto handleHeight = h / scrollable.actualHeight * h;
+				if (handleHeight < thicc)
+					handleHeight = thicc;
 
-					g.setColour(Colours::c(ColourID::Hover));
-					if (isMouseOver())
-						g.fillRoundedRectangle(bounds, thicc);
-					if (isMouseButtonDown())
-						g.fillRoundedRectangle(bounds, thicc);
+				const auto handleY = scrollable.yScrollOffset / scrollable.actualHeight * (h - handleHeight);
 
-					g.setColour(Colours::c(ColourID::Interact));
-					g.drawRoundedRectangle(bounds, thicc, thicc);
-				}
+				const auto bounds = BoundsF(0.f, handleY, w, handleHeight).reduced(thicc);
+
+				g.setColour(Colours::c(ColourID::Hover));
+				if (isMouseOver())
+					g.fillRoundedRectangle(bounds, thicc);
+				if (isMouseButtonDown())
+					g.fillRoundedRectangle(bounds, thicc);
+
+				g.setColour(Colours::c(ColourID::Interact));
+				g.drawRoundedRectangle(bounds, thicc, thicc);
 			}
 
 			void mouseEnter(const Mouse& mouse) override
@@ -158,17 +135,49 @@ namespace gui
 
 			void mouseDown(const Mouse& mouse) override
 			{
-				updateHandlePos(mouse.position.y);
+				if (!needed())
+					return;
+
+				hideCursor();
+				const auto h = static_cast<float>(scrollable.getHeight());
+				dragXY = mouse.position.y / utils.getDragSpeed() * h;
 			}
 
 			void mouseDrag(const Mouse& mouse) override
 			{
-				updateHandlePos(mouse.position.y);
+				if (!needed())
+					return;
+
+				const auto h = static_cast<float>(scrollable.getHeight());
+				const auto nDragXY = mouse.position.y / utils.getDragSpeed() * h;
+				auto dragDif = nDragXY - dragXY;
+				if (mouse.mods.isShiftDown())
+					dragDif *= SensitiveDrag;
+				updateHandlePos(scrollable.yScrollOffset + dragDif);
+				dragXY = nDragXY;
 			}
 
-			void mouseUp(const Mouse&) override
+			void mouseUp(const Mouse& mouse) override
 			{
-				repaint();
+				if (!needed())
+					return;
+
+				const auto h = static_cast<float>(scrollable.getHeight());
+				
+				if (mouse.mouseWasDraggedSinceMouseDown())
+				{
+					const auto nDragXY = mouse.position.y / utils.getDragSpeed() * h;
+					const auto dragDif = nDragXY - dragXY;
+					updateHandlePos(scrollable.yScrollOffset + dragDif);
+					showCursor(*this);
+				}
+				else
+				{
+					const auto relPos = mouse.y / h;
+					updateHandlePos(relPos * scrollable.actualHeight);
+					const auto pos = mouse.position.toInt();
+					showCursor(*this, &pos);
+				}
 			}
 
 			void mouseExit(const Mouse&) override
@@ -188,20 +197,19 @@ namespace gui
 				else
 				{
 					const auto deltaYPos = wheel.deltaY > 0.f ? 1.f : -1.f;
-					dragY = reversed * WheelDefaultSpeed * deltaYPos;
+					dragY = reversed * deltaYPos;
 				}
 				if (mouse.mods.isShiftDown())
 					dragY *= SensitiveDrag;
-
-				const auto h = static_cast<float>(getHeight());
-				updateHandlePos((scrollable.yScrollOffset - dragY) * h);
+				dragY *= utils.thicc * WheelDefaultSpeed;
+				updateHandlePos(scrollable.yScrollOffset - dragY);
 			}
 
 			void updateHandlePos(float y)
 			{
-				const auto h = static_cast<float>(getHeight());
-				scrollable.yScrollOffset = juce::jlimit(0.f, 1.f, y / h);
-
+				const auto h = static_cast<float>(scrollable.getHeight());
+				const auto maxHeight = std::max(h, scrollable.actualHeight - h);
+				scrollable.yScrollOffset = juce::jlimit(0.f, maxHeight, y);
 				getParentComponent()->resized();
 				repaint();
 			}
@@ -229,7 +237,7 @@ namespace gui
 
 		CompScreenshotable(Utils& u) :
 			Comp(u, "", CursorType::Default),
-			screenshotImage(Image::RGB, 1, 1, false),
+			screenshotImage(),
 			onScreenshotFX()
 		{
 			setOpaque(true);
@@ -237,12 +245,18 @@ namespace gui
 
 		void resized() override
 		{
-			screenshotImage = screenshotImage.rescaled(
-				getWidth(),
-				getHeight(),
-				Graphics::lowResamplingQuality
-			);
-			screenshotImage.clear(getLocalBounds(), Colours::c(ColourID::Bg));
+			if (screenshotImage.isNull())
+			{
+				screenshotImage = Image(Image::RGB, getWidth(), getHeight(), false);
+			}
+			else
+			{
+				screenshotImage = screenshotImage.rescaled(
+					getWidth(),
+					getHeight(),
+					Graphics::lowResamplingQuality
+				);
+			}
 		}
 
 		void paint(Graphics& g) override

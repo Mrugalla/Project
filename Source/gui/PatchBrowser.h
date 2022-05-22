@@ -6,8 +6,7 @@ namespace gui
 	using ValueTree = juce::ValueTree;
 	using Identifier = juce::Identifier;
 
-	using Tags = std::vector<Identifier>;
-
+	
 	struct Patch :
 		public Button
 	{
@@ -43,6 +42,32 @@ namespace gui
 
 			addAndMakeVisible(name);
 			addAndMakeVisible(author);
+
+			addTag("hard bass");
+			addTag("hyper schlager");
+			addTag("Hyper Schlager");
+		}
+
+		bool tagExists(const String& str) const noexcept
+		{
+			for (const auto& t : tags)
+				if (t == str)
+					return true;
+			return false;
+		}
+
+		bool addTag(const String& str)
+		{
+			const auto s = str.toLowerCase();
+
+			if (tagExists(s))
+				return false;
+
+			tags.push_back(s);
+
+			// inform tagSelector
+
+			return true;
 		}
 
 		bool isSame(const String& _name, const String& _author) const
@@ -61,17 +86,7 @@ namespace gui
 			return !author.getText().contains("factory");
 		}
 
-		bool has(const Identifier& _tag) const noexcept
-		{
-			for (const auto& tag : tags)
-				if (tag == _tag)
-					return true;
-			return false;
-		}
-
-		void paint(Graphics&) override
-		{
-		}
+		void paint(Graphics&) override {}
 
 		void resized() override
 		{
@@ -82,7 +97,7 @@ namespace gui
 		}
 
 		Label name, author;
-		Tags tags;
+		std::vector<String> tags;
 		ValueTree state;
 	};
 
@@ -91,8 +106,8 @@ namespace gui
 		String str("name: " + patch.name.getText() +
 			"\nauthor: " + patch.author.getText() +
 			"\ntags: ");
-		for (const auto& tag : patch.tags)
-			str += String(tag.toString()) + "; ";
+		//for (const auto& tag : patch.tags)
+		//	str += String(tag.toString()) + "; ";
 
 		return str;
 	}
@@ -107,11 +122,10 @@ namespace gui
 		static constexpr float RelHeight = 10.f;
 		using SortFunc = std::function<bool(const SharedPatch& a, const SharedPatch& b)>;
 
-		PatchList(Utils& u, Tags& _tags) :
+		PatchList(Utils& u) :
 			CompScrollable(u),
 			patches(),
 			filterString(""),
-			tags(_tags),
 			selected(nullptr),
 			listBounds()
 		{
@@ -121,7 +135,7 @@ namespace gui
 			);
 
 			Random rand;
-			for (auto i = 0; i < 17; ++i)
+			for (auto i = 0; i < 20; ++i)
 			{
 				String strA, strB;
 				appendRandomString(strA, rand, 12);
@@ -201,21 +215,6 @@ namespace gui
 			updateShown();
 		}
 
-		void show(const Identifier& _tag, bool isAdded)
-		{
-			if (isAdded)
-				tags.push_back(_tag);
-			else
-				for(auto t = 0; t < tags.size(); ++t)
-					if (tags[t] == _tag)
-					{
-						tags.erase(tags.begin() + t);
-						break;
-					}
-
-			updateShown();
-		}
-
 		void sort(const SortFunc& sortFunc)
 		{
 			std::sort(patches.begin(), patches.end(), sortFunc);
@@ -223,10 +222,12 @@ namespace gui
 			updateShown();
 		}
 
+		size_t numPatches() const noexcept { return patches.size(); }
+
+		const SharedPatch operator[](int i) const noexcept { return patches[i]; }
 	protected:
 		Patches patches;
 		String filterString;
-		Tags& tags;
 		SharedPatch selected;
 		BoundsF listBounds;
 
@@ -241,9 +242,9 @@ namespace gui
 			const auto x = listBounds.getX();
 			const auto w = listBounds.getWidth();
 			const auto h = utils.thicc * RelHeight;
-			actualHeight = h * static_cast<float>(patches.size()) - listBounds.getHeight();
+			actualHeight = h * static_cast<float>(patches.size());
 
-			auto y = listBounds.getY() - yScrollOffset * actualHeight;
+			auto y = listBounds.getY() - yScrollOffset;
 
 			for (auto p = 0; p < patches.size(); ++p)
 			{
@@ -278,7 +279,7 @@ namespace gui
 		void paintList(Graphics& g)
 		{
 			auto x = listBounds.getX();
-			auto y = listBounds.getY() - yScrollOffset * actualHeight;
+			auto y = listBounds.getY() - yScrollOffset;
 			auto w = listBounds.getWidth();
 			auto btm = listBounds.getBottom();
 			auto r = utils.thicc * RelHeight;
@@ -303,15 +304,15 @@ namespace gui
 					}
 				}
 				y += r;
-			}
+			}	
 		}
 
 		void updateShown()
 		{
-			bool considerTags = tags.size() != 0;
+			//bool considerTags = tags.size() != 0;
 			bool considerString = filterString.isNotEmpty();
 
-			if(!considerTags && !considerString)
+			if(/*!considerTags && */!considerString)
 				for (auto& patch : patches)
 					patch->setVisible(true);
 			else
@@ -324,11 +325,12 @@ namespace gui
 				if(considerString)
 					for (auto& patch : patches)
 					{
-						const auto& patchName = patch->name.getText();
+						const auto& patchName = patch->name.getText().toLowerCase();
 						if (patchName.contains(filterString))
 							patch->setVisible(true);
 					}
 
+				/*
 				if(considerTags)
 					for (auto& patch : patches)
 					{
@@ -338,6 +340,7 @@ namespace gui
 								patch->setVisible(true);
 						}
 					}
+				*/
 			}
 
 			resized();
@@ -348,9 +351,9 @@ namespace gui
 	struct PatchListSortable :
 		public Comp
 	{
-		PatchListSortable(Utils& u, Tags& tags) :
+		PatchListSortable(Utils& u) :
 			Comp(u, "", CursorType::Default),
-			patchList(u, tags),
+			patchList(u),
 			sortByName(u, "click here to sort patches by name."),
 			sortByAuthor(u, "click here to sort patches by author.")
 		{
@@ -435,11 +438,7 @@ namespace gui
 			patchList.show(containedString);
 		}
 
-		void show(const Identifier& _tag, bool isAdded)
-		{
-			patchList.show(_tag, isAdded);
-		}
-
+		PatchList& getPatchList() noexcept { return patchList; }
 	protected:
 		PatchList patchList;
 		Button sortByName, sortByAuthor;
@@ -466,71 +465,127 @@ namespace gui
 		void paint(Graphics&) override {}
 	};
 
+	struct TagsSelector :
+		public CompScrollable
+	{
+		static constexpr float RelHeight = 10.f;
+
+		struct Tag :
+			public Button
+		{
+			Tag(Utils& u, const String& str = "") :
+				Button(u, "Click on this tag to de/select it.")
+			{
+				makeTextButton(*this, str);
+			}
+		};
+
+		TagsSelector(Utils& u, PatchList& patchList) :
+			CompScrollable(u),
+			tags()
+		{
+			layout.init(
+				{ 21, 1 },
+				{ 1 }
+			);
+
+			for (auto i = 0; i < patchList.numPatches(); ++i)
+			{
+				const auto patch = patchList[i];
+				for(const auto& tag: patch->tags)
+					addTag(tag);
+			}
+		}
+
+		bool addTag(const String& id)
+		{
+			for (const auto& tag : tags)
+				if (tag->getLabel().getText() == id)
+					return false; // tag already exists
+
+			tags.push_back(std::make_unique<Tag>(utils, id));
+			addAndMakeVisible(*tags.back());
+			resized();
+			return true;
+		}
+
+		void paint(Graphics&) override {}
+
+		std::vector<std::unique_ptr<Tag>> tags;
+
+		void resized() override
+		{
+			layout.resized();
+
+			layout.place(scrollBar, 1, 0, 1, 1, false);
+
+			const auto bounds = layout(0, 0, 1, 1, false);
+
+			const auto width = bounds.getWidth();
+			const auto right = bounds.getRight();
+
+			const auto thicc = utils.thicc;
+
+			auto x = bounds.getX();
+			auto y = bounds.getY() - yScrollOffset;
+			const auto h = RelHeight * thicc;
+			const auto w = h * 3.f;
+
+			const auto numTags = static_cast<float>(tags.size());
+			const auto numTagsPerRow = std::floor(width / w);
+			actualHeight = numTags * h / numTagsPerRow;
+
+			for (auto& tag : tags)
+			{
+				if (x + w > right)
+				{
+					x = 0.f;
+					y += h;
+				}
+
+				tag->setBounds(BoundsF(x, y, w, h).toNearestInt());
+
+				x += w;
+			}
+		}
+	};
+
 	struct PatchInspector :
 		public Comp
 	{
 		PatchInspector(Utils& u, PatchList& _patchList) :
 			Comp(u, "", CursorType::Default),
 			patchList(_patchList),
-			title(u, "Inspector:"),
 			name(u, "Name: "),
 			author(u, "Author: "),
-			tags(u, "Tags: "),
-			tagsEditor(u, "Seperate each tag with a semicolon. ';'", "no tags yet"),
 			patch(nullptr)
 		{
 			layout.init(
-				{ 1, 5, 1 },
-				{ 1, 5, 5, 5, 5, 5, 1 }
+				{ 1, 13, 34, 1 },
+				{ 1, 13, 13, 13, 1 }
 			);
 
-			addAndMakeVisible(title);
-			title.mode = Label::Mode::TextToLabelBounds;
-			title.textCID = ColourID::Hover;
-			title.font = getFontLobster();
+			{
+				addAndMakeVisible(name);
+				addAndMakeVisible(author);
 
-			addAndMakeVisible(name);
-			addAndMakeVisible(author);
-			addAndMakeVisible(tags);
-			addAndMakeVisible(tagsEditor);
+				name.mode = Label::Mode::TextToLabelBounds;
+				name.just = Just::centredLeft;
+				name.textCID = ColourID::Txt;
+				name.font = getFontDosisBold();
 
-			name.mode = Label::Mode::TextToLabelBounds;
-			name.just = Just::centredLeft;
-			title.textCID = ColourID::Txt;
-			title.font = getFontDosisBold();
-
-			author.mode = Label::Mode::TextToLabelBounds;
-			author.textCID = title.textCID;
-			author.font = title.font;
-			author.just = title.just;
-			tags.mode = Label::Mode::TextToLabelBounds;
-			tags.textCID = title.textCID;
-			tags.font = title.font;
-			tags.just = title.just;
+				author.mode = name.mode;
+				author.textCID = name.textCID;
+				author.font = name.font;
+				author.just = name.just;
+			}
 		}
 
 		void paint(Graphics& g) override
 		{
 			const auto thicc = utils.thicc;
-			g.setColour(Colours::c(ColourID::Hover));
-			g.drawRoundedRectangle(getLocalBounds().toFloat(), thicc, thicc);
-			g.setFont(getFontDosisMedium().withHeight(24.f));
-
-			if (patch == nullptr)
-			{
-				g.drawFittedText("inspector:\n\nno patch selected.", getLocalBounds(), Just::centred, 1);
-			}
-			else
-			{
-				//g.setColour(Colours::c(ColourID::Txt));
-				//g.drawFittedText(
-				//	"inspector:\n\n" + 
-				//	toString(*patch),
-				//	getLocalBounds(),
-				//	Just::centred,
-				//	1
-				//);
-			}
+			g.setColour(Colours::c(ColourID::Bg));
+			g.fillRoundedRectangle(getLocalBounds().toFloat().reduced(thicc), thicc);
 		}
 
 		void update()
@@ -540,30 +595,31 @@ namespace gui
 				return;
 
 			patch = sel;
+			if (patch != nullptr)
+			{
+				name.setText("Name: " + patch->name.getText());
+				author.setText("Author: " + patch->author.getText());
+			}
+			
 			repaintWithChildren(this);
 		}
 
 	protected:
 		PatchList& patchList;
-		Label title, name, author, tags;
-		TextEditor tagsEditor;
+		Label name, author;
 		SharedPatch patch;
 
 		void resized() override
 		{
 			layout.resized();
 
-			layout.place(tagsEditor, 1, 5, 1, 1, false);
-
-			std::array<Label*, 4> labelPtr{ &title, &name, &author, &tags };
+			std::array<Label*, 2> labelPtr{ &name, &author };
 
 			for (auto l : labelPtr)
 				l->mode = Label::Mode::TextToLabelBounds;
 
-			layout.place(title, 1, 1, 1, 1, false);
-			layout.place(name, 1, 2, 1, 1, false);
-			layout.place(author, 1, 3, 1, 1, false);
-			layout.place(tags, 1, 4, 1, 1, false);
+			layout.place(name, 1, 1, 1, 1, false);
+			layout.place(author, 1, 2, 1, 1, false);
 
 			auto minHeight = labelPtr.front()->font.getHeight();
 			for (auto i = 1; i < labelPtr.size(); ++i)
@@ -589,16 +645,17 @@ namespace gui
 		PatchBrowser(Utils& u) :
 			CompScreenshotable(u),
 			Timer(),
-			tags(),
 			closeButton(u, "Click here to close the browser."),
 			saveButton(u, "Click here to save this patch."),
 			removeButton(u, "Click here to remove this patch."),
 			searchBar(u, "Define a name or search for a patch.", "Init.."),
-			patchList(u, tags)
+			patchList(u),
+			tagsSelector(u, patchList.getPatchList()),
+			inspector(u, patchList.getPatchList())
 		{
 			layout.init(
 				{ 1, 2, 34, 2, 2, 1 },
-				{ 1, 2, 34, 1 }
+				{ 1, 2, 8, 34, 5, 1 }
 			);
 
 			makeTextButton(closeButton, "X", false);
@@ -636,7 +693,9 @@ namespace gui
 			addAndMakeVisible(saveButton);
 			addAndMakeVisible(removeButton);
 			addAndMakeVisible(searchBar);
+			addAndMakeVisible(tagsSelector);
 			addAndMakeVisible(patchList);
+			addAndMakeVisible(inspector);
 
 			onScreenshotFX.push_back([](Graphics& g, Image& img)
 				{
@@ -692,12 +751,17 @@ namespace gui
 			layout.place(removeButton, 4, 1, 1, 1, true);
 
 			layout.place(searchBar, 2, 1, 1, 1, false);
-			layout.place(patchList, 1, 2, 4, 2, false);
+			layout.place(tagsSelector, 2, 2, 1, 1, false);
+			layout.place(patchList, 1, 3, 4, 1, false);
+
+			layout.place(inspector, 1, 4, 4, 1, false);
 		}
 
 		void timerCallback() override
 		{
-			patchList.show(searchBar.getText());
+			patchList.show(searchBar.getText().toLowerCase());
+
+			inspector.update();
 		}
 
 		String getSelectedPatchName() const
@@ -709,11 +773,12 @@ namespace gui
 		}
 
 	protected:
-		Tags tags;
 		Button closeButton;
 		Button saveButton, removeButton;
 		TextEditor searchBar;
 		PatchListSortable patchList;
+		TagsSelector tagsSelector;
+		PatchInspector inspector;
 	};
 
 

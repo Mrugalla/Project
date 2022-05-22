@@ -113,6 +113,21 @@ namespace gui
 		return { img, 0, 0 };
 	}
 
+	void hideCursor()
+	{
+		juce::Desktop::getInstance().getMainMouseSource().enableUnboundedMouseMovement(true, false);
+	}
+
+	void showCursor(const Component& comp, const Point* pos)
+	{
+		auto mms = juce::Desktop::getInstance().getMainMouseSource();
+		const Point centre(comp.getWidth() / 2, comp.getHeight() / 2);
+		if (pos == nullptr)
+			pos = &centre;
+		mms.setScreenPosition((comp.getScreenPosition() + *pos).toFloat());
+		mms.enableUnboundedMouseMovement(false, true);
+	}
+
 	void appendRandomString(String& str, Random& rand, int length, const String& legalChars)
 	{
 		const auto max = static_cast<float>(legalChars.length() - 1);

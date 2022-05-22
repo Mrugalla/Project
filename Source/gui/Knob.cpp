@@ -204,7 +204,8 @@ void gui::Knob::mouseDown(const Mouse& mouse)
 {
     if (mouse.mods.isLeftButtonDown())
     {
-        juce::Desktop::getInstance().getMainMouseSource().enableUnboundedMouseMovement(true, false);
+        hideCursor();
+
         if (param.isInGesture())
             return;
         param.beginGesture();
@@ -264,9 +265,7 @@ void gui::Knob::mouseUp(const Mouse& mouse)
                 param.setValueWithGesture(param.getDefaultValue());
             else
                 notify(EvtType::ParametrRightClicked, this);
-    auto mms = juce::Desktop::getInstance().getMainMouseSource();
-    mms.setScreenPosition((getScreenPosition() + Point(getWidth() / 2, getHeight() / 2)).toFloat());
-    mms.enableUnboundedMouseMovement(false, true);
+    showCursor(*this);
     {
         label.setText(param.getCurrentValueAsText());
         label.repaint();

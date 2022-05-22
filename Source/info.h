@@ -25,20 +25,37 @@ HOW TO USE:
 
 TO DO:
 
+Knob & Scollbar
+	..
+
 Shader
 	..
 
 ScrollBar
 	some things still not handled by scrollbarcomp alone
-	make drag behaviour not relative to actualHeight, but only to height
+	enable scrolling not only on scrollbar hover
 
 PatchBrowser
+	remake tag system
+		1. every patch has list of tags (inspector)
+			click on tag to select
+		2. every tag has
+			name / id
+			being selectable
+			edit-button for editting tag (spawns texteditor)
+			trash-button for removing selected tag
+		3. texteditor for adding tag to patch (inspector)
+			
+		4. tagSelectorComponent where tags can be selected
+			checks all patches for tags to fill list
+		5. on updates and on construction
+			update is adding or removing tag to patch
+			selection makes patches visible
+			no tags selected: all patches visible
+
+		adding tags via plus-button in inspector
 	don't load all existing patches into memory, but only the visible one(e)
 		or unique_ptr for heap
-	search bar
-		make case insensitive
-	sortable bar
-		looks too much like buttons
 	actually serialize patches
 
 FormularParser
