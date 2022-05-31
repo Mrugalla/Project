@@ -10,7 +10,6 @@
 #include "MIDICCMonitor.h"
 #include "LowLevel.h"
 
-#include <array>
 #include "config.h"
 
 #if PPDHasPatchBrowser

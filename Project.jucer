@@ -9,6 +9,7 @@
               pluginName="Project">
   <MAINGROUP id="c82PPq" name="Project">
     <GROUP id="{329F0704-CF49-5A90-357A-72806BBA6C7A}" name="Source">
+      <FILE id="r1AwBl" name="Editor.cpp" compile="1" resource="0" file="Source/Editor.cpp"/>
       <FILE id="efuGkR" name="cursor.png" compile="0" resource="1" file="Source/cursor.png"/>
       <FILE id="qZlLSW" name="cursorCross.png" compile="0" resource="1" file="Source/cursorCross.png"/>
       <GROUP id="{E92DF140-D139-51F3-C217-2B6F912F6360}" name="param">

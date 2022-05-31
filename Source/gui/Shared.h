@@ -1,5 +1,4 @@
 #pragma once
-#include <array>
 #include "Using.h"
 
 namespace gui
@@ -35,6 +34,7 @@ namespace gui
         default: return Colour(0x00000000);
         }
     }
+    
     inline String toString(ColourID i)
     {
         switch (i)

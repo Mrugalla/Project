@@ -96,7 +96,7 @@ namespace gui
 		ValueTree state;
 	};
 
-	String toString(const Patch& patch)
+	inline String toString(const Patch& patch)
 	{
 		String str("name: " + patch.name.getText() +
 			"\nauthor: " + patch.author.getText() +
