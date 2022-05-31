@@ -6,7 +6,6 @@ namespace gui
 	using ValueTree = juce::ValueTree;
 	using Identifier = juce::Identifier;
 
-	
 	struct Patch :
 		public Button
 	{
@@ -42,10 +41,6 @@ namespace gui
 
 			addAndMakeVisible(name);
 			addAndMakeVisible(author);
-
-			addTag("hard bass");
-			addTag("hyper schlager");
-			addTag("Hyper Schlager");
 		}
 
 		bool tagExists(const String& str) const noexcept
@@ -553,16 +548,65 @@ namespace gui
 	struct PatchInspector :
 		public Comp
 	{
+		struct Tag :
+			public Button
+		{
+			Tag(Utils& u, const String& str) :
+				Button(u, "Click on this tag to select it.")
+			{
+				makeToggleButton(*this, str);
+			}
+		};
+
+		struct Tags :
+			public CompScrollable
+		{
+			Tags(Utils& u) :
+				CompScrollable(u),
+				tags()
+			{
+				layout.init(
+					{ 1 },
+					{ 13, 1 }
+				);
+			}
+
+			void addTag(const String& str)
+			{
+				tags.push_back(std::make_unique<Tag>(utils, str));
+				addAndMakeVisible(*tags.back());
+				resized();
+			}
+
+			std::vector<std::unique_ptr<Tag>> tags;
+
+			void resized() override
+			{
+				layout.resized();
+
+				layout.place(scrollBar, 0, 1, 1, 1, false);
+
+				const auto tagsArea = layout(0, 0, 1, 1, false);
+
+				// blabla layout tags
+			}
+		};
+
 		PatchInspector(Utils& u, PatchList& _patchList) :
 			Comp(u, "", CursorType::Default),
 			patchList(_patchList),
 			name(u, "Name: "),
 			author(u, "Author: "),
-			patch(nullptr)
+			patch(nullptr),
+
+			tags(u),
+			addTag(u, "Click here to add a new tag!"),
+			removeTag(u, "Click here to remove the selected tag!"),
+			tagEditor(u, "Type a tag name!", "Enter tag..")
 		{
 			layout.init(
-				{ 1, 13, 34, 1 },
-				{ 1, 13, 13, 13, 1 }
+				{ 1, 13, 21, 2 },
+				{ 1, 13, 13, 1 }
 			);
 
 			{
@@ -579,6 +623,32 @@ namespace gui
 				author.font = name.font;
 				author.just = name.just;
 			}
+
+			{
+				addAndMakeVisible(tags);
+				addAndMakeVisible(addTag);
+				addAndMakeVisible(removeTag);
+				addChildComponent(tagEditor);
+
+				makeTextButton(addTag, "+");
+				makeTextButton(removeTag, "-");
+
+				addTag.onClick.push_back([&]()
+					{
+						if (!tagEditor.isEnabled())
+						{
+							tagEditor.enable();
+							resized();
+						}
+						else
+						{
+							tags.addTag(tagEditor.getText());
+							tagEditor.disable();
+							tagEditor.setVisible(false);
+						}
+					});
+			}
+			
 		}
 
 		void paint(Graphics& g) override
@@ -609,32 +679,43 @@ namespace gui
 		Label name, author;
 		SharedPatch patch;
 
+		Tags tags;
+		Button addTag, removeTag;
+		TextEditor tagEditor;
+
 		void resized() override
 		{
 			layout.resized();
 
-			std::array<Label*, 2> labelPtr{ &name, &author };
+			std::array<Label*, 2> labelPtr { &name, &author };
 
 			for (auto l : labelPtr)
 				l->mode = Label::Mode::TextToLabelBounds;
 
-			layout.place(name, 1, 1, 1, 1, false);
-			layout.place(author, 1, 2, 1, 1, false);
+			layout.place(name, 1, 1, 2, 1, false);
+			layout.place(author, 1, 2, 2, 1, false);
 
-			auto minHeight = labelPtr.front()->font.getHeight();
-			for (auto i = 1; i < labelPtr.size(); ++i)
 			{
-				const auto& l = *labelPtr[i];
-				const auto nHeight = l.font.getHeight();
-				if (minHeight < nHeight)
-					minHeight = nHeight;
-			}
+				auto minHeight = labelPtr.front()->font.getHeight();
+				for (auto i = 1; i < labelPtr.size(); ++i)
+				{
+					const auto& l = *labelPtr[i];
+					const auto nHeight = l.font.getHeight();
+					if (minHeight < nHeight)
+						minHeight = nHeight;
+				}
 
-			for (auto l : labelPtr)
-			{
-				l->mode = Label::Mode::None;
-				l->setMinFontHeight(minHeight);
+				for (auto l : labelPtr)
+				{
+					l->mode = Label::Mode::None;
+					l->setMinFontHeight(minHeight);
+				}
 			}
+			
+			layout.place(tags, 2, 1, 1, 2, false);
+			layout.place(addTag, 3, 1, 1, 1, true);
+			layout.place(removeTag, 3, 2, 1, 1, true);
+			layout.place(tagEditor, 2.2f, 1.2f, .6f, 1.6f, false);
 		}
 	};
 
@@ -701,14 +782,26 @@ namespace gui
 				{
 					imgPP::blur(img, g, 7);
 
-					for (auto y = 0; y < img.getHeight(); ++y)
-						for (auto x = 0; x < img.getWidth(); ++x)
-							img.setPixelAt
-							(x, y,
-								img.getPixelAt(x, y)
-								.withMultipliedSaturation(.4f)
-								.withMultipliedBrightness(.4f)
-							);
+					auto bgCol = Colours::c(ColourID::Bg);
+					
+					if(bgCol.getPerceivedBrightness() < .5f)
+						for (auto y = 0; y < img.getHeight(); ++y)
+							for (auto x = 0; x < img.getWidth(); ++x)
+								img.setPixelAt
+								(x, y,
+									img.getPixelAt(x, y)
+									.withMultipliedSaturation(.4f)
+									.withMultipliedBrightness(.4f)
+								);
+					else
+						for (auto y = 0; y < img.getHeight(); ++y)
+							for (auto x = 0; x < img.getWidth(); ++x)
+								img.setPixelAt
+								(x, y,
+									img.getPixelAt(x, y)
+									.withMultipliedSaturation(.4f)
+									.withMultipliedBrightness(1.5f)
+								);
 				});
 		}
 

@@ -481,7 +481,7 @@ namespace gui
 
 		void paint(juce::Graphics& g) override
 		{
-			g.fillAll(Colour(0xff000000));
+			g.fillAll(Colours::c(ColourID::Bg));
 		}
 
 		void resized() override

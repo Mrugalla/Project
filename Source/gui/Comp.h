@@ -82,22 +82,26 @@ namespace gui
 			static constexpr float SensitiveDrag = .2f;
 			static constexpr float WheelDefaultSpeed = 12.f;
 
-			ScrollBar(Utils& u, CompScrollable& _scrollable) :
+			ScrollBar(Utils& u, CompScrollable& _scrollable, bool _vertical = true) :
 				Comp(u, "Drag / Mousewheel to scroll."),
 				scrollable(_scrollable),
-				dragXY(0.f)
+				dragXY(0.f),
+				vertical(_vertical)
 			{
 				setBufferedToImage(true);
 			}
 
 			bool needed() const noexcept
 			{
-				return scrollable.actualHeight > static_cast<float>(getHeight());
+				if(vertical)
+					return scrollable.actualHeight > static_cast<float>(getHeight());
+				return scrollable.actualHeight > static_cast<float>(getWidth());
 			}
 
 		protected:
 			CompScrollable& scrollable;
 			float dragXY;
+			bool vertical;
 
 			void paint(Graphics& g) override
 			{
@@ -109,13 +113,30 @@ namespace gui
 
 				const auto thicc = utils.thicc;
 
-				auto handleHeight = h / scrollable.actualHeight * h;
-				if (handleHeight < thicc)
-					handleHeight = thicc;
+				BoundsF bounds;
 
-				const auto handleY = scrollable.yScrollOffset / scrollable.actualHeight * (h - handleHeight);
+				if (vertical)
+				{
+					auto handleHeight = h / scrollable.actualHeight * h;
 
-				const auto bounds = BoundsF(0.f, handleY, w, handleHeight).reduced(thicc);
+					if (handleHeight < thicc)
+						handleHeight = thicc;
+
+					const auto handleY = scrollable.yScrollOffset / scrollable.actualHeight * (h - handleHeight);
+
+					bounds = BoundsF(0.f, handleY, w, handleHeight).reduced(thicc);
+				}
+				else
+				{
+					auto handleWidth = w / scrollable.actualHeight * w;
+
+					if (handleWidth < thicc)
+						handleWidth = thicc;
+
+					const auto handleX = scrollable.xScrollOffset / scrollable.actualHeight * (w - handleWidth);
+
+					bounds = BoundsF(handleX, 0.f, handleWidth, h).reduced(thicc);
+				}
 
 				g.setColour(Colours::c(ColourID::Hover));
 				if (isMouseOver())
@@ -139,8 +160,19 @@ namespace gui
 					return;
 
 				hideCursor();
-				const auto h = static_cast<float>(scrollable.getHeight());
-				dragXY = mouse.position.y / utils.getDragSpeed() * h;
+				
+				const auto speed = 1.f / utils.getDragSpeed();
+
+				if (vertical)
+				{
+					const auto h = static_cast<float>(scrollable.getHeight());
+					dragXY = mouse.position.y * speed * h;
+				}
+				else
+				{
+					const auto w = static_cast<float>(scrollable.getWidth());
+					dragXY = mouse.position.x * speed * w;
+				}
 			}
 
 			void mouseDrag(const Mouse& mouse) override
@@ -148,13 +180,28 @@ namespace gui
 				if (!needed())
 					return;
 
-				const auto h = static_cast<float>(scrollable.getHeight());
-				const auto nDragXY = mouse.position.y / utils.getDragSpeed() * h;
-				auto dragDif = nDragXY - dragXY;
-				if (mouse.mods.isShiftDown())
-					dragDif *= SensitiveDrag;
-				updateHandlePos(scrollable.yScrollOffset + dragDif);
-				dragXY = nDragXY;
+				const auto speed = 1.f / utils.getDragSpeed();
+
+				if (vertical)
+				{
+					const auto h = static_cast<float>(scrollable.getHeight());
+					const auto nDragXY = mouse.position.y * speed * h;
+					auto dragDif = nDragXY - dragXY;
+					if (mouse.mods.isShiftDown())
+						dragDif *= SensitiveDrag;
+					updateHandlePosY(scrollable.yScrollOffset + dragDif);
+					dragXY = nDragXY;
+				}
+				else
+				{
+					const auto w = static_cast<float>(scrollable.getWidth());
+					const auto nDragXY = mouse.position.y * speed * w;
+					auto dragDif = nDragXY - dragXY;
+					if (mouse.mods.isShiftDown())
+						dragDif *= SensitiveDrag;
+					updateHandlePosX(scrollable.xScrollOffset + dragDif);
+					dragXY = nDragXY;
+				}
 			}
 
 			void mouseUp(const Mouse& mouse) override
@@ -162,19 +209,39 @@ namespace gui
 				if (!needed())
 					return;
 
+				const auto w = static_cast<float>(scrollable.getWidth());
 				const auto h = static_cast<float>(scrollable.getHeight());
 				
 				if (mouse.mouseWasDraggedSinceMouseDown())
 				{
-					const auto nDragXY = mouse.position.y / utils.getDragSpeed() * h;
-					const auto dragDif = nDragXY - dragXY;
-					updateHandlePos(scrollable.yScrollOffset + dragDif);
+					const auto speed = 1.f / utils.getDragSpeed();
+
+					if (vertical)
+					{
+						const auto nDragXY = mouse.position.y * speed * h;
+						const auto dragDif = nDragXY - dragXY;
+						updateHandlePosY(scrollable.yScrollOffset + dragDif);
+					}
+					else
+					{
+						const auto nDragXY = mouse.position.x * speed * w;
+						const auto dragDif = nDragXY - dragXY;
+						updateHandlePosY(scrollable.xScrollOffset + dragDif);
+					}
 					showCursor(*this);
 				}
 				else
 				{
-					const auto relPos = mouse.y / h;
-					updateHandlePos(relPos * scrollable.actualHeight);
+					if (vertical)
+					{
+						const auto relPos = mouse.y / h;
+						updateHandlePosY(relPos * scrollable.actualHeight);
+					}
+					else
+					{
+						const auto relPos = mouse.x / w;
+						updateHandlePosY(relPos * scrollable.actualHeight);
+					}
 					const auto pos = mouse.position.toInt();
 					showCursor(*this, &pos);
 				}
@@ -202,14 +269,27 @@ namespace gui
 				if (mouse.mods.isShiftDown())
 					dragY *= SensitiveDrag;
 				dragY *= utils.thicc * WheelDefaultSpeed;
-				updateHandlePos(scrollable.yScrollOffset - dragY);
+
+				if(vertical)
+					updateHandlePosY(scrollable.yScrollOffset - dragY);
+				else
+					updateHandlePosX(scrollable.yScrollOffset - dragY);
 			}
 
-			void updateHandlePos(float y)
+			void updateHandlePosY(float y)
 			{
 				const auto h = static_cast<float>(scrollable.getHeight());
 				const auto maxHeight = std::max(h, scrollable.actualHeight - h);
 				scrollable.yScrollOffset = juce::jlimit(0.f, maxHeight, y);
+				getParentComponent()->resized();
+				repaint();
+			}
+
+			void updateHandlePosX(float x)
+			{
+				const auto w = static_cast<float>(scrollable.getWidth());
+				const auto maxWidth = std::max(w, scrollable.actualHeight - w);
+				scrollable.xScrollOffset = juce::jlimit(0.f, maxWidth, x);
 				getParentComponent()->resized();
 				repaint();
 			}
