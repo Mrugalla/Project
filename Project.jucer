@@ -41,6 +41,7 @@
       <GROUP id="{D379AB76-3EAE-A37D-31CD-FC91511F3FC1}" name="arch">
         <FILE id="OiS45d" name="FormularParser.h" compile="0" resource="0"
               file="Source/arch/FormularParser.h"/>
+        <FILE id="f4V9L3" name="Interpolation.h" compile="0" resource="0" file="Source/arch/Interpolation.h"/>
         <FILE id="bgyAlz" name="Range.h" compile="0" resource="0" file="Source/arch/Range.h"/>
         <FILE id="pjozVu" name="Smooth.cpp" compile="1" resource="0" file="Source/arch/Smooth.cpp"/>
         <FILE id="kmNwlM" name="Smooth.h" compile="0" resource="0" file="Source/arch/Smooth.h"/>
@@ -97,6 +98,8 @@
         <FILE id="RFsXKN" name="NullNoiseSynth.h" compile="0" resource="0"
               file="Source/audio/NullNoiseSynth.h"/>
         <FILE id="KE2g4j" name="Oversampling.h" compile="0" resource="0" file="Source/audio/Oversampling.h"/>
+        <FILE id="wWm8Gd" name="PitchShifter.h" compile="0" resource="0" file="Source/audio/PitchShifter.h"/>
+        <FILE id="Gk45AM" name="PRM.h" compile="0" resource="0" file="Source/audio/PRM.h"/>
         <FILE id="Td7oEO" name="ProcessSuspend.h" compile="0" resource="0"
               file="Source/audio/ProcessSuspend.h"/>
         <FILE id="QAmb7f" name="Rectifier.h" compile="0" resource="0" file="Source/audio/Rectifier.h"/>

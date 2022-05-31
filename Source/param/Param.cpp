@@ -26,11 +26,15 @@ param::String param::toString(PID pID)
 #if PPDHasHQ
 	case PID::HQ: return "HQ";
 #endif
+#if PPDHasPolarity
 	case PID::Polarity: return "Polarity";
+#endif
 #if PPDHasUnityGain
 	case PID::UnityGain: return "Unity Gain";
 #endif
+#if PPDHasStereoConfig
 	case PID::StereoConfig: return "Stereo Config";
+#endif
 
 	case PID::Power: return "Power";
 
@@ -66,11 +70,15 @@ param::String param::toTooltip(PID pID)
 #if PPDHasHQ
 	case PID::HQ: return "Turn on HQ to apply 2x Oversampling to the signal.";
 #endif
+#if PPDHasPolarity
 	case PID::Polarity: return "Invert the wet signal's polarity.";
+#endif
 #if PPDHasUnityGain
 	case PID::UnityGain: return "If enabled the inversed input gain gets added to the output gain.";
 #endif
+#if PPDHasStereoConfig
 	case PID::StereoConfig: return "Define the stereo-configuration. L/R or M/S.";
+#endif
 
 	case PID::Power: return "Bypass the plugin with this parameter.";
 
@@ -99,6 +107,7 @@ param::String param::toString(Unit pID)
 	case Unit::Ratio: return "ratio";
 	case Unit::Polarity: return CharPtr("\xc2\xb0");
 	case Unit::StereoConfig: return "";
+	case Unit::Voices: return "v";
 	default: return "";
 	}
 }
@@ -476,6 +485,17 @@ param::StrToValFunc param::strToVal::db()
 	};
 }
 
+param::StrToValFunc param::strToVal::voices()
+{
+	return[p = parse()](const String& txt)
+	{
+		const auto text = txt.trimCharactersAtEnd(toString(Unit::Voices));
+		const auto val = p(text, 1.f);
+		return val;
+	};
+}
+
+
 param::ValToStrFunc param::valToStr::mute()
 {
 	return [](float v) { return v > .5f ? "Mute" : "Not Mute"; };
@@ -498,7 +518,15 @@ param::ValToStrFunc param::valToStr::percent()
 
 param::ValToStrFunc param::valToStr::hz()
 {
-	return [](float v) { return String(v).substring(0, 4) + " " + toString(Unit::Hz); };
+	return [](float v)
+	{
+		if(v >= 10000.f)
+			return String(v).substring(0, 5) + " " + toString(Unit::Hz);
+		else if(v >= 1000.f)
+			return String(v).substring(0, 4) + " " + toString(Unit::Hz);
+		else
+			return String(v).substring(0, 5) + " " + toString(Unit::Hz);
+	};
 }
 
 param::ValToStrFunc param::valToStr::phase()
@@ -570,6 +598,15 @@ param::ValToStrFunc param::valToStr::empty()
 	return [](float) { return String(""); };
 }
 
+param::ValToStrFunc param::valToStr::voices()
+{
+	return [](float v)
+	{
+		return String(static_cast<int>(v)) + toString(Unit::Voices);
+	};
+}
+
+
 param::Param* param::makeParam(PID id, State& state,
 	float valDenormDefault, const Range& range,
 	Unit unit, bool isLocked)
@@ -619,6 +656,18 @@ param::Param* param::makeParam(PID id, State& state,
 		valToStrFunc = valToStr::lrms();
 		strToValFunc = strToVal::lrms();
 		break;
+	case Unit::Semi:
+		valToStrFunc = valToStr::semi();
+		strToValFunc = strToVal::semi();
+		break;
+	case Unit::Fine:
+		valToStrFunc = valToStr::fine();
+		strToValFunc = strToVal::fine();
+		break;
+	case Unit::Voices:
+		valToStrFunc = valToStr::voices();
+		strToValFunc = strToVal::voices();
+		break;
 	default:
 		valToStrFunc = valToStr::empty();
 		strToValFunc = strToVal::percent();
@@ -637,14 +686,18 @@ param::Params::Params(AudioProcessor& audioProcessor, State& state) :
 #endif
 	params.push_back(makeParam(PID::Mix, state));
 	params.push_back(makeParam(PID::Gain, state, 0.f, makeRange::withCentre(PPD_GainOut_Min, PPD_GainIn_Max, 0.f), Unit::Decibel));
+#if PPDHasPolarity
 	params.push_back(makeParam(PID::Polarity, state, 0.f, makeRange::toggle(), Unit::Polarity));
+#endif
 #if PPDHasUnityGain
 	params.push_back(makeParam(PID::UnityGain, state, (PPD_UnityGainDefault ? 1.f : 0.f), makeRange::toggle(), Unit::Polarity));
 #endif
 #if PPDHasHQ
 	params.push_back(makeParam(PID::HQ, state, 1.f, makeRange::toggle()));
 #endif
+#if PPDHasStereoConfig
 	params.push_back(makeParam(PID::StereoConfig, state, 1.f, makeRange::toggle(), Unit::StereoConfig));
+#endif
 	params.push_back(makeParam(PID::Power, state, 1.f, makeRange::toggle(), Unit::Power));
 
 	// LOW LEVEL PARAMS:

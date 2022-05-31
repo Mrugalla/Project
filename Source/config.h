@@ -1,10 +1,16 @@
 // pre processor defines
 
+#define PPDEditorWidth 774
+#define PPDEditorHeight 448
+
 #define PPDHasEditor true
+#define PPDHasPatchBrowser true
 
 #define PPDHasGainIn true
 #define PPDHasHQ true
 #define PPDHasUnityGain true && PPDHasGainIn
+#define PPDHasStereoConfig true
+#define PPDHasPolarity true
 
 #define PPDEqualLoudnessMix false
 
@@ -19,8 +25,11 @@
 
 #define PPD_GainIn_Min -12.f
 #define PPD_GainIn_Max 12.f
-#define PPD_GainOut_Min -60.f
-#define PPD_GainOut_Max 6.f
+#define PPD_GainOut_Min -24.f
+#define PPD_GainOut_Max 24.f
 #define PPD_UnityGainDefault true
 
 #define PPD_DebugFormularParser false
+
+#define PPDPitchShifterSizeMs 1000.f
+#define PPDPitchShifterNumVoices 7

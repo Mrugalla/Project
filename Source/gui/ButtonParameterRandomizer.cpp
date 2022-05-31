@@ -34,7 +34,8 @@ void gui::ButtonParameterRandomizer::operator()()
     for (auto& func : randFuncs)
         func(rand);
     for (auto randomizable : randomizables)
-        randomizable->setValueWithGesture(rand.nextFloat());
+        if(randomizable->id != PID::Power)
+            randomizable->setValueWithGesture(rand.nextFloat());
 }
 
 void gui::ButtonParameterRandomizer::mouseUp(const Mouse& mouse)
@@ -250,15 +251,15 @@ gui::String gui::ButtonParameterRandomizer::makeTooltip()
     case 189: return "Rightclick on the power button and lock its parameter to prevent it from being randomized.";
     case 190: return "idk...";
     case 191: return "This is just a placeholder for a real tooltip message.";
-    case 192: return "";
-    case 193: return "";
-    case 194: return "";
-    case 195: return "";
-    case 196: return "";
-    case 197: return "";
-    case 198: return "";
-    case 199: return "";
-    case 200: return "";
+    case 192: return "Let's drift into a new soundscape!";
+    case 193: return "This is the most generic tooltip.";
+    case 194: return "Diffusion can be inharmonic, yet soothing.";
+    case 195: return "I always wanted to make a plugin that has something to do with temperature..";
+    case 196: return "You can't spell 'random' without 'awesome'.";
+    case 197: return "Do you want a 2nd opinion on that?";
+    case 198: return "This is essentially gambling, but without wasting money.";
+    case 199: return "You can lock parameters in order to avoid randomizing them.";
+    case 200: return "Right-click parameters in order to find additional options.";
     default: "Are you sure?";
     }
     return "You are not supposed to read this message!";

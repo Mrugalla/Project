@@ -19,6 +19,12 @@ namespace audio
     using PID = param::PID;
     using Params = param::Params;
     using State = sta::State;
+
+    template<typename Float>
+    inline float msInSamples(Float ms, Float Fs) noexcept
+    {
+        return ms * Fs * static_cast<Float>(.001);
+    }
 }
 
 #include "audio/MIDILearn.h"
@@ -96,7 +102,9 @@ namespace audio
         void processBlockEnd(AudioBuffer&) noexcept;
     
 private:
+#if PPDHasStereoConfig
         bool midSideEnabled;
+#endif
 
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ProcessorBackEnd)
     };

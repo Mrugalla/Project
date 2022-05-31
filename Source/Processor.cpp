@@ -27,8 +27,10 @@ audio::ProcessorBackEnd::ProcessorBackEnd() :
 #if PPDHasHQ
     oversampler(),
 #endif
-    meters(),
-    midSideEnabled(false)
+    meters()
+#if PPDHasStereoConfig
+    , midSideEnabled(false)
+#endif
 {
     {
         juce::PropertiesFile::Options options;
@@ -146,7 +148,7 @@ audio::AudioBuffer* audio::ProcessorBackEnd::processBlockStart(AudioBuffer& buff
     if (numSamples == 0)
         return nullptr;
 
-    if (params[PID::Power]->getValue() < .5f)
+    if (params[PID::Power]->getValMod() < .5f)
     {
         processBlockBypassed(buffer, midi);
         return nullptr;
@@ -154,7 +156,6 @@ audio::AudioBuffer* audio::ProcessorBackEnd::processBlockStart(AudioBuffer& buff
 
     const auto numChannels = buffer.getNumChannels() == 1 ? 1 : 2;
 
-    const auto constSamples = buffer.getArrayOfReadPointers();
     auto samples = buffer.getArrayOfWritePointers();
 
     dryWetMix.saveDry(
@@ -164,17 +165,21 @@ audio::AudioBuffer* audio::ProcessorBackEnd::processBlockStart(AudioBuffer& buff
 #if PPDHasGainIn
         params[PID::GainIn]->getValueDenorm(),
 #endif
-        params[PID::Mix]->getValue(),
-        params[PID::Gain]->getValueDenorm(),
-        (params[PID::Polarity]->getValue() > .5f ? -1.f : 1.f)
+        params[PID::Mix]->getValMod(),
+        params[PID::Gain]->getValModDenorm()
+#if PPDHasPolarity
+        , (params[PID::Polarity]->getValMod() > .5f ? -1.f : 1.f)
+#endif
 #if PPDHasUnityGain
         , params[PID::UnityGain]->getValue()
 #endif
     );
 #if PPDHasGainIn
+    const auto constSamples = buffer.getArrayOfReadPointers();
     meters.processIn(constSamples, numChannels, numSamples);
 #endif
-    midSideEnabled = numChannels == 2 && params[PID::StereoConfig]->getValue() > .5f;
+#if PPDHasStereoConfig
+    midSideEnabled = numChannels == 2 && params[PID::StereoConfig]->getValMod() > .5f;
     if (midSideEnabled)
     {
         encodeMS(samples, numSamples);
@@ -187,6 +192,7 @@ audio::AudioBuffer* audio::ProcessorBackEnd::processBlockStart(AudioBuffer& buff
         }
     }
     else
+#endif
     {
 #if PPDHasHQ
         return &oversampler.upsample(buffer);
@@ -206,8 +212,10 @@ void audio::ProcessorBackEnd::processBlockEnd(AudioBuffer& buffer) noexcept
     const auto numChannels = buffer.getNumChannels();
     const auto numSamples = buffer.getNumSamples();
 
+#if PPDHasStereoConfig
     if (midSideEnabled)
         decodeMS(samples, numSamples);
+#endif
 
     dryWetMix.processOutGain(samples, numChannels, numSamples);
     meters.processOut(constSamples, numChannels, numSamples);
@@ -223,10 +231,11 @@ void audio::Processor::prepareToPlay(double sampleRate, int maxBlockSize)
 {
     auto latency = 0;
 #if PPDHasHQ
-    oversampler.setEnabled(params[PID::HQ]->getValue() > .5f);
+    oversampler.setEnabled(params[PID::HQ]->getValMod() > .5f);
     oversampler.prepare(sampleRate, maxBlockSize);
-    //const auto sampleRateUp = oversampler.getFsUp();
-    //const auto maxBlockSizeUp = oversampler.getBlockSizeUp();
+    const auto sampleRateUp = oversampler.getFsUp();
+    const auto sampleRateUpF = static_cast<float>(sampleRateUp);
+    const auto blockSizeUp = oversampler.getBlockSizeUp();
     latency = oversampler.getLatency();
 #endif
     const auto sampleRateF = static_cast<float>(sampleRate);

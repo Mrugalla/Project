@@ -107,7 +107,10 @@ namespace audio
 #if PPDHasGainIn
 			float gainInP,
 #endif
-			float mixP, float gainP, float polarityP
+			float mixP, float gainP
+#if PPDHasPolarity
+			, float polarityP
+#endif
 #if PPDHasUnityGain
 			, float unityGainP
 #endif
@@ -134,7 +137,10 @@ namespace audio
 			auto mixBuf = bufs[MixW].data();
 			mixSmooth(mixBuf, mixP, numSamples);
 
-			gainSmooth(bufs[Gain].data(), juce::Decibels::decibelsToGain(gainP * polarityP), numSamples);
+#if PPDHasPolarity
+			gainP *= polarityP;
+#endif
+			gainSmooth(bufs[Gain].data(), juce::Decibels::decibelsToGain(gainP), numSamples);
 
 #if PPDEqualLoudnessMix
 			for (auto s = 0; s < numSamples; ++s)

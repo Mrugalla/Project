@@ -23,15 +23,15 @@ namespace gui
     {
         switch (i)
         {
-        case ColourID::Bg: return Colour(0xff211f28);
-        case ColourID::Txt: return Colour(0xff75da10);
+        case ColourID::Bg: return Colour(0xff181620);
+        case ColourID::Txt: return Colour(0xff009aff);
         case ColourID::Inactive: return Colour(0xff808080);
         case ColourID::Abort: return Colour(0xffff0000);
-        case ColourID::Interact: return Colour(0xff00ffc5);
+        case ColourID::Interact: return Colour(0xff00bcab);
         case ColourID::Darken: return Colour(0xea000000);
-        case ColourID::Hover: return Colour(0x827965cb);
-        case ColourID::Mod: return Colour(0xffac6700);
-        case ColourID::Bias: return Colour(0xfff3db00);
+        case ColourID::Hover: return Colour(0x756e89bd);
+        case ColourID::Mod: return Colour(0xffd20082);
+        case ColourID::Bias: return Colour(0xffcaaa00);
         default: return Colour(0x00000000);
         }
     }

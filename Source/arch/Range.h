@@ -73,17 +73,15 @@ namespace makeRange
 
 	// advanced one(s):
 
-	inline Range withCentre(float start, float end, float centre) noexcept
+	inline Range withCentre(float start, float end, float centre, float tolerance = .0001f) noexcept
 	{
-		static constexpr float Thresh = .0001f;
-
 		auto b = 0.f;
 		auto bInc = 1.f;
 		auto range = biased(start, end, b);
 		auto nVal = range.convertFrom0to1(.5f);
 		auto dist = nVal - centre;
 		auto dif = std::abs(dist);
-		if (dif < Thresh)
+		if (dif < tolerance)
 			return range;
 		do
 		{
@@ -95,7 +93,7 @@ namespace makeRange
 			dist = nVal - centre;
 			dif = std::abs(dist);
 
-		} while (dif > Thresh);
+		} while (dif > tolerance);
 
 		return range;
 	}

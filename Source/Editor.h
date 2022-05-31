@@ -43,6 +43,8 @@ namespace gui
             layout(*this),
             utils(*this, p),
 
+            pluginTitle(utils, JucePlugin_Name),
+
             lowLevel(utils),
             highLevel(utils, &lowLevel),
 
@@ -63,8 +65,12 @@ namespace gui
             
             layout.init(
                 { 1, 3 },
-                { 21, 1 }
+                { 2, 13, 1 }
             );
+
+            pluginTitle.font = getFontDosisExtraLight();
+            addAndMakeVisible(pluginTitle);
+            pluginTitle.mode = Label::Mode::TextToLabelBounds;
 
             addAndMakeVisible(lowLevel);
             addAndMakeVisible(highLevel);
@@ -82,8 +88,8 @@ namespace gui
             setResizable(true, true);
             {
                 auto user = audioProcessor.props.getUserSettings();
-                const auto w = user->getIntValue("gui/width", 620);
-                const auto h = user->getIntValue("gui/height", 420);
+                const auto w = user->getIntValue("gui/width", PPDEditorWidth);
+                const auto h = user->getIntValue("gui/height", PPDEditorHeight);
                 setSize(w, h);
             }
         }
@@ -109,8 +115,9 @@ namespace gui
 
             layout.resized();
 
-            layout.place(lowLevel, 1, 0, 1, 1, false);
-            layout.place(highLevel, 0, 0, 1, 1, false);
+            layout.place(pluginTitle, 1, 0, 1, 1, false);
+            layout.place(lowLevel, 1, 1, 1, 1, false);
+            layout.place(highLevel, 0, 0, 1, 2, false);
 
             tooltip.setBounds(layout.bottom().toNearestInt());
 
@@ -141,10 +148,12 @@ namespace gui
         
 
         audio::Processor& audioProcessor;
-    protected:
-        
+    
+protected:
         Layout layout;
         Utils utils;
+
+        Label pluginTitle;
 
         LowLevel lowLevel;
         HighLevel highLevel;

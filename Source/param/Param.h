@@ -28,14 +28,18 @@ namespace param
 #endif
 		Mix,
 		Gain,
+#if PPDHasPolarity
 		Polarity,
+#endif
 #if PPDHasUnityGain
 		UnityGain,
 #endif
 #if PPDHasHQ
 		HQ,
 #endif
+#if PPDHasStereoConfig
 		StereoConfig,
+#endif
 		Power,
 
 		// low level parameters
@@ -74,6 +78,7 @@ namespace param
 		Ratio,
 		Polarity,
 		StereoConfig,
+		Voices,
 		NumUnits
 	};
 
@@ -195,6 +200,7 @@ namespace param
 		StrToValFunc polarity();
 		StrToValFunc ms();
 		StrToValFunc db();
+		StrToValFunc voices();
 	}
 
 	namespace valToStr
@@ -217,6 +223,7 @@ namespace param
 		ValToStrFunc ms();
 		ValToStrFunc db();
 		ValToStrFunc empty();
+		ValToStrFunc voices();
 	}
 
 	Param* makeParam(PID, State&,

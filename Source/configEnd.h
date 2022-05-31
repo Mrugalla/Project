@@ -15,3 +15,10 @@
 #undef PPDValueBubbleVisibleTimeMs
 #undef PPDFPSTextEditor
 #undef PPD_DebugFormularParser
+#undef PPDHasPatchBrowser
+#undef PPDPitchShifterSizeMs
+#undef PPDPitchShifterNumVoices
+#undef PPDHasStereoConfig
+#undef PPDHasPolarity
+#undef PPDEditorWidth
+#undef PPDEditorHeight

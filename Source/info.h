@@ -13,9 +13,8 @@ HOW TO USE:
 
 1. Copy the folder "Source" as well as the file "Project.jucer" into a new folder.
 2. In Project.jucer
-	2.1 Rename project name
-	2.2 Rename plugin name
-	2.3 Define unique plugin ID
+	2.1 Rename plugin name
+	2.2 Define unique plugin ID
 3. Open config.h and define the needed pro processor definitions
 4. Open LowLevel.h and define all low level parameters, layout and stuff
 5. Ship it!

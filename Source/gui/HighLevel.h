@@ -1,6 +1,10 @@
 #pragma once
 #include "ButtonParameterRandomizer.h"
+
+#if PPDHasPatchBrowser
 #include "PatchBrowser.h"
+#endif
+
 #include "Knob.h"
 #include "Menu.h"
 #include "MIDICCMonitor.h"
@@ -16,18 +20,19 @@ namespace gui
 	{
 		HighLevel(Utils& u, LowLevel* _lowLevel) :
 			Comp(u, "", CursorType::Default),
-			pluginTitle(u, JucePlugin_Name),
-
+#if PPDHasPatchBrowser
 			patchBrowser(u),
 			patchBrowserButton(u, patchBrowser),
-
+#endif
 			macro(u, "Macro", PID::Macro, false),
 			parameterRandomizer(u),
 #if PPDHasGainIn
 			gainIn(u, "In", PID::GainIn),
 			meterIn(gainIn, u.getMeter(0)),
-#endif
 			gainOut(u, "Out", PID::Gain),
+#else
+			gainOut(u, "Gain", PID::Gain),
+#endif
 			meterOut(gainOut, u.getMeter(PPDHasGainIn ? 1 : 0)),
 			mix(u, "Mix", PID::Mix),
 #if PPDHasUnityGain
@@ -36,9 +41,13 @@ namespace gui
 #if PPDHasHQ
 			hq(u, param::toTooltip(PID::HQ)),
 #endif
+#if PPDHasStereoConfig
 			stereoConfig(u, param::toTooltip(PID::StereoConfig)),
+#endif
 			power(u, param::toTooltip(PID::Power)),
+#if PPDHasPolarity
 			polarity(u, param::toTooltip(PID::Polarity)),
+#endif
 
 			ccMonitor(u, u.getMIDILearn()),
 
@@ -47,18 +56,21 @@ namespace gui
 			menu(nullptr),
 			menuButton(u, "Click here to open or close the panel with the advanced settings.")
 		{
+#if PPDHasPatchBrowser
 			layout.init(
 				{ 1, 8, 1, 8, 1, 8, 1, 8, 1, 1 },
 				{ 1, 8, 1, 5, 1, 21, 1, 21, 1, 21, 1, 8, 5 }
 			);
-
-			pluginTitle.font = getFontMsMadi();
-
-			addAndMakeVisible(pluginTitle);
-			pluginTitle.mode = Label::Mode::TextToLabelBounds;
+#else
+			layout.init(
+				{ 1, 8, 1, 8, 1, 8, 1, 8, 1, 1 },
+				{ 1, 8, 1, 21, 1, 21, 1, 21, 1, 8, 5 }
+			);
+#endif
 			
+#if PPDHasPatchBrowser
 			addAndMakeVisible(patchBrowserButton);
-
+#endif
 			addAndMakeVisible(macro);
 			addAndMakeVisible(parameterRandomizer);
 			parameterRandomizer.add(utils.getAllParams());
@@ -76,16 +88,17 @@ namespace gui
 			hq.getLabel().mode = Label::Mode::TextToLabelBounds;
 			addAndMakeVisible(hq);
 #endif
+#if PPDHasStereoConfig
 			makeParameterSwitchButton(stereoConfig, PID::StereoConfig, ButtonSymbol::StereoConfig);
 			stereoConfig.getLabel().mode = Label::Mode::TextToLabelBounds;
 			addAndMakeVisible(stereoConfig);
-
+#endif
 			makeParameterSwitchButton(power, PID::Power, ButtonSymbol::Power);
 			addAndMakeVisible(power);
-
+#if PPDHasPolarity
 			makeParameterSwitchButton(polarity, PID::Polarity, ButtonSymbol::Polarity);
 			addAndMakeVisible(polarity);
-
+#endif
 			addAndMakeVisible(ccMonitor);
 
 			makeSymbolButton(menuButton, ButtonSymbol::Settings);
@@ -130,8 +143,10 @@ namespace gui
 
 		void init()
 		{
+#if PPDHasPatchBrowser
 			auto& pluginTop = utils.pluginTop;
 			pluginTop.addChildComponent(patchBrowser);
+#endif
 		}
 
 		void paint(Graphics& g) override
@@ -142,47 +157,62 @@ namespace gui
 			g.setFont(getFontDosisMedium());
 			g.setColour(Colours::c(ColourID::Hover));
 			
-			layout.label(g, "<", 7.f, 3.f, .5f, 1.f, false);
-			layout.label(g, ">", 7.5f, 3.f, .5f, 1.f, false);
-			layout.label(g, "v", 1.5f, 5.f, .5f, .25f, true);
+			//layout.label(g, "<", 7.f, 3.f, .5f, 1.f, false);
+			//layout.label(g, ">", 7.5f, 3.f, .5f, 1.f, false);
+			//layout.label(g, "v", 1.5f, 5.f, .5f, .25f, true);
 			
 			g.fillRect(layout.right());
 
+#if PPDGainIn
 			const auto thicc = utils.thicc;
 			const auto thicc3 = thicc * 3.f;
 			const Stroke stroke(thicc, Stroke::JointStyle::curved, Stroke::EndCapStyle::rounded);
-
 			const auto gainArea = layout(1.f, 7.f, 7.f, 1.f);
 			g.drawFittedText("Gain", gainArea.toNearestInt(), Just::centredTop, 1);
 			drawRectEdges(g, gainArea, thicc3, stroke);
+#endif
 		}
 
 		void resized() override
 		{
 			layout.resized();
 
-			layout.place(patchBrowserButton, 1.f, 3.f, 5.f, 1.f, false);
+#if PPDHasPatchBrowser
+			layout.place(patchBrowserButton, 1.f, 3.f, 7.f, 1.f, false);
+#endif
+			const auto patchBrowserOffset = PPDHasPatchBrowser ? 2.f : 0.f;
 
 			layout.place(menuButton, 1.f, 1.f, 1.f, 1.f, true);
-			layout.place(pluginTitle, 3.f, 1.f, 3.f, 1.f, false);
 			layout.place(parameterRandomizer, 7.f, 1.f, 1.f, 1.f, true);
 
-			layout.place(macro, 3.f, 5.f, 3.f, 1.f, true);
+			layout.place(macro, 3.f, 3.f + patchBrowserOffset, 3.f, 1.f, true);
 			
-			layout.place(gainIn, 1.f, 7.f, 2.5f, 2.f, true);
-			layout.place(unityGain, 3.6f, 7.2f, 1.8f, .6f, true);
-			layout.place(gainOut, 5.5f, 7.f, 2.5f, 2.f, true);
+#if PPDGainIn
+			layout.place(gainIn, 1.f, 5.f + patchBrowserOffset, 2.5f, 2.f, true);
+#if PPDUnityGain
+			layout.place(unityGain, 3.6f, 5.2f + patchBrowserOffset, 1.8f, .6f, true);
+#endif
+			layout.place(gainOut, 5.5f, 5.f + patchBrowserOffset, 2.5f, 2.f, true);
+#else
+			layout.place(gainOut, 3.f, 5.2f + patchBrowserOffset, 3.f, 1.6f, true);
+#endif
+			
+			layout.place(mix, 3.f, 7.f + patchBrowserOffset, 3.f, 1.f, true);
 
-			layout.place(mix, 3.f, 9.f, 3.f, 1.f, true);
+			layout.place(power, 1.f, 9.f + patchBrowserOffset, 1.f, 1.f, true);
+#if PPDHasPolarity
+			layout.place(polarity, 3.f, 9.f + patchBrowserOffset, 1.f, 1.f, true);
+#endif
+#if PPDHasStereoConfig
+			layout.place(stereoConfig, 5.f, 9.f + patchBrowserOffset, 1.f, 1.f, true);
+#endif
+			layout.place(hq, 7.f, 9.f + patchBrowserOffset, 1.f, 1.f, true);
 
-			layout.place(power, 1.f, 11.f, 1.f, 1.f, true);
-			layout.place(polarity, 3.f, 11.f, 1.f, 1.f, true);
-			layout.place(stereoConfig, 5.f, 11.f, 1.f, 1.f, true);
-			layout.place(hq, 7.f, 11.f, 1.f, 1.f, true);
+			layout.place(ccMonitor, 1.f, 10.f + patchBrowserOffset, 3.f, 1.f, false);
 
-			layout.place(ccMonitor, 1.f, 12.f, 3.f, 1.f, false);
-
+#if PPDHasPatchBrowser
 			patchBrowser.setBounds(lowLevel->getBounds());
+#endif
 
 			if (menu != nullptr)
 			{
@@ -192,11 +222,10 @@ namespace gui
 		}
 
 	protected:
-		Label pluginTitle;
-
+#if PPDHasPatchBrowser
 		PatchBrowser patchBrowser;
 		ButtonPatchBrowser patchBrowserButton;
-
+#endif
 		Knob macro;
 		ButtonParameterRandomizer parameterRandomizer;
 #if PPDHasGainIn
@@ -212,9 +241,13 @@ namespace gui
 #if PPDHasHQ
 		Button hq;
 #endif
+#if PPDHasStereoConfig
 		Button stereoConfig;
+#endif
 		Button power;
+#if PPDHasPolarity
 		Button polarity;
+#endif
 
 		MIDICCMonitor ccMonitor;
 

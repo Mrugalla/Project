@@ -29,6 +29,7 @@ namespace audio
 
 		int operator[](int i) const noexcept { return buf[i]; }
 
+		const int* data() const noexcept { return buf.data(); }
 	protected:
 		std::vector<int> buf;
 		int wHead, delaySize;
