@@ -25,6 +25,7 @@ namespace gui
     using Image = juce::Image;
     using Graphics = juce::Graphics;
     using Mouse = juce::MouseEvent;
+    using MouseWheel = juce::MouseWheelDetails;
     using Graphics = juce::Graphics;
     using Just = juce::Justification;
     using Timer = juce::Timer;

@@ -13,6 +13,10 @@
 #include <array>
 #include "config.h"
 
+#if PPDHasPatchBrowser
+#include "PatchBrowser.h"
+#endif
+
 namespace gui
 {
 	struct HighLevel :
