@@ -40,6 +40,7 @@ namespace gui
     using Stroke = juce::PathStrokeType;
     using Affine = juce::AffineTransform;
     using Random = juce::Random;
+    using KeyPress = juce::KeyPress;
 
     using Component = juce::Component;
     using Processor = audio::Processor;

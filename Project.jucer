@@ -50,6 +50,7 @@
         <FILE id="Uad8Jv" name="State.h" compile="0" resource="0" file="Source/arch/State.h"/>
       </GROUP>
       <GROUP id="{DA435779-5001-4379-F809-3E7C21D55DC0}" name="gui">
+        <FILE id="mE6xes" name="TextEditor.cpp" compile="1" resource="0" file="Source/gui/TextEditor.cpp"/>
         <FILE id="r0E4Jm" name="Utils.cpp" compile="1" resource="0" file="Source/gui/Utils.cpp"/>
         <FILE id="j9keEG" name="Tooltip.cpp" compile="1" resource="0" file="Source/gui/Tooltip.cpp"/>
         <FILE id="yFkICM" name="Button.cpp" compile="1" resource="0" file="Source/gui/Button.cpp"/>

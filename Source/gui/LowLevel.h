@@ -15,8 +15,8 @@ namespace gui
         {
             
             layout.init(
-                { 30, 10, 10, 30 },
-                { 30, 10, 10, 30 }
+                { 1, 2, 2, 1 },
+                { 1, 5, 1 }
             );
 
             addAndMakeVisible(crushGain);

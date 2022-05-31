@@ -118,12 +118,11 @@ namespace gui
 				if (vertical)
 				{
 					auto handleHeight = h / scrollable.actualHeight * h;
-
+					
 					if (handleHeight < thicc)
 						handleHeight = thicc;
-
+					
 					const auto handleY = scrollable.yScrollOffset / scrollable.actualHeight * (h - handleHeight);
-
 					bounds = BoundsF(0.f, handleY, w, handleHeight).reduced(thicc);
 				}
 				else
@@ -134,7 +133,6 @@ namespace gui
 						handleWidth = thicc;
 
 					const auto handleX = scrollable.xScrollOffset / scrollable.actualHeight * (w - handleWidth);
-
 					bounds = BoundsF(handleX, 0.f, handleWidth, h).reduced(thicc);
 				}
 
@@ -195,7 +193,7 @@ namespace gui
 				else
 				{
 					const auto w = static_cast<float>(scrollable.getWidth());
-					const auto nDragXY = mouse.position.y * speed * w;
+					const auto nDragXY = mouse.position.x * speed * w;
 					auto dragDif = nDragXY - dragXY;
 					if (mouse.mods.isShiftDown())
 						dragDif *= SensitiveDrag;
@@ -226,7 +224,7 @@ namespace gui
 					{
 						const auto nDragXY = mouse.position.x * speed * w;
 						const auto dragDif = nDragXY - dragXY;
-						updateHandlePosY(scrollable.xScrollOffset + dragDif);
+						updateHandlePosX(scrollable.xScrollOffset + dragDif);
 					}
 					showCursor(*this);
 				}
@@ -240,7 +238,7 @@ namespace gui
 					else
 					{
 						const auto relPos = mouse.x / w;
-						updateHandlePosY(relPos * scrollable.actualHeight);
+						updateHandlePosX(relPos * scrollable.actualHeight);
 					}
 					const auto pos = mouse.position.toInt();
 					showCursor(*this, &pos);
@@ -256,24 +254,24 @@ namespace gui
 			{
 				const auto reversed = wheel.isReversed ? -1.f : 1.f;
 				const bool isTrackPad = wheel.deltaY * wheel.deltaY < .0549316f;
-				auto dragY = 0.f;
+				dragXY = 0.f;
 				if (isTrackPad)
 				{
-					dragY = reversed * wheel.deltaY;
+					dragXY = reversed * wheel.deltaY;
 				}
 				else
 				{
 					const auto deltaYPos = wheel.deltaY > 0.f ? 1.f : -1.f;
-					dragY = reversed * deltaYPos;
+					dragXY = reversed * deltaYPos;
 				}
 				if (mouse.mods.isShiftDown())
-					dragY *= SensitiveDrag;
-				dragY *= utils.thicc * WheelDefaultSpeed;
+					dragXY *= SensitiveDrag;
+				dragXY *= utils.thicc * WheelDefaultSpeed;
 
 				if(vertical)
-					updateHandlePosY(scrollable.yScrollOffset - dragY);
+					updateHandlePosY(scrollable.yScrollOffset - dragXY);
 				else
-					updateHandlePosX(scrollable.yScrollOffset - dragY);
+					updateHandlePosX(scrollable.xScrollOffset + dragXY);
 			}
 
 			void updateHandlePosY(float y)
@@ -295,9 +293,9 @@ namespace gui
 			}
 		};
 
-		CompScrollable(Utils& u) :
+		CompScrollable(Utils& u, bool vertical = true) :
 			Comp(u, "", CursorType::Default),
-			scrollBar(u, *this),
+			scrollBar(u, *this, vertical),
 			xScrollOffset(0.f),
 			yScrollOffset(0.f),
 			actualHeight(1.f)

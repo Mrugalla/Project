@@ -354,14 +354,14 @@ namespace gui
 		{
 			layout.init(
 				{ 21, 1 },
-				{ 2, 34 }
+				{ 3, 34 }
 			);
 
 			addAndMakeVisible(sortByName);
 			addAndMakeVisible(sortByAuthor);
 
-			makeTextButton(sortByName, "name");
-			makeTextButton(sortByAuthor, "author");
+			makeTextButton(sortByName, "NAME");
+			makeTextButton(sortByAuthor, "AUTHOR");
 
 			sortByName.onClick.push_back([&]()
 				{
@@ -397,7 +397,7 @@ namespace gui
 				auto& nLabel = sortByName.getLabel();
 				auto& authLabel = sortByAuthor.getLabel();
 
-				nLabel.textCID = ColourID::Hover;
+				nLabel.textCID = ColourID::Txt;
 				authLabel.textCID = nLabel.textCID;
 
 				nLabel.font = getFontDosisMedium();
@@ -561,34 +561,62 @@ namespace gui
 		struct Tags :
 			public CompScrollable
 		{
+			static constexpr float RelWidth = 40.f;
+
 			Tags(Utils& u) :
-				CompScrollable(u),
+				CompScrollable(u, false),
 				tags()
 			{
+				setInterceptsMouseClicks(false, true);
+
 				layout.init(
 					{ 1 },
-					{ 13, 1 }
+					{ 5, 3 }
 				);
 			}
 
-			void addTag(const String& str)
+			bool addTag(const String& str)
 			{
+				for (auto& t : tags)
+					if (t->getText() == str)
+						return false;
+
 				tags.push_back(std::make_unique<Tag>(utils, str));
 				addAndMakeVisible(*tags.back());
 				resized();
+				repaintWithChildren(getParentComponent());
+
+				return true;
 			}
 
 			std::vector<std::unique_ptr<Tag>> tags;
 
 			void resized() override
 			{
+				const auto numTags = tags.size();
+				if (numTags == 0)
+					return;
+
 				layout.resized();
-
 				layout.place(scrollBar, 0, 1, 1, 1, false);
-
+				
 				const auto tagsArea = layout(0, 0, 1, 1, false);
+				{
+					const auto thicc = utils.thicc;
+					const auto y = tagsArea.getY();
+					const auto h = tagsArea.getHeight();
+					const auto w = thicc * RelWidth;
 
-				// blabla layout tags
+					actualHeight = w * static_cast<float>(numTags);
+
+					auto x = tagsArea.getX() - xScrollOffset;
+					for (auto i = 0; i < numTags; ++i)
+					{
+						auto& tag = *tags[i];
+						tag.setBounds(BoundsF(x, y, w, h).toNearestInt());
+						x += w;
+					}
+				}
 			}
 		};
 
@@ -643,10 +671,21 @@ namespace gui
 						else
 						{
 							tags.addTag(tagEditor.getText());
-							tagEditor.disable();
 							tagEditor.setVisible(false);
 						}
 					});
+
+				tagEditor.onReturn = [&]()
+				{
+					tags.addTag(tagEditor.getText());
+					tagEditor.setVisible(false);
+				};
+
+				tagEditor.onEscape = [&]()
+				{
+					tagEditor.setVisible(false);
+				};
+
 			}
 			
 		}
@@ -717,6 +756,12 @@ namespace gui
 			layout.place(removeTag, 3, 2, 1, 1, true);
 			layout.place(tagEditor, 2.2f, 1.2f, .6f, 1.6f, false);
 		}
+
+		void mouseUp(const Mouse& evt)
+		{
+			Comp::mouseUp(evt);
+			tagEditor.setVisible(false);
+		}
 	};
 
 	struct PatchBrowser :
@@ -736,7 +781,7 @@ namespace gui
 		{
 			layout.init(
 				{ 1, 2, 34, 2, 2, 1 },
-				{ 1, 2, 8, 34, 5, 1 }
+				{ 1, 3, 8, 34, 5, 1 }
 			);
 
 			makeTextButton(closeButton, "X", false);

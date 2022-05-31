@@ -39,6 +39,8 @@ namespace gui
 
 		Label& getLabel() noexcept;
 
+		const String& getText() const noexcept;
+
 		std::vector<OnClick> onClick, onRightClick, onTimer;
 		std::vector<OnPaint> onPaint;
 		BlinkyBoy blinkyBoy;

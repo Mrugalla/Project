@@ -151,6 +151,11 @@ gui::Button::Button(Utils& _utils, String&& _tooltip) :
 
 gui::Label& gui::Button::getLabel() noexcept { return label; }
 
+const gui::String& gui::Button::getText() const noexcept
+{
+	return label.getText();
+}
+
 void gui::Button::resized()
 {
 	if (label.isVisible())
