@@ -65,6 +65,17 @@ namespace gui
 			return true;
 		}
 
+		bool removeTag(const String& str)
+		{
+			for(auto i = 0; i < tags.size(); ++i)
+				if (tags[i] == str)
+				{
+					tags.erase(tags.begin() + i);
+					return true;
+				}
+			return false;
+		}
+
 		bool isSame(const String& _name, const String& _author) const
 		{
 			return name.getText() == _name &&
@@ -130,7 +141,7 @@ namespace gui
 			);
 
 			Random rand;
-			for (auto i = 0; i < 20; ++i)
+			for (auto i = 0; i < 3; ++i)
 			{
 				String strA, strB;
 				appendRandomString(strA, rand, 12);
@@ -220,11 +231,6 @@ namespace gui
 		size_t numPatches() const noexcept { return patches.size(); }
 
 		const SharedPatch operator[](int i) const noexcept { return patches[i]; }
-	protected:
-		Patches patches;
-		String filterString;
-		SharedPatch selected;
-		BoundsF listBounds;
 
 		void resized() override
 		{
@@ -252,6 +258,12 @@ namespace gui
 				}
 			}
 		}
+
+	protected:
+		Patches patches;
+		String filterString;
+		SharedPatch selected;
+		BoundsF listBounds;
 
 		void paint(Graphics& g) override
 		{
@@ -307,7 +319,7 @@ namespace gui
 			//bool considerTags = tags.size() != 0;
 			bool considerString = filterString.isNotEmpty();
 
-			if(/*!considerTags && */!considerString)
+			if (!considerString)
 				for (auto& patch : patches)
 					patch->setVisible(true);
 			else
@@ -317,25 +329,13 @@ namespace gui
 					patch->setVisible(false);
 				}
 
-				if(considerString)
+				if (considerString)
 					for (auto& patch : patches)
 					{
 						const auto& patchName = patch->name.getText().toLowerCase();
 						if (patchName.contains(filterString))
 							patch->setVisible(true);
 					}
-
-				/*
-				if(considerTags)
-					for (auto& patch : patches)
-					{
-						for (const auto& tag : tags)
-						{
-							if (patch->has(tag))
-								patch->setVisible(true);
-						}
-					}
-				*/
 			}
 
 			resized();
@@ -475,9 +475,10 @@ namespace gui
 			}
 		};
 
-		TagsSelector(Utils& u, PatchList& patchList) :
+		TagsSelector(Utils& u, PatchList& _patchList) :
 			CompScrollable(u),
-			tags()
+			tags(),
+			patchList(_patchList)
 		{
 			layout.init(
 				{ 21, 1 },
@@ -501,12 +502,59 @@ namespace gui
 			tags.push_back(std::make_unique<Tag>(utils, id));
 			addAndMakeVisible(*tags.back());
 			resized();
+
+			updatePatchList();
+
 			return true;
+		}
+
+		bool removeTag(const String& id)
+		{
+			for (auto i = 0; i < patchList.numPatches(); ++i)
+			{
+				auto& patch = *patchList[i];
+				if (patch.tagExists(id))
+					return false; // tag still exists somewhere
+			}
+
+			for(auto i = 0; i < tags.size(); ++i)
+				if (tags[i]->getText() == id)
+				{
+					tags.erase(tags.begin() + i);
+					resized();
+
+					updatePatchList();
+
+					return true;
+				}
+
+			return false;
+		}
+
+		void updatePatchList()
+		{
+			bool someTagSelected = false;
+			for(auto& tag: tags)
+				if (tag->toggleState == 1)
+				{
+					someTagSelected = true;
+					break;
+				}
+
+			if (someTagSelected)
+			{
+				for (auto i = 0; i < patchList.numPatches(); ++i)
+					updatePatch(*patchList[i]);
+			}
+
+			patchList.resized();
+			repaintWithChildren(&patchList);
 		}
 
 		void paint(Graphics&) override {}
 
 		std::vector<std::unique_ptr<Tag>> tags;
+		PatchList& patchList;
 
 		void resized() override
 		{
@@ -543,6 +591,17 @@ namespace gui
 				x += w;
 			}
 		}
+
+	private:
+
+		void updatePatch(Patch& patch)
+		{
+			patch.setVisible(false);
+
+			for (const auto& tag : tags)
+				if (patch.tagExists(tag->getText()))
+					return patch.setVisible(true);;
+		}
 	};
 
 	struct PatchInspector :
@@ -561,7 +620,7 @@ namespace gui
 		struct Tags :
 			public CompScrollable
 		{
-			static constexpr float RelWidth = 40.f;
+			static constexpr float RelWidth = 20.f;
 
 			Tags(Utils& u) :
 				CompScrollable(u, false),
@@ -575,24 +634,55 @@ namespace gui
 				);
 			}
 
-			bool addTag(const String& str)
+			void updatePatch(const SharedPatch& patch)
 			{
-				for (auto& t : tags)
-					if (t->getText() == str)
-						return false;
+				clear();
+				for (const auto& tag : patch->tags)
+					addTag(tag);
+			}
 
-				tags.push_back(std::make_unique<Tag>(utils, str));
-				addAndMakeVisible(*tags.back());
-				resized();
-				repaintWithChildren(getParentComponent());
+			bool addTag(const String& str, SharedPatch& patch)
+			{
+				if(addTag(str))
+					return patch->addTag(str);
+				return false;
+			}
 
-				return true;
+			void clear()
+			{
+				tags.clear();
+			}
+
+			void removeSelected(SharedPatch& patch, TagsSelector& tagsSelector)
+			{
+				auto numTags = static_cast<int>(tags.size());
+				for (auto i = 0; i < numTags; ++i)
+				{
+					const auto& tag = *tags[i];
+					if (tag.toggleState == 1)
+					{
+						patch->removeTag(tag.getText());
+						tagsSelector.removeTag(tag.getText());
+
+						tags.erase(tags.begin() + i);
+						resized();
+
+						if (numTags != 1)
+							groupTags();
+
+						return;
+					}
+				}
+
 			}
 
 			std::vector<std::unique_ptr<Tag>> tags;
 
 			void resized() override
 			{
+				for (auto& t : tags)
+					t->getLabel().mode = Label::Mode::TextToLabelBounds;
+
 				const auto numTags = tags.size();
 				if (numTags == 0)
 					return;
@@ -618,9 +708,57 @@ namespace gui
 					}
 				}
 			}
+
+		private:
+			void paint(Graphics& g) override
+			{
+				g.fillAll(Colours::c(ColourID::Hover));
+			}
+
+			void groupTags()
+			{
+				for (auto& tag : tags)
+					tag->toggleState = 0;
+				tags.back()->toggleState = 1;
+
+				for (auto i = 0; i < tags.size(); ++i)
+				{
+					auto& tag = *tags[i];
+
+					tag.onClick.clear();
+					tag.onClick.push_back([&others = tags, i]()
+						{
+							for (auto& oth : others)
+							{
+								oth->toggleState = 0;
+								repaintWithChildren(oth.get());
+							}
+
+							others[i]->toggleState = 1;
+						});
+				}
+
+
+				repaintWithChildren(getParentComponent());
+			}
+
+			bool addTag(const String& str)
+			{
+				for (auto& t : tags)
+					if (t->getText() == str)
+						return false;
+
+				tags.push_back(std::make_unique<Tag>(utils, str));
+				addAndMakeVisible(*tags.back());
+				resized();
+
+				groupTags();
+
+				return true;
+			}
 		};
 
-		PatchInspector(Utils& u, PatchList& _patchList) :
+		PatchInspector(Utils& u, PatchList& _patchList, TagsSelector& _tagsSelector) :
 			Comp(u, "", CursorType::Default),
 			patchList(_patchList),
 			name(u, "Name: "),
@@ -630,7 +768,9 @@ namespace gui
 			tags(u),
 			addTag(u, "Click here to add a new tag!"),
 			removeTag(u, "Click here to remove the selected tag!"),
-			tagEditor(u, "Type a tag name!", "Enter tag..")
+			tagEditor(u, "Type a tag name!", "Enter tag.."),
+
+			tagsSelector(_tagsSelector)
 		{
 			layout.init(
 				{ 1, 13, 21, 2 },
@@ -662,32 +802,33 @@ namespace gui
 				makeTextButton(removeTag, "-");
 
 				addTag.onClick.push_back([&]()
+				{
+					if (!tagEditor.isEnabled())
 					{
-						if (!tagEditor.isEnabled())
-						{
-							tagEditor.enable();
-							resized();
-						}
-						else
-						{
-							tags.addTag(tagEditor.getText());
-							tagEditor.setVisible(false);
-						}
-					});
+						tagEditor.enable();
+						resized();
+					}
+					else
+					{
+						addTagFromEditor();
+					}
+				});
+
+				removeTag.onClick.push_back([&]()
+				{
+					tags.removeSelected(patch, tagsSelector);
+				});
 
 				tagEditor.onReturn = [&]()
 				{
-					tags.addTag(tagEditor.getText());
-					tagEditor.setVisible(false);
+					addTagFromEditor();
 				};
 
 				tagEditor.onEscape = [&]()
 				{
 					tagEditor.setVisible(false);
 				};
-
 			}
-			
 		}
 
 		void paint(Graphics& g) override
@@ -708,6 +849,7 @@ namespace gui
 			{
 				name.setText("Name: " + patch->name.getText());
 				author.setText("Author: " + patch->author.getText());
+				tags.updatePatch(patch);
 			}
 			
 			repaintWithChildren(this);
@@ -721,6 +863,8 @@ namespace gui
 		Tags tags;
 		Button addTag, removeTag;
 		TextEditor tagEditor;
+
+		TagsSelector& tagsSelector;
 
 		void resized() override
 		{
@@ -762,6 +906,13 @@ namespace gui
 			Comp::mouseUp(evt);
 			tagEditor.setVisible(false);
 		}
+
+		void addTagFromEditor()
+		{
+			if (tags.addTag(tagEditor.getText(), patch))
+				tagsSelector.addTag(tagEditor.getText());
+			tagEditor.setVisible(false);
+		}
 	};
 
 	struct PatchBrowser :
@@ -777,7 +928,7 @@ namespace gui
 			searchBar(u, "Define a name or search for a patch.", "Init.."),
 			patchList(u),
 			tagsSelector(u, patchList.getPatchList()),
-			inspector(u, patchList.getPatchList())
+			inspector(u, patchList.getPatchList(), tagsSelector)
 		{
 			layout.init(
 				{ 1, 2, 34, 2, 2, 1 },

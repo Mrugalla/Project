@@ -115,7 +115,7 @@ void audio::ProcessorBackEnd::forcePrepareToPlay()
 void audio::ProcessorBackEnd::timerCallback()
 {
 #if PPDHasHQ
-    const auto ovsrEnabled = params[PID::HQ]->getValue() > .5f;
+    const auto ovsrEnabled = params[PID::HQ]->getValMod() > .5f;
     if (oversampler.isEnabled() != ovsrEnabled)
         forcePrepareToPlay();
 #endif
@@ -124,6 +124,8 @@ void audio::ProcessorBackEnd::timerCallback()
 void audio::ProcessorBackEnd::processBlockBypassed(AudioBuffer& buffer, juce::MidiBuffer&)
 {
     macroProcessor();
+    if (sus.suspendIfNeeded(buffer))
+        return;
     const auto numSamples = buffer.getNumSamples();
     if (numSamples == 0)
         return;

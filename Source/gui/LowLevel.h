@@ -1,7 +1,6 @@
 #pragma once
 #include "Knob.h"
-#include "Shader.h"
-#include "config.h"
+#include "../config.h"
 
 namespace gui
 {
@@ -38,4 +37,4 @@ namespace gui
     };
 }
 
-#include "configEnd.h"
+#include "../configEnd.h"

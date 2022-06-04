@@ -24,6 +24,10 @@ HOW TO USE:
 
 TO DO:
 
+TagsSelector
+	updateShown needs to consider TagSelector
+		maybe rewrite with event system
+
 Knob & Scollbar
 	..
 

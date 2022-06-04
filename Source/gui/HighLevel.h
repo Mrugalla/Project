@@ -10,11 +10,7 @@
 #include "MIDICCMonitor.h"
 #include "LowLevel.h"
 
-#include "config.h"
-
-#if PPDHasPatchBrowser
-#include "PatchBrowser.h"
-#endif
+#include "../config.h"
 
 namespace gui
 {
@@ -261,4 +257,4 @@ namespace gui
 }
 
 
-#include "configEnd.h"
+#include "../configEnd.h"
