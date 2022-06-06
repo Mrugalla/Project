@@ -19,36 +19,46 @@ namespace makeRange
 			return
 		{
 				start, end,
-				[a2, aM, aR](float min, float max, float x)
+				[a2, aM, aR](float min, float, float x)
 				{
-					if (x < 0.f)
-						return min;
-					if (x > 1.f)
-						return max;
 					const auto denom = aM - x + a2 * x;
 					if (denom == 0.f)
 						return min;
 					return min + aR * x / denom;
 				},
-				[a2, aM, aR](float min, float max, float x)
+				[a2, aM, aR](float min, float, float x)
 				{
-					if (x < min)
-						return 0.f;
-					if (x > max)
-						return 1.f;
 					const auto denom = a2 * min + aR - a2 * x - min + x;
 					if (denom == 0.f)
 						return 0.f;
 					return aM * (x - min) / denom;
 				},
-				nullptr
+				[](float min, float max, float x)
+				{
+					return x < min ? min : x > max ? max : x;
+				}
 		};
 		else return { start, end };
 	}
 
 	inline Range toggle() noexcept
 	{
-		return { 0.f, 1.f, 1.f };
+		return
+		{
+			0.f, 1.f,
+			[](float, float, float x)
+			{
+				return x;
+			},
+			[](float, float, float x)
+			{
+				return x;
+			},
+			[](float, float, float x)
+			{
+				return x > .5 ? 1.f : 0.f;
+			}
+		};
 	}
 
 	inline Range stepped(float start, float end, float steps = 1.f) noexcept
@@ -64,9 +74,9 @@ namespace makeRange
 				{
 					return (denormalized - min) * rangeInv;
 				},
-				[steps, stepsInv = 1.f / steps](float, float, float val)
+				[steps, stepsInv = 1.f / steps](float min, float max, float val)
 				{
-					return std::rint(val * stepsInv) * steps;
+					return juce::jlimit(min, max, std::rint(val * stepsInv) * steps);
 				}
 		};
 	}

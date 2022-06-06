@@ -77,11 +77,15 @@ namespace gui
 				modDepthLocked.toggleState = params.isModDepthLocked();
 
 				modDepthLocked.onClick.push_back([&prms = params]()
-					{
-						prms.switchModDepthLocked();
-					});
+				{
+					prms.switchModDepthLocked();
+				});
+				modDepthLocked.onClick.push_back([&btn = modDepthLocked]()
+				{
+					btn.toggleState = 1 - btn.toggleState;
+				});
 
-				makeToggleButton(modDepthLocked, "mdl");
+				makeSymbolButton(modDepthLocked, ButtonSymbol::ModDepthLock, 1);
 			}
 
 			addAndMakeVisible(swapParamWithModDepth);
@@ -110,7 +114,7 @@ namespace gui
 
 					});
 
-				makeTextButton(swapParamWithModDepth, "swap");
+				makeSymbolButton(swapParamWithModDepth, ButtonSymbol::SwapParamModDepth);
 			}
 
 #if PPDHasPatchBrowser
@@ -231,8 +235,8 @@ namespace gui
 			layout.place(parameterRandomizer, 7.f, 1.f, 1.f, 1.f, true);
 
 			layout.place(macro, 3.f, 3.f + patchBrowserOffset, 3.f, 1.f, true);
-			layout.place(modDepthLocked, 1.f, 3.f + patchBrowserOffset, 1.f, .5f, true);
-			layout.place(swapParamWithModDepth, 1.f, 3.5f + patchBrowserOffset, 1.f, .5f, true);
+			layout.place(modDepthLocked, 7.f, 3.f + patchBrowserOffset, 1.f, .5f, true);
+			layout.place(swapParamWithModDepth, 7.f, 3.5f + patchBrowserOffset, 1.f, .5f, true);
 			
 #if PPDGainIn
 			layout.place(gainIn, 1.f, 5.f + patchBrowserOffset, 2.5f, 2.f, true);

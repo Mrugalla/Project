@@ -79,6 +79,8 @@ namespace gui
 		Settings,
 		Random,
 		Abort,
+		SwapParamModDepth,
+		ModDepthLock,
 		NumSymbols
 	};
 

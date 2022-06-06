@@ -516,6 +516,83 @@ void gui::makeSymbolButton(Button& b, ButtonSymbol symbol, int targetToggleState
 				g.fillEllipse(x1 - pointRadius, y - pointRadius, pointSize, pointSize);
 			}
 		}
+		else if (symbol == ButtonSymbol::SwapParamModDepth)
+		{
+			const auto thicc3 = thicc * 3.f;
+
+			bounds = maxQuadIn(bounds).reduced(thicc3);
+
+			float xVal[2] =
+			{
+				bounds.getRight(),
+				bounds.getX()
+			};
+
+			for(auto i = 0; i < 2; ++i)
+			{
+				const auto iF = static_cast<float>(i);
+				const auto r = (iF + 1.f) * .33333f;
+
+				const auto y = bounds.getY() + bounds.getHeight() * r;
+				const auto x0 = xVal[i];
+				const auto x1 = xVal[(i + 1) % 2];
+				
+				const LineF line(x0, y, x1, y);
+				g.drawLine(line, thicc);
+
+				const auto pt = line.getEnd();
+
+				const auto ang0 = iF * PiHalf;
+
+				for(auto j = 0; j < 2; ++j)
+				{
+					const auto jF = static_cast<float>(j);
+					const auto jF2 = jF * 2.f;
+
+					const auto angle = (1.f + jF2) * PiQuart + ang0 * (-1.f + jF2);
+					
+					const auto tick = LineF::fromStartAndAngle(pt, thicc, angle)
+						.withLengthenedStart(thicc * .5f)
+						.withLengthenedEnd(thicc);
+					g.drawLine(tick, thicc);
+				}
+			}
+		}
+		else if (symbol == ButtonSymbol::ModDepthLock)
+		{
+			const auto thiccHalf = thicc * .5f;
+			const auto thicc2 = thicc * 2.f;
+			const auto thicc3 = thicc * 3.f;
+
+			bounds = maxQuadIn(bounds).reduced(thicc3);
+
+			const auto arcHeight = bounds.getHeight() * .4f;
+			const auto arcWidth = bounds.getWidth() * .6f;
+			
+			const BoundsF arcBounds(
+				bounds.getX() + (bounds.getWidth() - arcWidth) * .5f,
+				bounds.getY(),
+				arcWidth,
+				arcHeight
+			);
+
+			Path path;
+			path.addArc(arcBounds.getX(), arcBounds.getY(),
+				arcBounds.getWidth(), arcBounds.getHeight() * 2.1f, -PiHalf, PiHalf, true);
+			
+			Stroke stroke(thicc, Stroke::JointStyle::beveled, Stroke::EndCapStyle::butt);
+
+			g.strokePath(path, stroke);
+
+			const BoundsF bodyBounds(
+				bounds.getX(),
+				arcBounds.getBottom(),
+				bounds.getWidth(),
+				bounds.getHeight() - arcBounds.getHeight()
+			);
+
+			g.fillRoundedRectangle(bodyBounds, thicc);
+		}
 	});
 }
 
@@ -524,7 +601,7 @@ void gui::makeToggleButton(Button& b, const String& txt)
 	makeTextButton(b, txt, true);
 	b.onClick.push_back([&button = b]()
 	{
-		button.toggleState = !button.toggleState;
+		button.toggleState = 1 - button.toggleState;
 	});
 }
 

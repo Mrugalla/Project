@@ -711,7 +711,7 @@ param::Param* param::makeParam(PID id, State& state,
 param::Params::Params(AudioProcessor& audioProcessor, State& _state) :
 	params(),
 	state(_state),
-	modDepthLocked(true)
+	modDepthLocked(false)
 {
 	params.push_back(makeParam(PID::Macro, state, 0.f));
 #if PPDHasGainIn

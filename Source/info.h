@@ -5,7 +5,7 @@
 Welcome to DEFAULT PROJECT!
 
 This project contains my vision of a default JUCE VST plugin project. I made this so I can get started trying new ideas
-and finishing projects way faster than from a projucer-made default project.
+and finishing projects way faster than from a projucer-made template.
 
 -------------------------------------------------------------------
 
@@ -23,12 +23,6 @@ HOW TO USE:
 -------------------------------------------------------------------
 
 TO DO:
-
-Macro
-	swap button swaps HQ enabled state for some reason
-
-Button Parameters
-	randomize can lead to out of range parameter value
 
 TagsSelector
 	updateShown needs to consider TagSelector
