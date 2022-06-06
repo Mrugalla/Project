@@ -9,12 +9,12 @@ namespace gui
         layout(*this),
         utils(*this, p),
 
+        tooltip(utils, "The tooltips bar leads you to wisdom."),
+
         pluginTitle(utils, JucePlugin_Name),
 
         lowLevel(utils),
         highLevel(utils, &lowLevel),
-
-        tooltip(utils, "The tooltips bar leads you to wisdom."),
 
         contextMenuKnobs(utils),
         contextMenuButtons(utils),
@@ -34,6 +34,8 @@ namespace gui
             { 2, 13, 1 }
         );
 
+        addAndMakeVisible(tooltip);
+
         pluginTitle.font = getFontDosisExtraLight();
         addAndMakeVisible(pluginTitle);
         pluginTitle.mode = Label::Mode::TextToLabelBounds;
@@ -42,8 +44,6 @@ namespace gui
         addAndMakeVisible(highLevel);
 
         highLevel.init();
-
-        addAndMakeVisible(tooltip);
 
         addAndMakeVisible(contextMenuKnobs);
         addAndMakeVisible(contextMenuButtons);

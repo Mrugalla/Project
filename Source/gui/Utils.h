@@ -40,6 +40,8 @@ namespace gui
 		std::vector<Param*>& getAllParams() noexcept;
 		const std::vector<Param*>& getAllParams() const noexcept;
 
+		Params& getParams() noexcept;
+
 		juce::ValueTree getState() const noexcept;
 
 		void assignMIDILearn(PID pID) noexcept;

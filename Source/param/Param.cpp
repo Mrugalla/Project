@@ -112,9 +112,11 @@ param::String param::toString(Unit pID)
 	}
 }
 
+// PARAM:
+
 param::Param::Param(const PID pID, const Range& _range, const float _valDenormDefault,
 	const ValToStrFunc& _valToStr, const StrToValFunc& _strToVal,
-	State& _state, const Unit _unit, bool _locked) :
+	State& _state, const Unit _unit) :
 
 	AudioProcessorParameter(),
 	id(pID),
@@ -132,55 +134,62 @@ param::Param::Param(const PID pID, const Range& _range, const float _valDenormDe
 	strToVal(_strToVal),
 	unit(_unit),
 
-	locked(_locked),
-	inGesture(false)
+	locked(false),
+	inGesture(false),
+
+	modDepthLocked(true)
 {
 }
 
 void param::Param::savePatch(juce::ApplicationProperties& appProps) const
 {
+	const auto idStr = getIDString();
+
 	const auto v = range.convertFrom0to1(getValue());
-	state.set(getIDString(), "value", v, true);
+	state.set(idStr, "value", v, true);
 	const auto mdd = getMaxModDepth();
-	state.set(getIDString(), "maxmoddepth", mdd, true);
+	state.set(idStr, "maxmoddepth", mdd, true);
 	const auto mb = getModBias();
-	state.set(getIDString(), "modbias", mb, true);
+	state.set(idStr, "modbias", mb, true);
 
 	auto user = appProps.getUserSettings();
 	if (user->isValidFile())
 	{
-		user->setValue(getIDString() + "valDefault", valDenormDefault);
+		user->setValue(idStr + "valDefault", valDenormDefault);
 	}
 }
 
 void param::Param::loadPatch(juce::ApplicationProperties& appProps)
 {
+	const auto idStr = getIDString();
+
 	const auto lckd = isLocked();
 	if (!lckd)
 	{
-		auto var = state.get(getIDString(), "value");
+		auto var = state.get(idStr, "value");
 		if (var)
 		{
 			const auto val = static_cast<float>(*var);
 			const auto valD = range.convertTo0to1(val);
 			setValueNotifyingHost(valD);
 		}
-		var = state.get(getIDString(), "maxmoddepth");
+		var = state.get(idStr, "maxmoddepth");
 		if (var)
 		{
 			const auto val = static_cast<float>(*var);
 			setMaxModDepth(val);
 		}
-		var = state.get(getIDString(), "modbias");
+		var = state.get(idStr, "modbias");
 		if (var)
 		{
 			const auto val = static_cast<float>(*var);
 			setModBias(val);
 		}
+
 		auto user = appProps.getUserSettings();
 		if (user->isValidFile())
 		{
-			const auto vdd = user->getDoubleValue(getIDString() + "valDefault", static_cast<double>(valDenormDefault));
+			const auto vdd = user->getDoubleValue(idStr + "valDefault", static_cast<double>(valDenormDefault));
 			setDefaultValue(range.convertTo0to1(static_cast<float>(vdd)));
 		}
 	}
@@ -190,11 +199,23 @@ void param::Param::loadPatch(juce::ApplicationProperties& appProps)
 float param::Param::getValue() const { return valNorm.load(); }
 float param::Param::getValueDenorm() const noexcept { return range.convertFrom0to1(getValue()); }
 
-// called by host, normalized, avoid locks, not used by editor
+// called by host, normalized, avoid locks, not used (directly) by editor
 void param::Param::setValue(float normalized)
 {
-	if (!isLocked())
-		valNorm.store(normalized);
+	if (isLocked())
+		return;
+	
+	if(!modDepthLocked)
+		return valNorm.store(normalized);
+
+	const auto p0 = valNorm.load();
+	const auto p1 = normalized;
+
+	const auto d0 = getMaxModDepth();
+	const auto d1 = d0 - p1 + p0;
+
+	valNorm.store(p1);
+	setMaxModDepth(d1);
 }
 
 // called by editor
@@ -248,6 +269,8 @@ void param::Param::setModBias(float b) noexcept
 }
 
 float param::Param::getModBias() const noexcept { return modBias.load(); }
+
+void param::Param::setModDepthLocked(bool e) noexcept { modDepthLocked = e; }
 
 void param::Param::setDefaultValue(float norm) noexcept
 {
@@ -319,6 +342,8 @@ float param::Param::biased(float start, float end, float bias/*[0,1]*/, float x)
 	return start + aR * x / (aM - x + a2 * x);
 }
 
+// STRING PARSER
+
 std::function<float(param::String, const float/*altVal*/)> param::strToVal::parse()
 {
 	return [](const String& txt, const float altVal)
@@ -330,6 +355,8 @@ std::function<float(param::String, const float/*altVal*/)> param::strToVal::pars
 		return altVal;
 	};
 }
+
+// STR TO VAL
 
 param::StrToValFunc param::strToVal::power()
 {
@@ -495,6 +522,7 @@ param::StrToValFunc param::strToVal::voices()
 	};
 }
 
+// VAL TO STR
 
 param::ValToStrFunc param::valToStr::mute()
 {
@@ -606,10 +634,11 @@ param::ValToStrFunc param::valToStr::voices()
 	};
 }
 
+// MAKE PARAM
 
 param::Param* param::makeParam(PID id, State& state,
 	float valDenormDefault, const Range& range,
-	Unit unit, bool isLocked)
+	Unit unit)
 {
 	ValToStrFunc valToStrFunc;
 	StrToValFunc strToValFunc;
@@ -674,11 +703,15 @@ param::Param* param::makeParam(PID id, State& state,
 		break;
 	}
 
-	return new Param(id, range, valDenormDefault, valToStrFunc, strToValFunc, state, unit, isLocked);
+	return new Param(id, range, valDenormDefault, valToStrFunc, strToValFunc, state, unit);
 }
 
-param::Params::Params(AudioProcessor& audioProcessor, State& state) :
-	params()
+// PARAMS
+
+param::Params::Params(AudioProcessor& audioProcessor, State& _state) :
+	params(),
+	state(_state),
+	modDepthLocked(true)
 {
 	params.push_back(makeParam(PID::Macro, state, 0.f));
 #if PPDHasGainIn
@@ -712,6 +745,11 @@ param::Params::Params(AudioProcessor& audioProcessor, State& state) :
 
 void param::Params::loadPatch(juce::ApplicationProperties& appProps)
 {
+	const auto idStr = getIDString();
+	const auto mdl = state.get(idStr, "moddepthlocked");
+	if (mdl != nullptr)
+		setModDepthLocked(static_cast<int>(*mdl) != 0);
+
 	for (auto param : params)
 		param->loadPatch(appProps);
 }
@@ -720,6 +758,14 @@ void param::Params::savePatch(juce::ApplicationProperties& appProps) const
 {
 	for (auto param : params)
 		param->savePatch(appProps);
+
+	const auto idStr = getIDString();
+	state.set(idStr, "moddepthlocked", isModDepthLocked() ? 1 : 0);
+}
+
+param::String param::Params::getIDString() const
+{
+	return "params";
 }
 
 int param::Params::getParamIdx(const String& nameOrID) const
@@ -741,7 +787,21 @@ param::Param* param::Params::operator[](PID p) noexcept { return params[static_c
 const param::Param* param::Params::operator[](PID p) const noexcept { return params[static_cast<int>(p)]; }
 
 param::Params::Parameters& param::Params::data() noexcept { return params; }
+
 const param::Params::Parameters& param::Params::data() const noexcept { return params; }
+
+bool param::Params::isModDepthLocked() const noexcept { return modDepthLocked.load(); }
+
+void param::Params::setModDepthLocked(bool e) noexcept
+{
+	modDepthLocked.store(e);
+	for (auto& p : params)
+		p->setModDepthLocked(e);
+}
+
+void param::Params::switchModDepthLocked() noexcept { setModDepthLocked(!isModDepthLocked()); }
+
+// MACRO PROCESSOR
 
 param::MacroProcessor::MacroProcessor(Params& _params) :
 	params(_params)

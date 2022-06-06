@@ -73,6 +73,16 @@ namespace makeRange
 
 	// advanced one(s):
 
+	inline Range withCentre(float start, float end, float centre) noexcept
+	{
+		const auto r = end - start;
+		const auto v = (centre - start) / r;
+
+		return makeRange::biased(start, end, 2.f * v - 1.f);
+	}
+
+	// probably deprecated
+	/*
 	inline Range withCentre(float start, float end, float centre, float tolerance = .0001f) noexcept
 	{
 		auto b = 0.f;
@@ -97,4 +107,6 @@ namespace makeRange
 
 		return range;
 	}
+	*/
+
 }

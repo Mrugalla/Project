@@ -101,7 +101,7 @@ namespace param
 	public:
 		Param(const PID, const Range&, const float/*_valDenormDefault*/,
 			const ValToStrFunc&, const StrToValFunc&,
-			State&, const Unit = Unit::NumUnits, bool/*_locked*/ = false);
+			State&, const Unit = Unit::NumUnits);
 
 		void savePatch(juce::ApplicationProperties&) const;
 
@@ -163,6 +163,10 @@ namespace param
 		void setLocked(bool) noexcept;
 		void switchLock() noexcept;
 
+		void setModDepthLocked(bool) noexcept;
+
+		float biased(float /*start*/, float /*end*/, float /*bias [0,1]*/, float /*x*/) const noexcept;
+
 		const PID id;
 		const Range range;
 	protected:
@@ -174,10 +178,10 @@ namespace param
 		Unit unit;
 
 		std::atomic<bool> locked, inGesture;
+
+		bool modDepthLocked;
 	private:
 		String getIDString() const;
-
-		float biased(float /*start*/, float /*end*/, float /*bias [0,1]*/, float /*x*/) const noexcept;
 	};
 
 	namespace strToVal
@@ -228,7 +232,7 @@ namespace param
 
 	Param* makeParam(PID, State&,
 		float /*valDenormDefault*/ = 1.f, const Range& = Range(0.f, 1.f),
-		Unit = Unit::Percent, bool /*isLocked*/ = false);
+		Unit = Unit::Percent);
 
 	struct Params
 	{
@@ -241,9 +245,15 @@ namespace param
 
 		void savePatch(juce::ApplicationProperties&) const;
 
+		String getIDString() const;
+
 		int getParamIdx(const String& /*nameOrID*/) const;
 
 		size_t numParams() const noexcept;
+
+		bool isModDepthLocked() const noexcept;
+		void setModDepthLocked(bool) noexcept;
+		void switchModDepthLocked() noexcept;
 
 		Param* operator[](int) noexcept;
 		const Param* operator[](int) const noexcept;
@@ -254,6 +264,9 @@ namespace param
 		const Parameters& data() const noexcept;
 	protected:
 		Parameters params;
+
+		State& state;
+		std::atomic<float> modDepthLocked;
 	};
 
 	struct MacroProcessor

@@ -35,12 +35,12 @@ protected:
         Layout layout;
         Utils utils;
 
+        Tooltip tooltip;
+
         Label pluginTitle;
 
         LowLevel lowLevel;
         HighLevel highLevel;
-
-        Tooltip tooltip;
 
         ContextMenuKnobs contextMenuKnobs;
         ContextMenuButtons contextMenuButtons;

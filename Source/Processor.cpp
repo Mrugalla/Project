@@ -173,7 +173,7 @@ audio::AudioBuffer* audio::ProcessorBackEnd::processBlockStart(AudioBuffer& buff
         , (params[PID::Polarity]->getValMod() > .5f ? -1.f : 1.f)
 #endif
 #if PPDHasUnityGain
-        , params[PID::UnityGain]->getValue()
+        , params[PID::UnityGain]->getValMod()
 #endif
     );
 #if PPDHasGainIn
@@ -273,10 +273,8 @@ void audio::Processor::processBlock(AudioBuffer& buffer, juce::MidiBuffer& midi)
 
 void audio::Processor::processBlockCustom(float** samples, int numChannels, int numSamples) noexcept
 {
-    {
-        const auto crushGain = params[PID::CrushGain]->getValModDenorm();
-        crush(samples, numChannels, numSamples, crushGain);
-    }
+    const auto crushGain = params[PID::CrushGain]->getValModDenorm();
+    crush(samples, numChannels, numSamples, crushGain);
 }
 
 void audio::Processor::releaseResources() {}

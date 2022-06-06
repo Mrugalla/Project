@@ -3,7 +3,7 @@
 #define PPDEditorWidth 774
 #define PPDEditorHeight 448
 
-#define PPDHasEditor true
+#define PPDHasEditor false
 #define PPDHasPatchBrowser true
 
 #define PPDHasGainIn true

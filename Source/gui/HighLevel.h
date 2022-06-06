@@ -24,6 +24,9 @@ namespace gui
 			patchBrowserButton(u, patchBrowser),
 #endif
 			macro(u, "Macro", PID::Macro, false),
+			modDepthLocked(u, "(Un-)Lock all parameters' modulation depths to their current destinations."),
+			swapParamWithModDepth(u, "Swap all parameters values with their current destinations."),
+
 			parameterRandomizer(u),
 #if PPDHasGainIn
 			gainIn(u, "In", PID::GainIn),
@@ -67,6 +70,49 @@ namespace gui
 			);
 #endif
 			
+			addAndMakeVisible(modDepthLocked);
+			{
+				auto& params = utils.getParams();
+
+				modDepthLocked.toggleState = params.isModDepthLocked();
+
+				modDepthLocked.onClick.push_back([&prms = params]()
+					{
+						prms.switchModDepthLocked();
+					});
+
+				makeToggleButton(modDepthLocked, "mdl");
+			}
+
+			addAndMakeVisible(swapParamWithModDepth);
+			{
+				auto& params = utils.getParams();
+
+				swapParamWithModDepth.onClick.push_back([&prms = params]()
+					{
+						for (auto i = static_cast<int>(prms.numParams() - 1); i > 0; --i)
+						{
+							auto& param = *prms[i];
+
+							const auto p = param.getValue();
+							const auto d = param.getMaxModDepth();
+							const auto b = param.getModBias();
+
+							const auto m = p + d;
+
+							param.setValueWithGesture(m);
+							param.setMaxModDepth(-d);
+							param.setModBias(1.f - b);
+						}
+						
+						auto& macro = *prms[PID::Macro];
+						macro.setValueWithGesture(1.f - macro.getValue());
+
+					});
+
+				makeTextButton(swapParamWithModDepth, "swap");
+			}
+
 #if PPDHasPatchBrowser
 			addAndMakeVisible(patchBrowserButton);
 #endif
@@ -185,6 +231,8 @@ namespace gui
 			layout.place(parameterRandomizer, 7.f, 1.f, 1.f, 1.f, true);
 
 			layout.place(macro, 3.f, 3.f + patchBrowserOffset, 3.f, 1.f, true);
+			layout.place(modDepthLocked, 1.f, 3.f + patchBrowserOffset, 1.f, .5f, true);
+			layout.place(swapParamWithModDepth, 1.f, 3.5f + patchBrowserOffset, 1.f, .5f, true);
 			
 #if PPDGainIn
 			layout.place(gainIn, 1.f, 5.f + patchBrowserOffset, 2.5f, 2.f, true);
@@ -226,6 +274,9 @@ namespace gui
 		ButtonPatchBrowser patchBrowserButton;
 #endif
 		Knob macro;
+		Button modDepthLocked;
+		Button swapParamWithModDepth;
+
 		ButtonParameterRandomizer parameterRandomizer;
 #if PPDHasGainIn
 		Knob gainIn;

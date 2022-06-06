@@ -24,6 +24,12 @@ HOW TO USE:
 
 TO DO:
 
+Macro
+	swap button swaps HQ enabled state for some reason
+
+Button Parameters
+	randomize can lead to out of range parameter value
+
 TagsSelector
 	updateShown needs to consider TagSelector
 		maybe rewrite with event system

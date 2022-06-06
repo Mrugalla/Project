@@ -17,6 +17,11 @@ namespace gui
 	Param* Utils::getParam(PID pID) noexcept { return params[pID]; }
 	const Param* Utils::getParam(PID pID) const noexcept { return params[pID]; }
 
+	Params& Utils::getParams() noexcept
+	{
+		return audioProcessor.params;
+	}
+
 	std::vector<Param*>& Utils::getAllParams() noexcept
 	{
 		return params.data();
