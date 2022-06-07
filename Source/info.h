@@ -24,10 +24,6 @@ HOW TO USE:
 
 TO DO:
 
-TagsSelector
-	updateShown needs to consider TagSelector
-		maybe rewrite with event system
-
 Knob & Scollbar
 	..
 
@@ -40,6 +36,9 @@ ScrollBar
 
 PatchBrowser
 	remake tag system
+		1. vector of all existent tags exists
+		2. patch has vector of tags
+
 		1. every patch has list of tags (inspector)
 			click on tag to select
 		2. every tag has
@@ -102,13 +101,11 @@ Label
 	make free func(s) for grouping labels (n buttons)
 
 Options Menu
-	lookandfeel thickness
 	think about how to make automatic tutorials or manuals
 	how to make automatic updates possible
 
 All Params
 	saving and loading max mod depths as preset
-	setting max mod depths as absolute
 
 Param
 	...

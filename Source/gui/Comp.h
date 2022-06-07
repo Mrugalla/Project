@@ -323,6 +323,9 @@ namespace gui
 
 		void resized() override
 		{
+			if (getWidth() + getHeight() == 0)
+				return;
+
 			if (screenshotImage.isNull())
 			{
 				screenshotImage = Image(Image::RGB, getWidth(), getHeight(), false);

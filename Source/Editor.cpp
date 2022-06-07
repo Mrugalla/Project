@@ -9,7 +9,7 @@ namespace gui
         layout(*this),
         utils(*this, p),
 
-        tooltip(utils, "The tooltips bar leads you to wisdom."),
+        tooltip(utils, "The tooltips bar leads to ultimate wisdom."),
 
         pluginTitle(utils, JucePlugin_Name),
 

@@ -4,7 +4,7 @@
 #define PPDEditorHeight 448
 
 #define PPDHasEditor true
-#define PPDHasPatchBrowser false
+#define PPDHasPatchBrowser true
 
 #define PPDHasGainIn true
 #define PPDHasHQ true

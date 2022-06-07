@@ -208,13 +208,16 @@ namespace gui
 				--tickIdx;
 			drawTick = true;
 			updateLabel();
+			onType();
 			return true;
 		}
 		if (key == key.deleteKey)
 		{
+			onRemove();
 			txt = txt.substring(0, tickIdx) + txt.substring(tickIdx + 1);
 			drawTick = true;
 			updateLabel();
+			onType();
 			return true;
 		}
 		const auto chr = key.getTextCharacter();

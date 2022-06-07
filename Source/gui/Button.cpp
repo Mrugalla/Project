@@ -283,7 +283,11 @@ void gui::makeSymbolButton(Button& b, ButtonSymbol symbol, int targetToggleState
 		thicc *= (isOver ? 1.1f : 1.f);
 
 		auto bounds = button.getLocalBounds().toFloat().reduced(thicc);
-		auto col = blinkyBoy.getInterpolated(Colours::c(ColourID::Bg), juce::Colours::white);
+		Colour col;
+		if(symbol == ButtonSymbol::Empty)
+			col = blinkyBoy.getInterpolated(Colours::c(ColourID::Transp), juce::Colours::white);
+		else
+			col = blinkyBoy.getInterpolated(Colours::c(ColourID::Bg), juce::Colours::white);
 
 		g.setColour(col);
 		g.fillRoundedRectangle(bounds, thicc);
@@ -291,7 +295,9 @@ void gui::makeSymbolButton(Button& b, ButtonSymbol symbol, int targetToggleState
 		g.setColour(Colours::c(ColourID::Hover));
 		if (withToggle && button.toggleState == targetToggleState)
 			g.fillRoundedRectangle(bounds, thicc);
-		g.drawRoundedRectangle(bounds, thicc, thicc);
+		
+		if (symbol != ButtonSymbol::Empty)
+			g.drawRoundedRectangle(bounds, thicc, thicc);
 
 		if (button.isMouseOver())
 		{
