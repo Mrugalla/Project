@@ -6,152 +6,6 @@
 // OLD STUFF:
 
 // VERSION 1
-
-/*
-	struct TagsSelector :
-		public CompScrollable
-	{
-		static constexpr float RelHeight = 10.f;
-
-		struct Tag :
-			public Button
-		{
-			Tag(Utils& u, const String& str = "") :
-				Button(u, "Click on this tag to de/select it.")
-			{
-				makeTextButton(*this, str);
-			}
-		};
-
-		TagsSelector(Utils& u, PatchList& _patchList) :
-			CompScrollable(u),
-			tags(),
-			patchList(_patchList)
-		{
-			layout.init(
-				{ 21, 1 },
-				{ 1 }
-			);
-
-			for (auto i = 0; i < patchList.numPatches(); ++i)
-			{
-				const auto patch = patchList[i];
-				for(const auto& tag: patch->tags)
-					addTag(tag);
-			}
-		}
-
-		bool addTag(const String& id)
-		{
-			for (const auto& tag : tags)
-				if (tag->getLabel().getText() == id)
-					return false; // tag already exists
-
-			tags.push_back(std::make_unique<Tag>(utils, id));
-			addAndMakeVisible(*tags.back());
-			resized();
-
-			updatePatchList();
-
-			return true;
-		}
-
-		bool removeTag(const String& id)
-		{
-			for (auto i = 0; i < patchList.numPatches(); ++i)
-			{
-				auto& patch = *patchList[i];
-				if (patch.tagExists(id))
-					return false; // tag still exists somewhere
-			}
-
-			for(auto i = 0; i < tags.size(); ++i)
-				if (tags[i]->getText() == id)
-				{
-					tags.erase(tags.begin() + i);
-					resized();
-
-					updatePatchList();
-
-					return true;
-				}
-
-			return false;
-		}
-
-		void updatePatchList()
-		{
-			bool someTagSelected = false;
-			for(auto& tag: tags)
-				if (tag->toggleState == 1)
-				{
-					someTagSelected = true;
-					break;
-				}
-
-			if (someTagSelected)
-			{
-				for (auto i = 0; i < patchList.numPatches(); ++i)
-					updatePatch(*patchList[i]);
-			}
-
-			patchList.resized();
-			repaintWithChildren(&patchList);
-		}
-
-		void paint(Graphics&) override {}
-
-		std::vector<std::unique_ptr<Tag>> tags;
-		PatchList& patchList;
-
-		void resized() override
-		{
-			layout.resized();
-
-			layout.place(scrollBar, 1, 0, 1, 1, false);
-
-			const auto bounds = layout(0, 0, 1, 1, false);
-
-			const auto width = bounds.getWidth();
-			const auto right = bounds.getRight();
-
-			const auto thicc = utils.thicc;
-
-			auto x = bounds.getX();
-			auto y = bounds.getY() - yScrollOffset;
-			const auto h = RelHeight * thicc;
-			const auto w = h * 3.f;
-
-			const auto numTags = static_cast<float>(tags.size());
-			const auto numTagsPerRow = std::floor(width / w);
-			actualHeight = numTags * h / numTagsPerRow;
-
-			for (auto& tag : tags)
-			{
-				if (x + w > right)
-				{
-					x = 0.f;
-					y += h;
-				}
-
-				tag->setBounds(BoundsF(x, y, w, h).toNearestInt());
-
-				x += w;
-			}
-		}
-
-	private:
-
-		void updatePatch(Patch& patch)
-		{
-			patch.setVisible(false);
-
-			for (const auto& tag : tags)
-				if (patch.tagExists(tag->getText()))
-					return patch.setVisible(true);;
-		}
-	};
-	*/
 /*
 	struct PatchInspector :
 		public Comp
@@ -947,7 +801,8 @@ namespace gui
 		Patch(Utils& u, const String& _name, const String& _author) :
 			Button(u, "Click on this patch in order to select it."),
 			name(u, _name),
-			author(u, _author)
+			author(u, _author),
+			tags()
 		{
 			layout.init(
 				{ 1, PatchNameWidth, PatchAuthorWidth, 1 },
@@ -997,6 +852,7 @@ namespace gui
 		}
 
 		Label name, author;
+		std::vector<String> tags;
 	};
 
 	static constexpr float PatchRelHeight = 8.f;
@@ -1384,12 +1240,168 @@ namespace gui
 			patches.applyFilters(text);
 		}
 
+		Patches& getPatches() noexcept { return patches; }
+
+		const Patches& getPatches() const noexcept { return patches; }
+
 	protected:
 		Patches patches;
 		Button sortByName, sortByAuthor;
 
 		void paint(Graphics&) override {}
 	};
+
+	static constexpr float TagRelHeight = 8.f;
+
+	struct TagsSelector :
+		public CompScrollable
+	{
+		struct Tag :
+			public Button
+		{
+			Tag(Utils& u, const String& str = "") :
+				Button(u, "Click on this tag to (de-)select it!"),
+				refCount(1)
+			{
+				makeTextButton(*this, str);
+			}
+
+			std::atomic<int> refCount;
+		};
+
+		using UniqueTag = std::unique_ptr<Tag>;
+
+		TagsSelector(Utils& u, Patches& patches) :
+			CompScrollable(u),
+			tags()
+		{
+			layout.init(
+				{ 21, 1 },
+				{ 1 }
+			);
+
+			for (auto i = 0; i < patches.numPatches(); ++i)
+			{
+				const auto& patch = patches[i];
+				for (const auto& tag : patch.tags)
+					addTag(tag);
+			}
+		}
+
+		int getIdx(const String& txt) const noexcept
+		{
+			for (auto i = 0; i < numTags(); ++i)
+			{
+				const auto& tag = tags[i]->getText();
+				if (tag == txt)
+					return i;
+			}
+			return -1;
+		}
+
+		bool tagExists(const String& txt) const noexcept
+		{
+			const auto idx = getIdx(txt);
+			return idx == -1 ? false : true;
+		}
+
+		bool addTag(const String& txt)
+		{
+			const auto idx = getIdx(txt);
+
+			if (idx != -1)
+			{
+				// tag already exist
+				++tags[idx]->refCount;
+				return false;
+			}
+
+			tags.push_back(std::make_unique<Tag>(
+				utils, txt
+			));
+			auto& tag = *tags.back();
+			addAndMakeVisible(tag);
+
+			resized();
+			repaintWithChildren(this);
+
+			return true;
+		}
+
+		bool removeTag(const String& txt)
+		{
+			const auto idx = getIdx(txt);
+			if (idx == -1)
+			{
+				// tag doesn't exist
+				return false;
+			}
+
+			auto& tag = *tags[idx];
+			const auto count = tag.refCount.load() - 1;
+			if (count == 0)
+			{
+				// remove tag
+				tags.erase(tags.begin() + idx);
+
+				resized();
+				repaintWithChildren(this);
+
+				return true;
+			}
+
+			// tag still exists
+			tag.refCount.store(count);
+
+			return false;
+		}
+
+		void paint(Graphics&) override {}
+
+		void resized() override
+		{
+			layout.resized();
+
+			layout.place(scrollBar, 1, 0, 1, 1, false);
+
+			const auto bounds = layout(0, 0, 1, 1, false);
+
+			const auto width = bounds.getWidth();
+			const auto right = bounds.getRight();
+
+			const auto thicc = utils.thicc;
+
+			auto x = bounds.getX();
+			auto y = bounds.getY() - yScrollOffset;
+			const auto h = TagRelHeight * thicc;
+			const auto w = h * 3.f;
+
+			const auto numTgs = static_cast<float>(numTags());
+			const auto numTagsPerRow = std::floor(width / w);
+			actualHeight = numTgs * h / numTagsPerRow;
+
+			for (auto& tag : tags)
+			{
+				if (x + w > right)
+				{
+					x = 0.f;
+					y += h;
+				}
+
+				tag->setBounds(BoundsF(x, y, w, h).toNearestInt());
+
+				x += w;
+			}
+		}
+
+		size_t numTags() const noexcept
+		{
+			return tags.size();
+		}
+
+		std::vector<UniqueTag> tags;
+	};
+
 
 	struct PatchBrowser :
 		public CompScreenshotable
@@ -1403,8 +1415,8 @@ namespace gui
 
 			patches(u),
 
-			searchBar(u, "Define a name or search for a patch!", "Init..")
-			//tagsSelector(u, patchList.getPatchList()),
+			searchBar(u, "Define a name or search for a patch!", "Init.."),
+			tagsSelector(u, patches.getPatches())
 			//inspector(u, patchList.getPatchList(), tagsSelector)
 		{
 			layout.init(
@@ -1445,8 +1457,7 @@ namespace gui
 			addAndMakeVisible(removeButton);
 			addAndMakeVisible(searchBar);
 			addAndMakeVisible(patches);
-
-			//addAndMakeVisible(tagsSelector);
+			addAndMakeVisible(tagsSelector);
 			//addAndMakeVisible(inspector);
 
 			onScreenshotFX.push_back([](Graphics& g, Image& img)
@@ -1520,8 +1531,7 @@ namespace gui
 			layout.place(removeButton, 5, 1, 1, 1, true);
 			layout.place(searchBar, 2, 1, 2, 1, false);
 			layout.place(patches, 1, 2, 2, 2, false);
-
-			//layout.place(tagsSelector, 2, 2, 1, 1, false);
+			layout.place(tagsSelector, 2, 2, 1, 1, false);
 			//layout.place(inspector, 1, 4, 4, 1, false);
 
 		}
@@ -1541,7 +1551,7 @@ namespace gui
 		PatchesSortable patches;
 
 		TextEditor searchBar;
-		//TagsSelector tagsSelector;
+		TagsSelector tagsSelector;
 		//PatchInspector inspector;
 
 		void savePatch()
