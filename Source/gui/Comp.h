@@ -82,232 +82,37 @@ namespace gui
 			static constexpr float SensitiveDrag = .2f;
 			static constexpr float WheelDefaultSpeed = 12.f;
 
-			ScrollBar(Utils& u, CompScrollable& _scrollable, bool _vertical = true) :
-				Comp(u, "Drag / Mousewheel to scroll."),
-				scrollable(_scrollable),
-				dragXY(0.f),
-				vertical(_vertical)
-			{
-				setBufferedToImage(true);
-			}
+			ScrollBar(Utils&, CompScrollable&, bool /*vertical*/ = true);
 
-			bool needed() const noexcept
-			{
-				if(vertical)
-					return scrollable.actualHeight > static_cast<float>(getHeight());
-				return scrollable.actualHeight > static_cast<float>(getWidth());
-			}
+			bool needed() const noexcept;
 
-			void mouseEnter(const Mouse& mouse) override
-			{
-				Comp::mouseEnter(mouse);
-				repaint();
-			}
+			void mouseEnter(const Mouse&) override;
 
-			void mouseDown(const Mouse& mouse) override
-			{
-				if (!needed())
-					return;
+			void mouseDown(const Mouse&) override;
 
-				hideCursor();
+			void mouseDrag(const Mouse&) override;
 
-				const auto speed = 1.f / utils.getDragSpeed();
+			void mouseUp(const Mouse&) override;
 
-				if (vertical)
-				{
-					const auto h = static_cast<float>(scrollable.getHeight());
-					dragXY = mouse.position.y * speed * h;
-				}
-				else
-				{
-					const auto w = static_cast<float>(scrollable.getWidth());
-					dragXY = mouse.position.x * speed * w;
-				}
-			}
+			void mouseExit(const Mouse&) override;
 
-			void mouseDrag(const Mouse& mouse) override
-			{
-				if (!needed())
-					return;
-
-				const auto speed = 1.f / utils.getDragSpeed();
-
-				if (vertical)
-				{
-					const auto h = static_cast<float>(scrollable.getHeight());
-					const auto nDragXY = mouse.position.y * speed * h;
-					auto dragDif = nDragXY - dragXY;
-					if (mouse.mods.isShiftDown())
-						dragDif *= SensitiveDrag;
-					updateHandlePosY(scrollable.yScrollOffset + dragDif);
-					dragXY = nDragXY;
-				}
-				else
-				{
-					const auto w = static_cast<float>(scrollable.getWidth());
-					const auto nDragXY = mouse.position.x * speed * w;
-					auto dragDif = nDragXY - dragXY;
-					if (mouse.mods.isShiftDown())
-						dragDif *= SensitiveDrag;
-					updateHandlePosX(scrollable.xScrollOffset + dragDif);
-					dragXY = nDragXY;
-				}
-			}
-
-			void mouseUp(const Mouse& mouse) override
-			{
-				if (!needed())
-					return;
-
-				const auto w = static_cast<float>(scrollable.getWidth());
-				const auto h = static_cast<float>(scrollable.getHeight());
-
-				if (mouse.mouseWasDraggedSinceMouseDown())
-				{
-					const auto speed = 1.f / utils.getDragSpeed();
-
-					if (vertical)
-					{
-						const auto nDragXY = mouse.position.y * speed * h;
-						const auto dragDif = nDragXY - dragXY;
-						updateHandlePosY(scrollable.yScrollOffset + dragDif);
-					}
-					else
-					{
-						const auto nDragXY = mouse.position.x * speed * w;
-						const auto dragDif = nDragXY - dragXY;
-						updateHandlePosX(scrollable.xScrollOffset + dragDif);
-					}
-					showCursor(*this);
-				}
-				else
-				{
-					if (vertical)
-					{
-						const auto relPos = mouse.y / h;
-						updateHandlePosY(relPos * scrollable.actualHeight);
-					}
-					else
-					{
-						const auto relPos = mouse.x / w;
-						updateHandlePosX(relPos * scrollable.actualHeight);
-					}
-					const auto pos = mouse.position.toInt();
-					showCursor(*this, &pos);
-				}
-			}
-
-			void mouseExit(const Mouse&) override
-			{
-				repaint();
-			}
-
-			void mouseWheelMove(const Mouse& mouse, const juce::MouseWheelDetails& wheel) override
-			{
-				const auto reversed = wheel.isReversed ? -1.f : 1.f;
-				const bool isTrackPad = wheel.deltaY * wheel.deltaY < .0549316f;
-				dragXY = 0.f;
-				if (isTrackPad)
-				{
-					dragXY = reversed * wheel.deltaY;
-				}
-				else
-				{
-					const auto deltaYPos = wheel.deltaY > 0.f ? 1.f : -1.f;
-					dragXY = reversed * deltaYPos;
-				}
-				if (mouse.mods.isShiftDown())
-					dragXY *= SensitiveDrag;
-				dragXY *= utils.thicc * WheelDefaultSpeed;
-
-				if (vertical)
-					updateHandlePosY(scrollable.yScrollOffset - dragXY);
-				else
-					updateHandlePosX(scrollable.xScrollOffset + dragXY);
-			}
+			void mouseWheelMove(const Mouse&, const MouseWheel&) override;
 
 		protected:
 			CompScrollable& scrollable;
 			float dragXY;
 			bool vertical;
 
-			void paint(Graphics& g) override
-			{
-				if (!needed())
-					return;
+			void paint(Graphics&) override;
 
-				const auto w = static_cast<float>(scrollable.getWidth());
-				const auto h = static_cast<float>(scrollable.getHeight());
+			void updateHandlePosY(float);
 
-				const auto thicc = utils.thicc;
-
-				BoundsF bounds;
-
-				if (vertical)
-				{
-					auto handleHeight = h / scrollable.actualHeight * h;
-					
-					if (handleHeight < thicc)
-						handleHeight = thicc;
-					
-					const auto handleY = scrollable.yScrollOffset / scrollable.actualHeight * (h - handleHeight);
-					bounds = BoundsF(0.f, handleY, w, handleHeight).reduced(thicc);
-				}
-				else
-				{
-					auto handleWidth = w / scrollable.actualHeight * w;
-
-					if (handleWidth < thicc)
-						handleWidth = thicc;
-
-					const auto handleX = scrollable.xScrollOffset / scrollable.actualHeight * (w - handleWidth);
-					bounds = BoundsF(handleX, 0.f, handleWidth, h).reduced(thicc);
-				}
-
-				g.setColour(Colours::c(ColourID::Hover));
-				if (isMouseOver())
-					g.fillRoundedRectangle(bounds, thicc);
-				if (isMouseButtonDown())
-					g.fillRoundedRectangle(bounds, thicc);
-
-				g.setColour(Colours::c(ColourID::Interact));
-				g.drawRoundedRectangle(bounds, thicc, thicc);
-			}
-
-			void updateHandlePosY(float y)
-			{
-				const auto h = static_cast<float>(scrollable.getHeight());
-				const auto maxHeight = std::max(h, scrollable.actualHeight - h);
-				scrollable.yScrollOffset = juce::jlimit(0.f, maxHeight, y);
-				getParentComponent()->resized();
-				repaint();
-			}
-
-			void updateHandlePosX(float x)
-			{
-				const auto w = static_cast<float>(scrollable.getWidth());
-				const auto maxWidth = std::max(w, scrollable.actualHeight - w);
-				scrollable.xScrollOffset = juce::jlimit(0.f, maxWidth, x);
-				getParentComponent()->resized();
-				repaint();
-			}
+			void updateHandlePosX(float);
 		};
 
-		CompScrollable(Utils& u, bool vertical = true) :
-			Comp(u, "", CursorType::Default),
-			scrollBar(u, *this, vertical),
-			xScrollOffset(0.f),
-			yScrollOffset(0.f),
-			actualHeight(1.f)
-		{
-			addAndMakeVisible(scrollBar);
-		}
+		CompScrollable(Utils&, bool /*vertical*/ = true);
 
-		void mouseWheelMove(const Mouse& mouse, const MouseWheel& wheel) override
-		{
-			Comp::mouseWheelMove(mouse, wheel);
-			scrollBar.mouseWheelMove(mouse, wheel);
-		}
+		void mouseWheelMove(const Mouse&, const MouseWheel&) override;
 
 	protected:
 		ScrollBar scrollBar;
@@ -319,48 +124,13 @@ namespace gui
 	{
 		using PPFunc = std::function<void(Graphics&, Image&)>;
 
-		CompScreenshotable(Utils& u) :
-			Comp(u, "", CursorType::Default),
-			screenshotImage(),
-			onScreenshotFX()
-		{
-			setOpaque(true);
-		}
+		CompScreenshotable(Utils&);
 
-		void resized() override
-		{
-			if (getWidth() + getHeight() == 0)
-				return;
+		void resized() override;
 
-			if (screenshotImage.isNull())
-			{
-				screenshotImage = Image(Image::RGB, getWidth(), getHeight(), false);
-			}
-			else
-			{
-				screenshotImage = screenshotImage.rescaled(
-					getWidth(),
-					getHeight(),
-					Graphics::lowResamplingQuality
-				);
-			}
-		}
-
-		void paint(Graphics& g) override
-		{
-			g.drawImageAt(screenshotImage, 0, 0, false);
-		}
+		void paint(Graphics&) override;
 		
-		void takeScreenshot()
-		{
-			screenshotImage = utils.pluginTop.createComponentSnapshot(
-				getBounds(),
-				true
-			);
-			Graphics g{ screenshotImage };
-			for (auto& ossfx : onScreenshotFX)
-				ossfx(g, screenshotImage);
-		}
+		void takeScreenshot();
 
 	protected:
 		Image screenshotImage;
