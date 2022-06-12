@@ -3,11 +3,6 @@
 
 namespace audio
 {
-    juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
-    {
-        return new Processor();
-    }
-
     juce::AudioProcessorEditor* Processor::createEditor()
     {
         return new gui::Editor(*this);
@@ -295,6 +290,10 @@ namespace audio
     }
 }
 
+juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
+{
+    return new audio::Processor();
+}
 
 
 #include "configEnd.h"
