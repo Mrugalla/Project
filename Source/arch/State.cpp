@@ -25,7 +25,7 @@ void sta::State::loadPatch(const XML& xmlState)
 {
 	if (xmlState.get() != nullptr)
 		if (xmlState->hasTagName(state.getType()))
-			state = juce::ValueTree::fromXml(*xmlState);
+			loadPatch(juce::ValueTree::fromXml(*xmlState));
 }
 
 void sta::State::loadPatch(const Proc& p, const void* data, int sizeInBytes)
@@ -45,7 +45,12 @@ void sta::State::loadPatch(const juce::File& xmlFile)
 	const auto xml = XMLDoc::parse(xmlFile);
 	if (xml == nullptr) return;
 	if (!xml->hasTagName(state.getType())) return;
-	state = ValueTree::fromXml(*xml);
+	loadPatch(ValueTree::fromXml(*xml));
+}
+
+void sta::State::loadPatch(const ValueTree& vt)
+{
+	state = vt;
 }
 
 void sta::State::set(String&& key, String&& id, Var&& val, bool undoable)

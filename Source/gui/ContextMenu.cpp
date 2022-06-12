@@ -106,40 +106,40 @@ namespace gui
 				const auto& parametr = *static_cast<const Parametr*>(stuff);
 				auto& utils = pop.getUtils();
 
-				pop.setButton([param = utils.getParam(parametr.getPID())]()
+				pop.setButton([param = utils.getParam(parametr.getPID())](Button&)
 				{
 					juce::Random rand;
 					param->setValueWithGesture(rand.nextFloat());
 				}, 0);
-				pop.setButton([param = utils.getParam(parametr.getPID())]()
+				pop.setButton([param = utils.getParam(parametr.getPID())](Button&)
 				{
 					juce::Random rand;
 					auto val = param->getValue();
 					val += .05f * (rand.nextFloat() - .5f);
 					param->setValueWithGesture(juce::jlimit(0.f, 1.f, val));
 				}, 1);
-				pop.setButton([param = utils.getParam(parametr.getPID())]()
+				pop.setButton([param = utils.getParam(parametr.getPID())](Button&)
 				{
 					const auto val = param->getDefaultValue();
 					param->setValueWithGesture(val);
 				}, 2);
-				pop.setButton([param = utils.getParam(parametr.getPID())]()
+				pop.setButton([param = utils.getParam(parametr.getPID())](Button&)
 				{
 					param->setDefaultValue(param->getValue());
 				}, 3);
-				pop.setButton([param = utils.getParam(parametr.getPID())]()
+				pop.setButton([param = utils.getParam(parametr.getPID())](Button&)
 				{
 					param->switchLock();
 				}, 4);
-				pop.setButton([&u = utils, pID = parametr.getPID()]()
+				pop.setButton([&u = utils, pID = parametr.getPID()](Button&)
 				{
 					u.assignMIDILearn(pID);
 				}, 5);
-				pop.setButton([&u = utils, pID = parametr.getPID()]()
+				pop.setButton([&u = utils, pID = parametr.getPID()](Button&)
 				{
 					u.removeMIDILearn(pID);
 				}, 6);
-				pop.setButton([&u = utils, &paramtr = parametr]()
+				pop.setButton([&u = utils, &paramtr = parametr](Button&)
 					{
 						u.getEventSystem().notify(EvtType::EnterParametrValue, &paramtr);
 					}, 7);
@@ -180,33 +180,33 @@ namespace gui
 
 				auto& utils = pop.getUtils();
 
-				pop.setButton([param = utils.getParam(button.pID)]()
+				pop.setButton([param = utils.getParam(button.pID)](Button&)
 				{
 					juce::Random rand;
 					param->setValueWithGesture(rand.nextFloat());
 				}, 0);
-				pop.setButton([param = utils.getParam(button.pID)]()
+				pop.setButton([param = utils.getParam(button.pID)](Button&)
 				{
 					const auto val = param->getDefaultValue();
 					param->setValueWithGesture(val);
 				}, 1);
-				pop.setButton([param = utils.getParam(button.pID)]()
+				pop.setButton([param = utils.getParam(button.pID)](Button&)
 				{
 					param->setDefaultValue(param->getValue());
 				}, 2);
-				pop.setButton([param = utils.getParam(button.pID)]()
+				pop.setButton([param = utils.getParam(button.pID)](Button&)
 				{
 					param->switchLock();
 				}, 3);
-				pop.setButton([&u = utils, pID = button.pID]()
+				pop.setButton([&u = utils, pID = button.pID](Button&)
 				{
 					u.assignMIDILearn(pID);
 				}, 4);
-				pop.setButton([&u = utils, pID = button.pID]()
+				pop.setButton([&u = utils, pID = button.pID](Button&)
 				{
 					u.removeMIDILearn(pID);
 				}, 5);
-				pop.setButton([&u = utils, &btn = button]()
+				pop.setButton([&u = utils, &btn = button](Button&)
 					{
 						u.getEventSystem().notify(EvtType::EnterParametrValue, &btn);
 						// this probably doesn't work yet

@@ -24,8 +24,9 @@ namespace gui
 		public Comp,
 		public Timer
 	{
-		using OnClick = std::function<void()>;
+		using OnClick = std::function<void(Button&)>;
 		using OnPaint = std::function<void(Graphics&, Button&)>;
+		using OnMouseWheel = std::function<void(const Mouse&, const MouseWheel&)>;
 
 		void enableLabel(const String&);
 
@@ -43,6 +44,7 @@ namespace gui
 
 		std::vector<OnClick> onClick, onRightClick, onTimer;
 		std::vector<OnPaint> onPaint;
+		std::vector<OnMouseWheel> onMouseWheel;
 		BlinkyBoy blinkyBoy;
 		int toggleState;
 		PID pID;
@@ -60,6 +62,8 @@ namespace gui
 		void mouseExit(const Mouse&) override;
 
 		void mouseUp(const Mouse&) override;
+
+		void mouseWheelMove(const Mouse&, const MouseWheel&) override;
 
 		void timerCallback() override;
 	};

@@ -61,7 +61,7 @@ namespace gui
 			{
 				auto& btn = *colButtons[i];
 
-				btn.onClick.push_back([this, i]()
+				btn.onClick.push_back([this, i](Button&)
 					{
 						colIdx = i;
 
@@ -73,12 +73,12 @@ namespace gui
 			}
 
 			for (auto& oc : colButtons[colIdx]->onClick)
-				oc();
+				oc(*colButtons[colIdx].get());
 
 			makeTextButton(revert, "Revert", false, true);
 			makeTextButton(deflt, "Default", false, true);
 
-			revert.onClick.push_back([this, numCols]()
+			revert.onClick.push_back([this, numCols](Button&)
 			{
 				for (auto i = 0; i < numCols; ++i)
 					Colours::c.set(i, curSheme[i]);
@@ -89,7 +89,7 @@ namespace gui
 
 				notify(EvtType::ColourSchemeChanged);
 			});
-			deflt.onClick.push_back([this, numCols]()
+			deflt.onClick.push_back([this, numCols](Button&)
 			{
 				for (auto i = 0; i < numCols; ++i)
 					Colours::c.set(i, getDefault(static_cast<ColourID>(i)));
@@ -320,7 +320,7 @@ namespace gui
 
 				// make navigation functionality
 
-				btn.onClick.push_back([&sub = subMenu, &prnt = parent, &node = nodes[i]]()
+				btn.onClick.push_back([&sub = subMenu, &prnt = parent, &node = nodes[i]](Button&)
 				{
 					auto& utils = prnt.getUtils();
 
@@ -411,7 +411,7 @@ namespace gui
 			}
 
 			for (auto& oc : buttons.front()->onClick)
-				oc();
+				oc(*buttons.front().get());
 		}
 
 	protected:

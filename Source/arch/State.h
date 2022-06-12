@@ -29,6 +29,8 @@ namespace sta
 
 		void loadPatch(const juce::File&);
 
+		void loadPatch(const ValueTree&);
+
 		void set(String&& /*key*/, String&& /*id*/, Var&&, bool /*undoable*/ = true);
 
 		void set(String&& /*key*/, const String& /*id*/, Var&&, bool /*undoable*/ = true);

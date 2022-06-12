@@ -58,7 +58,7 @@ namespace gui
 		if (isEnabled())
 			return;
 		setVisible(true);
-		tickIdx = label.getText().length();
+		tickIdx = getText().length();
 		drawTick = true;
 		grabKeyboardFocus();
 		startTimerHz(PPDFPSTextEditor);
@@ -86,6 +86,7 @@ namespace gui
 		if (txt == str)
 			return;
 		txt = str;
+		tickIdx = juce::jlimit(0, txt.length(), tickIdx);
 		updateLabel();
 	}
 
@@ -102,33 +103,33 @@ namespace gui
 	void TextEditor::clear()
 	{
 		txt.clear();
+		tickIdx = 0;
 		repaintWithChildren(this);
 	}
 
 	void TextEditor::mouseUp(const Mouse& mouse)
 	{
-		if (txt.isEmpty())
-			return;
-
-		if (label.mode == Label::Mode::TextToLabelBounds)
+		if (txt.isNotEmpty())
 		{
-			const auto x = mouse.position.x;
-			const auto w = static_cast<float>(getWidth());
-			const auto& font = label.font;
-			const auto strWidth = font.getStringWidthFloat(txt);
-			const auto xOff = (w - strWidth) * .5f;
-			const auto xShifted = x - xOff;
-			const auto strLen = static_cast<float>(txt.length());
-			auto xRatio = xShifted / strWidth;
-			auto xMapped = xRatio * strLen;
-			auto xLimited = juce::jlimit(0.f, strLen, xMapped);
-			tickIdx = static_cast<int>(std::rint(xLimited));
+			if (label.mode == Label::Mode::TextToLabelBounds)
+			{
+				const auto x = mouse.position.x;
+				const auto w = static_cast<float>(getWidth());
+				const auto& font = label.font;
+				const auto strWidth = font.getStringWidthFloat(txt);
+				const auto xOff = (w - strWidth) * .5f;
+				const auto xShifted = x - xOff;
+				const auto strLen = static_cast<float>(txt.length());
+				auto xRatio = xShifted / strWidth;
+				auto xMapped = xRatio * strLen;
+				auto xLimited = juce::jlimit(0.f, strLen, xMapped);
+				tickIdx = static_cast<int>(std::rint(xLimited));
+			}
+			//else
+			//	return; // not implemented yet cause not needed lol
 		}
-		//else
-		//	return; // not implemented yet cause not needed lol
 
 		enable();
-		drawTick = true;
 		updateLabel();
 	}
 
@@ -178,13 +179,13 @@ namespace gui
 			onEscape();
 			return true;
 		}
-		if (key == key.returnKey)
+		else if (key == key.returnKey)
 		{
 			onReturn();
 			blinkyBoy.init(this, .25f);
 			return true;
 		}
-		if (key == key.leftKey)
+		else if (key == key.leftKey)
 		{
 			if (tickIdx > 0)
 				--tickIdx;
@@ -192,7 +193,7 @@ namespace gui
 			updateLabel();
 			return true;
 		}
-		if (key == key.rightKey)
+		else if (key == key.rightKey)
 		{
 			if (tickIdx < txt.length())
 				++tickIdx;
@@ -200,7 +201,7 @@ namespace gui
 			updateLabel();
 			return true;
 		}
-		if (key == key.backspaceKey)
+		else if (key == key.backspaceKey)
 		{
 			onRemove();
 			txt = txt.substring(0, tickIdx - 1) + txt.substring(tickIdx);
@@ -211,7 +212,7 @@ namespace gui
 			onType();
 			return true;
 		}
-		if (key == key.deleteKey)
+		else if (key == key.deleteKey)
 		{
 			onRemove();
 			txt = txt.substring(0, tickIdx) + txt.substring(tickIdx + 1);
@@ -220,13 +221,16 @@ namespace gui
 			onType();
 			return true;
 		}
-		const auto chr = key.getTextCharacter();
-		txt = txt.substring(0, tickIdx) + chr + txt.substring(tickIdx);
-		++tickIdx;
-		drawTick = true;
-		updateLabel();
-		onType();
-		return true;
+		else
+		{
+			const auto chr = key.getTextCharacter();
+			txt = txt.substring(0, tickIdx) + chr + txt.substring(tickIdx);
+			++tickIdx;
+			drawTick = true;
+			updateLabel();
+			onType();
+			return true;
+		}
 	}
 
 	Notify TextEditorKnobs::makeNotify(TextEditorKnobs& tek)

@@ -88,12 +88,17 @@ void gui::Comp::mouseUp(const Mouse&)
 
 gui::Notify gui::Comp::makeNotifyBasic(Comp* c)
 {
-	return [c](const EvtType type, const void*)
+	return [&comp = *c](const EvtType type, const void*)
 	{
 		if (type == EvtType::ColourSchemeChanged)
 		{
-			c->updateCursor();
-			c->repaint();
+			comp.updateCursor();
+			comp.repaint();
+		}
+		else if (type == EvtType::PatchUpdated)
+		{
+			comp.resized();
+			comp.repaint();
 		}
 	};
 }

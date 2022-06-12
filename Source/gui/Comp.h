@@ -98,54 +98,6 @@ namespace gui
 				return scrollable.actualHeight > static_cast<float>(getWidth());
 			}
 
-		protected:
-			CompScrollable& scrollable;
-			float dragXY;
-			bool vertical;
-
-			void paint(Graphics& g) override
-			{
-				if (!needed())
-					return;
-
-				const auto w = static_cast<float>(scrollable.getWidth());
-				const auto h = static_cast<float>(scrollable.getHeight());
-
-				const auto thicc = utils.thicc;
-
-				BoundsF bounds;
-
-				if (vertical)
-				{
-					auto handleHeight = h / scrollable.actualHeight * h;
-					
-					if (handleHeight < thicc)
-						handleHeight = thicc;
-					
-					const auto handleY = scrollable.yScrollOffset / scrollable.actualHeight * (h - handleHeight);
-					bounds = BoundsF(0.f, handleY, w, handleHeight).reduced(thicc);
-				}
-				else
-				{
-					auto handleWidth = w / scrollable.actualHeight * w;
-
-					if (handleWidth < thicc)
-						handleWidth = thicc;
-
-					const auto handleX = scrollable.xScrollOffset / scrollable.actualHeight * (w - handleWidth);
-					bounds = BoundsF(handleX, 0.f, handleWidth, h).reduced(thicc);
-				}
-
-				g.setColour(Colours::c(ColourID::Hover));
-				if (isMouseOver())
-					g.fillRoundedRectangle(bounds, thicc);
-				if (isMouseButtonDown())
-					g.fillRoundedRectangle(bounds, thicc);
-
-				g.setColour(Colours::c(ColourID::Interact));
-				g.drawRoundedRectangle(bounds, thicc, thicc);
-			}
-
 			void mouseEnter(const Mouse& mouse) override
 			{
 				Comp::mouseEnter(mouse);
@@ -158,7 +110,7 @@ namespace gui
 					return;
 
 				hideCursor();
-				
+
 				const auto speed = 1.f / utils.getDragSpeed();
 
 				if (vertical)
@@ -209,7 +161,7 @@ namespace gui
 
 				const auto w = static_cast<float>(scrollable.getWidth());
 				const auto h = static_cast<float>(scrollable.getHeight());
-				
+
 				if (mouse.mouseWasDraggedSinceMouseDown())
 				{
 					const auto speed = 1.f / utils.getDragSpeed();
@@ -268,10 +220,58 @@ namespace gui
 					dragXY *= SensitiveDrag;
 				dragXY *= utils.thicc * WheelDefaultSpeed;
 
-				if(vertical)
+				if (vertical)
 					updateHandlePosY(scrollable.yScrollOffset - dragXY);
 				else
 					updateHandlePosX(scrollable.xScrollOffset + dragXY);
+			}
+
+		protected:
+			CompScrollable& scrollable;
+			float dragXY;
+			bool vertical;
+
+			void paint(Graphics& g) override
+			{
+				if (!needed())
+					return;
+
+				const auto w = static_cast<float>(scrollable.getWidth());
+				const auto h = static_cast<float>(scrollable.getHeight());
+
+				const auto thicc = utils.thicc;
+
+				BoundsF bounds;
+
+				if (vertical)
+				{
+					auto handleHeight = h / scrollable.actualHeight * h;
+					
+					if (handleHeight < thicc)
+						handleHeight = thicc;
+					
+					const auto handleY = scrollable.yScrollOffset / scrollable.actualHeight * (h - handleHeight);
+					bounds = BoundsF(0.f, handleY, w, handleHeight).reduced(thicc);
+				}
+				else
+				{
+					auto handleWidth = w / scrollable.actualHeight * w;
+
+					if (handleWidth < thicc)
+						handleWidth = thicc;
+
+					const auto handleX = scrollable.xScrollOffset / scrollable.actualHeight * (w - handleWidth);
+					bounds = BoundsF(handleX, 0.f, handleWidth, h).reduced(thicc);
+				}
+
+				g.setColour(Colours::c(ColourID::Hover));
+				if (isMouseOver())
+					g.fillRoundedRectangle(bounds, thicc);
+				if (isMouseButtonDown())
+					g.fillRoundedRectangle(bounds, thicc);
+
+				g.setColour(Colours::c(ColourID::Interact));
+				g.drawRoundedRectangle(bounds, thicc, thicc);
 			}
 
 			void updateHandlePosY(float y)
@@ -301,6 +301,12 @@ namespace gui
 			actualHeight(1.f)
 		{
 			addAndMakeVisible(scrollBar);
+		}
+
+		void mouseWheelMove(const Mouse& mouse, const MouseWheel& wheel) override
+		{
+			Comp::mouseWheelMove(mouse, wheel);
+			scrollBar.mouseWheelMove(mouse, wheel);
 		}
 
 	protected:

@@ -76,13 +76,13 @@ namespace gui
 
 				modDepthLocked.toggleState = params.isModDepthLocked();
 
-				modDepthLocked.onClick.push_back([&prms = params]()
+				modDepthLocked.onClick.push_back([&prms = params](Button&)
 				{
 					prms.switchModDepthLocked();
 				});
-				modDepthLocked.onClick.push_back([&btn = modDepthLocked]()
+				modDepthLocked.onClick.push_back([](Button& btn)
 				{
-					btn.toggleState = 1 - btn.toggleState;
+					btn.toggleState = btn.toggleState == 0 ? 1 : 0;
 				});
 
 				makeSymbolButton(modDepthLocked, ButtonSymbol::ModDepthLock, 1);
@@ -92,7 +92,7 @@ namespace gui
 			{
 				auto& params = utils.getParams();
 
-				swapParamWithModDepth.onClick.push_back([&prms = params]()
+				swapParamWithModDepth.onClick.push_back([&prms = params](Button&)
 					{
 						for (auto i = static_cast<int>(prms.numParams() - 1); i > 0; --i)
 						{
@@ -152,10 +152,8 @@ namespace gui
 
 			makeSymbolButton(menuButton, ButtonSymbol::Settings);
 			menuButton.toggleState = 0;
-			menuButton.onClick.push_back([this]()
+			menuButton.onClick.push_back([this](Button& btn)
 			{
-				auto& btn = menuButton;
-
 				auto& ts = btn.toggleState;
 				ts = ts == 0 ? 1 : 0;
 				repaintWithChildren(&btn);

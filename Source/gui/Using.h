@@ -41,6 +41,10 @@ namespace gui
     using Affine = juce::AffineTransform;
     using Random = juce::Random;
     using KeyPress = juce::KeyPress;
+    using ValueTree = juce::ValueTree;
+    using File = juce::File;
+    using PropertiesFile = juce::PropertiesFile;
+    using RangedDirectoryIterator = juce::RangedDirectoryIterator;
 
     using Component = juce::Component;
     using Processor = audio::Processor;

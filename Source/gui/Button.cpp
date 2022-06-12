@@ -50,13 +50,13 @@ void gui::Button::enableParameterSwitch(PID _pID)
 
 	stopTimer();
 
-	onClick.push_back([param = utils.getParam(pID)]()
+	onClick.push_back([param = utils.getParam(pID)](Button&)
 	{
 		const auto ts = param->getValue() > .5f ? 0.f : 1.f;
 		param->setValueWithGesture(ts);
 	});
 
-	onTimer.push_back([this]()
+	onTimer.push_back([this](Button&)
 		{
 			bool shallRepaint = false;
 
@@ -94,14 +94,14 @@ void gui::Button::enableParameter(PID _pID, int val)
 
 	stopTimer();
 
-	onClick.push_back([param = utils.getParam(pID), v = static_cast<float>(val)]()
+	onClick.push_back([param = utils.getParam(pID), v = static_cast<float>(val)](Button&)
 	{
 		const auto pVal = std::rint(param->getValueDenorm());
 		const auto ts = pVal == v ? 0.f : v;
 		param->setValueWithGesture(param->range.convertTo0to1(ts));
 	});
 
-	onTimer.push_back([this, val]()
+	onTimer.push_back([this, val](Button&)
 		{
 			bool shallRepaint = false;
 
@@ -140,6 +140,7 @@ gui::Button::Button(Utils& _utils, String&& _tooltip) :
 	onRightClick(),
 	onTimer(),
 	onPaint(),
+	onMouseWheel(),
 	blinkyBoy(),
 	toggleState(-1),
 	pID(PID::NumParams),
@@ -198,21 +199,27 @@ void gui::Button::mouseUp(const Mouse& mouse)
 		blinkyBoy.init(this, .25f);
 
 		for (auto& oc : onClick)
-			oc();
+			oc(*this);
 		notify(EvtType::ButtonClicked, this);
 	}
 	else
 	{
 		for (auto& oc : onRightClick)
-			oc();
+			oc(*this);
 		notify(EvtType::ButtonRightClicked, this);
 	}
+}
+
+void gui::Button::mouseWheelMove(const Mouse& mouse, const MouseWheel& mouseWheel)
+{
+	for (auto& mw : onMouseWheel)
+		mw(mouse, mouseWheel);
 }
 
 void gui::Button::timerCallback()
 {
 	for (auto& ot : onTimer)
-		ot();
+		ot(*this);
 }
 
 gui::Button::OnPaint gui::buttonOnPaintDefault()
@@ -566,8 +573,6 @@ void gui::makeSymbolButton(Button& b, ButtonSymbol symbol, int targetToggleState
 		}
 		else if (symbol == ButtonSymbol::ModDepthLock)
 		{
-			const auto thiccHalf = thicc * .5f;
-			const auto thicc2 = thicc * 2.f;
 			const auto thicc3 = thicc * 3.f;
 
 			bounds = maxQuadIn(bounds).reduced(thicc3);
@@ -605,9 +610,9 @@ void gui::makeSymbolButton(Button& b, ButtonSymbol symbol, int targetToggleState
 void gui::makeToggleButton(Button& b, const String& txt)
 {
 	makeTextButton(b, txt, true);
-	b.onClick.push_back([&button = b]()
+	b.onClick.push_back([](Button& btn)
 	{
-		button.toggleState = 1 - button.toggleState;
+		btn.toggleState = btn.toggleState == 0 ? 1 : 0;
 	});
 }
 
@@ -646,18 +651,18 @@ void gui::makeButtonsGroup(std::vector<std::unique_ptr<Button>>& btns, int defau
 
 	for (auto i = 0; i < btns.size(); ++i)
 	{
-		auto& btn = *btns[i];
+		auto& button = *btns[i];
 
-		btn.onClick.push_back([&buttons = btns, i]()
+		button.onClick.push_back([&buttons = btns](Button& btn)
+		{
+			for (auto& b : buttons)
 			{
-				for (auto& btn : buttons)
-				{
-					btn->toggleState = 0;
-					repaintWithChildren(btn.get());
-				}
+				b->toggleState = 0;
+				repaintWithChildren(b.get());
+			}
 
-				buttons[i]->toggleState = 1;
-			});
+			btn.toggleState = 1;
+		});
 	}
 }
 
@@ -665,7 +670,7 @@ void gui::makeURLButton(Button& b, String&& urlPath)
 {
 	const juce::URL url(urlPath);
 
-	b.onClick.push_back([url]()
+	b.onClick.push_back([url](Button&)
 	{
 		url.launchInDefaultBrowser();
 	});

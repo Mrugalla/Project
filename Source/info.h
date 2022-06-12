@@ -24,7 +24,7 @@ HOW TO USE:
 
 TO DO:
 
-Knob & Scollbar
+Knob & Scrollbar
 	..
 
 Shader
@@ -35,35 +35,13 @@ ScrollBar
 	enable scrolling not only on scrollbar hover
 
 PatchBrowser
-	remake tag system
-		1. vector of all existent tags exists
-		2. patch has vector of tags
-
-		1. every patch has list of tags (inspector)
-			click on tag to select
-		2. every tag has
-			name / id
-			being selectable
-			edit-button for editting tag (spawns texteditor)
-			trash-button for removing selected tag
-		3. texteditor for adding tag to patch (inspector)
-			
-		4. tagSelectorComponent where tags can be selected
-			checks all patches for tags to fill list
-		5. on updates and on construction
-			update is adding or removing tag to patch
-			selection makes patches visible
-			no tags selected: all patches visible
-
-		adding tags via plus-button in inspector
-	don't load all existing patches into memory, but only the visible one(e)
-		or unique_ptr for heap
-	actually serialize patches
+	revisit tag system
 
 FormularParser
 	is log and ln working right?
 	make more lightweight
 		values push_backs in calculate and calculateX needed?
+		make callbacks instead of buffers?
 
 Param
 	...
@@ -72,11 +50,10 @@ ParameterRandomizer
 	...
 
 Comp
-	...
+	make cpp of stuff
 
 TextEditor
 	minimize > back > click > tick doesn't move > 2nd click > does move
-	fast repeated "back" hits not always registered
 
 sta::State
 	contains valueTree as well as ApplicationProperties for max workflow!
@@ -88,12 +65,9 @@ MIDI Learn
 	possible to save and load default state of whole midi learn patch
 
 ScrollBar
-	finish
-	make vertical
 	have own header/cpp
 
-PopUp
-	rename to context menu
+ContextMenu
 	implement context menu(s) for
 		ccMonitor
 
@@ -111,9 +85,9 @@ Param
 	...
 
 Oversampler
-	less cpu demanding (FFT?)
+	make less cpu demanding (FFT?)
 
-FirstTimeAction
+FirstTimeAction(s)
 	thing that only makes lookuptables when the plugin is started the first time
 	tutorial
 

@@ -60,6 +60,12 @@ namespace gui
 
 		void resized();
 
+		ValueTree savePatch();
+
+		void loadPatch(const ValueTree&);
+
+		AppProps& getProps() noexcept;
+
 		Component& pluginTop;
 		float thicc;
 	protected:

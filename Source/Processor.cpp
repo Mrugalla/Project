@@ -73,7 +73,10 @@ bool audio::ProcessorBackEnd::isBusesLayoutSupported(const BusesLayout& layouts)
     return layouts.getMainOutputChannelSet() == layouts.getMainInputChannelSet();
 }
 
-audio::ProcessorBackEnd::AppProps* audio::ProcessorBackEnd::getProps() noexcept { return &props; }
+audio::ProcessorBackEnd::AppProps* audio::ProcessorBackEnd::getProps() noexcept
+{
+    return &props;
+}
 
 void audio::ProcessorBackEnd::savePatch()
 {

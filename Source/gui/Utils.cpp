@@ -31,7 +31,7 @@ namespace gui
 		return params.data();
 	}
 
-	juce::ValueTree Utils::getState() const noexcept
+	ValueTree Utils::getState() const noexcept
 	{
 		return audioProcessor.state.getState();
 	}
@@ -83,7 +83,28 @@ namespace gui
 		return audioProcessor.meters(i);
 	}
 
-	Point Utils::getScreenPosition() const noexcept { return pluginTop.getScreenPosition(); }
+	ValueTree Utils::savePatch()
+	{
+		audioProcessor.savePatch();
+		return audioProcessor.state.getState();
+	}
+
+	void Utils::loadPatch(const ValueTree& vt)
+	{
+		audioProcessor.state.loadPatch(vt);
+		audioProcessor.loadPatch();
+		audioProcessor.forcePrepareToPlay();
+	}
+
+	AppProps& Utils::getProps() noexcept
+	{
+		return *audioProcessor.getProps();
+	}
+
+	Point Utils::getScreenPosition() const noexcept
+	{
+		return pluginTop.getScreenPosition();
+	}
 
 	juce::MouseCursor makeCursor(CursorType c)
 	{
