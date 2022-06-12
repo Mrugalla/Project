@@ -19,6 +19,7 @@ namespace audio
     using PID = param::PID;
     using Params = param::Params;
     using State = sta::State;
+    using String = juce::String;
 
     template<typename Float>
     inline float msInSamples(Float ms, Float Fs) noexcept
@@ -130,5 +131,3 @@ private:
 
     };
 }
-
-#include "configEnd.h"
