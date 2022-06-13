@@ -1,32 +1,7 @@
 #pragma once
 
-#include "arch/Smooth.h"
-#include "arch/State.h"
-#include "param/Param.h"
-
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_events/juce_events.h>
-
-namespace audio
-{
-    static constexpr float Tau = 6.28318530718f;
-    static constexpr float Pi = Tau * .5f;
-
-    using AudioBuffer = juce::AudioBuffer<float>;
-    using SIMD = juce::FloatVectorOperations;
-    using Smooth = smooth::Smooth<float>;
-
-    using PID = param::PID;
-    using Params = param::Params;
-    using State = sta::State;
-    using String = juce::String;
-
-    template<typename Float>
-    inline float msInSamples(Float ms, Float Fs) noexcept
-    {
-        return ms * Fs * static_cast<Float>(.001);
-    }
-}
 
 #include "audio/MIDILearn.h"
 #include "audio/ProcessSuspend.h"
@@ -37,6 +12,8 @@ namespace audio
 #include "audio/Rectifier.h"
 #include "audio/Bitcrusher.h"
 #include "audio/NullNoiseSynth.h"
+
+#include "audio/AudioUtils.h"
 
 #include "config.h"
 

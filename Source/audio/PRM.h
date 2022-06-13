@@ -1,37 +1,25 @@
 #pragma once
+#include <vector>
 #include "../arch/Smooth.h"
 
 namespace audio
 {
 	struct PRM
 	{
-		PRM(float startVal) :
-			smooth(startVal),
-			buf()
-		{}
+		/* startVal */
+		PRM(float);
 
-		void prepare(float Fs, int blockSize, float smoothLenMs)
-		{
-			buf.resize(blockSize);
-			smooth.makeFromDecayInMs(smoothLenMs, Fs);
-		}
+		/*Fs, blockSize, smoothLenMs */
+		void prepare(float, int, float);
 
-		float* operator()(float value, int numSamples) noexcept
-		{
-			smooth(buf.data(), value, numSamples);
-			return buf.data();
-		}
+		/* value, numSamples */
+		float* operator()(float, int) noexcept;
 
-		float* operator()(int numSamples) noexcept
-		{
-			smooth(buf.data(), numSamples);
-			return buf.data();
-		}
+		/* numSamples */
+		float* operator()(int) noexcept;
 
-		float operator()(float value) noexcept
-		{
-			return smooth(value);
-		}
+		/* value */
+		float operator()(float) noexcept;
 
 		smooth::Smooth<float> smooth;
 		std::vector<float> buf;

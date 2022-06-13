@@ -1,4 +1,5 @@
 #pragma once
+#include <cmath>
 
 namespace interpolate
 {

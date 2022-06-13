@@ -24,6 +24,10 @@ HOW TO USE:
 
 TO DO:
 
+Colours
+	throw some colours out of the options menu
+	like Transparent or Darken
+
 Knob & Scrollbar
 	..
 

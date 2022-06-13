@@ -89,22 +89,32 @@
         <FILE id="XInD6O" name="Utils.h" compile="0" resource="0" file="Source/gui/Utils.h"/>
       </GROUP>
       <GROUP id="{6A8CB2D6-E6E3-8D1E-1148-21BD24558A7A}" name="audio">
+        <FILE id="SX6ccp" name="AudioUtils.h" compile="0" resource="0" file="Source/audio/AudioUtils.h"/>
         <FILE id="DT8T5u" name="Bitcrusher.h" compile="0" resource="0" file="Source/audio/Bitcrusher.h"/>
+        <FILE id="gCh4Uk" name="DryWetMix.cpp" compile="1" resource="0" file="Source/audio/DryWetMix.cpp"/>
         <FILE id="KPtX3O" name="DryWetMix.h" compile="0" resource="0" file="Source/audio/DryWetMix.h"/>
         <FILE id="dgpmul" name="EnvelopeFollower.h" compile="0" resource="0"
               file="Source/audio/EnvelopeFollower.h"/>
+        <FILE id="kQwYTy" name="Meter.cpp" compile="1" resource="0" file="Source/audio/Meter.cpp"/>
         <FILE id="TN2ewh" name="Meter.h" compile="0" resource="0" file="Source/audio/Meter.h"/>
         <FILE id="vVTypK" name="MIDILearn.cpp" compile="1" resource="0" file="Source/audio/MIDILearn.cpp"/>
         <FILE id="WFKvT5" name="MIDILearn.h" compile="0" resource="0" file="Source/audio/MIDILearn.h"/>
+        <FILE id="zSBVab" name="MidSide.cpp" compile="1" resource="0" file="Source/audio/MidSide.cpp"/>
         <FILE id="K88rdo" name="MidSide.h" compile="0" resource="0" file="Source/audio/MidSide.h"/>
         <FILE id="RFsXKN" name="NullNoiseSynth.h" compile="0" resource="0"
               file="Source/audio/NullNoiseSynth.h"/>
+        <FILE id="Ew9Z1a" name="Oversampling.cpp" compile="1" resource="0"
+              file="Source/audio/Oversampling.cpp"/>
         <FILE id="KE2g4j" name="Oversampling.h" compile="0" resource="0" file="Source/audio/Oversampling.h"/>
-        <FILE id="wWm8Gd" name="PitchShifter.h" compile="0" resource="0" file="Source/audio/PitchShifter.h"/>
+        <FILE id="wvGOKd" name="PitchGlitcher.cpp" compile="1" resource="0"
+              file="Source/audio/PitchGlitcher.cpp"/>
+        <FILE id="wWm8Gd" name="PitchGlitcher.h" compile="0" resource="0" file="Source/audio/PitchGlitcher.h"/>
+        <FILE id="tau91r" name="PRM.cpp" compile="1" resource="0" file="Source/audio/PRM.cpp"/>
         <FILE id="Gk45AM" name="PRM.h" compile="0" resource="0" file="Source/audio/PRM.h"/>
         <FILE id="Td7oEO" name="ProcessSuspend.h" compile="0" resource="0"
               file="Source/audio/ProcessSuspend.h"/>
         <FILE id="QAmb7f" name="Rectifier.h" compile="0" resource="0" file="Source/audio/Rectifier.h"/>
+        <FILE id="joPwDQ" name="WHead.cpp" compile="1" resource="0" file="Source/audio/WHead.cpp"/>
         <FILE id="aRvoAX" name="WHead.h" compile="0" resource="0" file="Source/audio/WHead.h"/>
       </GROUP>
       <FILE id="NTRJ33" name="Editor.h" compile="0" resource="0" file="Source/Editor.h"/>
