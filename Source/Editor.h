@@ -5,8 +5,6 @@
 #include "gui/HighLevel.h"
 #include "gui/Tooltip.h"
 
-#include "config.h"
-
 namespace gui
 {
     struct Editor :

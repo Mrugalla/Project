@@ -3,7 +3,6 @@
 #include "WHead.h"
 #include <array>
 #include <vector>
-#include <cmath>
 
 namespace audio
 {

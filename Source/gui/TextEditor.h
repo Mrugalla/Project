@@ -1,7 +1,6 @@
 #pragma once
 #include "Button.h"
 #include "GUIParams.h"
-#include "../config.h"
 
 namespace gui
 {

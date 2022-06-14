@@ -310,5 +310,3 @@ namespace audio
 			SIMD::multiply(samples[ch], gain, numSamples);
 	}
 }
-
-#include "../configEnd.h"

@@ -157,5 +157,3 @@ namespace audio
 #endif
 	}
 }
-
-#include "../configEnd.h"

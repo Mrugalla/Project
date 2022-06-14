@@ -1,17 +1,12 @@
 #pragma once
 
-#include "../arch/FormularParser.h"
-
 #include <functional>
-#include <array>
 
 #include "juce_core/juce_core.h"
 #include "juce_audio_processors/juce_audio_processors.h"
 
 #include "../arch/State.h"
 #include "../arch/Range.h"
-
-#include "../config.h"
 
 namespace param
 {
@@ -278,5 +273,3 @@ namespace param
 		Params& params;
 	};
 }
-
-#include "../configEnd.h"

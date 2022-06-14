@@ -3,8 +3,6 @@
 #include "WHead.h"
 #include <array>
 
-#include "../config.h"
-
 namespace audio
 {
 	class DryWetMix

@@ -15,8 +15,8 @@ HOW TO USE:
 2. In Project.jucer
 	2.1 Rename plugin name
 	2.2 Define unique plugin ID
-3. Open config.h and define the needed pro processor definitions
-4. Open LowLevel.h and define all low level parameters, layout and stuff
+	2.3 Configurate the pre processor definitions
+4. Open LowLevel.h and design all low level parameters, layout and stuff
 5. Ship it!
 
 

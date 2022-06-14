@@ -1,4 +1,5 @@
 #include "Oversampling.h"
+#include <cmath>
 
 namespace audio
 {

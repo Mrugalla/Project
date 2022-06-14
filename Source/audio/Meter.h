@@ -4,8 +4,6 @@
 #include <array>
 #include <atomic>
 
-#include "../config.h"
-
 namespace audio
 {
 	class Meters

@@ -1,6 +1,5 @@
 #pragma once
 #include "Knob.h"
-#include "../config.h"
 
 namespace gui
 {
@@ -36,5 +35,3 @@ namespace gui
         }
     };
 }
-
-#include "../configEnd.h"

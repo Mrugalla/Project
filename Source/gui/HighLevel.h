@@ -10,8 +10,6 @@
 #include "MIDICCMonitor.h"
 #include "LowLevel.h"
 
-#include "../config.h"
-
 namespace gui
 {
 	struct HighLevel :
@@ -308,6 +306,3 @@ namespace gui
 		Button menuButton;
 	};
 }
-
-
-#include "../configEnd.h"

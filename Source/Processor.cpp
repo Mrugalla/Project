@@ -294,6 +294,3 @@ juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
     return new audio::Processor();
 }
-
-
-#include "configEnd.h"

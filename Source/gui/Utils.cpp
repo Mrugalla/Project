@@ -165,5 +165,3 @@ namespace gui
 		}
 	}
 }
-
-#include "../configEnd.h"

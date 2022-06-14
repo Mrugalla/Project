@@ -66,7 +66,7 @@ namespace gui
     String ButtonParameterRandomizer::makeTooltip()
     {
         Random rand;
-        static constexpr float count = 210.f;
+        static constexpr float count = 215.f;
         const auto v = static_cast<int>(std::rint(rand.nextFloat() * count));
         switch (v)
         {
@@ -281,6 +281,11 @@ namespace gui
         case 208: return "I know you really want to click on this button, but I want you to try something else instead.";
         case 209: return "Sweet.";
         case 210: return "OMG I wanna tell you everything about me and my parameter-friends!!!";
+        case 211: return "Take your phone number and add or subtract 1 from it! That's your textdoor neighbor.";
+        case 212: return "Um.. ok?";
+        case 213: return "I need more coffee.";
+        case 214: return "Btw if you have some spare money to share, there is a donate button in the settings :>";
+        case 215: return "Beware! This button causes quantum entanglement.";
         default: "Are you sure?";
         }
         return "You are not supposed to read this message!";

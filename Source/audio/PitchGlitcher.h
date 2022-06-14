@@ -5,7 +5,6 @@
 #include "AudioUtils.h"
 
 #include <array>
-#include "../config.h"
 
 namespace audio
 {

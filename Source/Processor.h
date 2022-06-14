@@ -15,8 +15,6 @@
 
 #include "audio/AudioUtils.h"
 
-#include "config.h"
-
 namespace audio
 {
     using MacroProcessor = param::MacroProcessor;
