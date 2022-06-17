@@ -732,7 +732,7 @@ namespace param
 		params.push_back(makeParam(PID::UnityGain, state, (PPD_UnityGainDefault ? 1.f : 0.f), makeRange::toggle(), Unit::Polarity));
 #endif
 #if PPDHasHQ
-		params.push_back(makeParam(PID::HQ, state, 1.f, makeRange::toggle()));
+		params.push_back(makeParam(PID::HQ, state, 0.f, makeRange::toggle()));
 #endif
 #if PPDHasStereoConfig
 		params.push_back(makeParam(PID::StereoConfig, state, 1.f, makeRange::toggle(), Unit::StereoConfig));

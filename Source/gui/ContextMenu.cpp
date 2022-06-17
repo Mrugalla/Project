@@ -49,7 +49,7 @@ namespace gui
 			BoundsF(screenPos.x, screenPos.y, 1.f, 1.f),
 			dest
 		);
-		initWidget(.15f, false);
+		initWidget(.08f, false);
 		setVisible(true);
 	}
 
@@ -96,6 +96,8 @@ namespace gui
 			l->setMinFontHeight(minHeight);
 		}
 	}
+
+
 
 	Notify ContextMenuKnobs::makeNotify2(ContextMenuKnobs& popUp)
 	{
@@ -167,6 +169,8 @@ namespace gui
 		init();
 	}
 
+
+
 	Notify ContextMenuButtons::makeNotify2(ContextMenuButtons& popUp)
 	{
 		return [&pop = popUp](EvtType type, const void* stuff)
@@ -234,4 +238,65 @@ namespace gui
 		init();
 	}
 
+
+
+	Notify ContextMenuMacro::makeNotify2(ContextMenuMacro& popUp)
+	{
+		return [&pop = popUp](EvtType type, const void* stuff)
+		{
+			if (type == EvtType::ButtonRightClicked)
+			{
+				const auto& button = *static_cast<const Button*>(stuff);
+
+				pop.setButton([](Button&)
+				{
+
+				}, 0);
+				pop.setButton([](Button&)
+				{
+					
+				}, 1);
+				pop.setButton([](Button&)
+				{
+
+				}, 2);
+				pop.setButton([](Button&)
+				{
+
+				}, 3);
+				pop.setButton([](Button&)
+				{
+
+				}, 4);
+				pop.setButton([](Button&)
+				{
+
+				}, 5);
+				pop.setButton([](Button&)
+				{
+
+				}, 6);
+
+				pop.place(&button);
+			}
+		};
+	}
+
+	ContextMenuMacro::ContextMenuMacro(Utils& u) :
+		ContextMenu(u)
+	{
+		evts.push_back({ utils.getEventSystem(), makeNotify2(*this) });
+
+		buttons.reserve(7);
+		
+		addButton("Load Mods", "Load a patch as modulation destinations.");
+		addButton("Save Mods", "Saves the current modulation destinations as a patch.");
+		addButton("Mods / Bias", "Switch between controlling modulation depth and bias.");
+		addButton("Rel/Abs Mods", "Switch between relative or absolute modulation depth.");
+		addButton("Flip Mods/Value", "Flips the current parameter values with their modulation destinations.");
+		addButton("MIDI Unlearn", "Click here to remove this parameter from its hardware control(s).");
+		addButton("Randomize All Mods", "Randomizes all parameters modulation depths and bias values");
+
+		init();
+	}
 }

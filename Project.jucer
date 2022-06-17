@@ -50,6 +50,8 @@
         <FILE id="Uad8Jv" name="State.h" compile="0" resource="0" file="Source/arch/State.h"/>
       </GROUP>
       <GROUP id="{DA435779-5001-4379-F809-3E7C21D55DC0}" name="gui">
+        <FILE id="g5xEoA" name="Menu.cpp" compile="1" resource="0" file="Source/gui/Menu.cpp"/>
+        <FILE id="M9Lqvx" name="HighLevel.cpp" compile="1" resource="0" file="Source/gui/HighLevel.cpp"/>
         <FILE id="mE6xes" name="TextEditor.cpp" compile="1" resource="0" file="Source/gui/TextEditor.cpp"/>
         <FILE id="r0E4Jm" name="Utils.cpp" compile="1" resource="0" file="Source/gui/Utils.cpp"/>
         <FILE id="j9keEG" name="Tooltip.cpp" compile="1" resource="0" file="Source/gui/Tooltip.cpp"/>
@@ -99,6 +101,7 @@
         <FILE id="TN2ewh" name="Meter.h" compile="0" resource="0" file="Source/audio/Meter.h"/>
         <FILE id="vVTypK" name="MIDILearn.cpp" compile="1" resource="0" file="Source/audio/MIDILearn.cpp"/>
         <FILE id="WFKvT5" name="MIDILearn.h" compile="0" resource="0" file="Source/audio/MIDILearn.h"/>
+        <FILE id="ZTEKeB" name="MIDIManager.h" compile="0" resource="0" file="Source/audio/MIDIManager.h"/>
         <FILE id="zSBVab" name="MidSide.cpp" compile="1" resource="0" file="Source/audio/MidSide.cpp"/>
         <FILE id="K88rdo" name="MidSide.h" compile="0" resource="0" file="Source/audio/MidSide.h"/>
         <FILE id="RFsXKN" name="NullNoiseSynth.h" compile="0" resource="0"

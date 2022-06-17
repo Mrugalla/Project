@@ -24,6 +24,14 @@ HOW TO USE:
 
 TO DO:
 
+Macro Dropdown
+	Save All MaxModDepths and Bias-Patch
+	Load Some MaxModDepths and Bias-Patch (FileChooser?)
+	Switch: Control MaxModDepth or Bias
+	Switch: Rel/Abs MaxModDepth
+	Flip Parameter Value with MaxModDepth
+	Remove All MaxModDepth and Bias
+
 Colours
 	throw some colours out of the options menu
 	like Transparent or Darken

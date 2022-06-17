@@ -406,21 +406,3 @@ namespace gui
 	template void Layout::place<int, float>(Component*, int, float, int, float, bool) const noexcept;
 	template void Layout::place<float, float>(Component*, float, float, float, float, bool) const noexcept;
 }
-
-
-
-
-/*
-#define TEMPLATE(type1, type2) \
-template void gui::Layout::place<type1, type2>(Component&, type1, type2, type1, type2, bool);
-template void gui::Layout::label<type1, type2>(Graphics&, String&&, type1, type2, type1, type2, bool) const;
-template gui::BoundsF gui::Layout::operator() < int, int > (int, int, int, int, bool) const;
-template gui::PointF gui::Layout::operator() < int, int > (int, int) const;
-
-TEMPLATE(int, int)
-TEMPLATE(float, int)
-TEMPLATE(int, float)
-TEMPLATE(float, float)
-
-#undef TEMPLATE
-*/

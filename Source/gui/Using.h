@@ -45,6 +45,7 @@ namespace gui
     using File = juce::File;
     using PropertiesFile = juce::PropertiesFile;
     using RangedDirectoryIterator = juce::RangedDirectoryIterator;
+    using Identifier = juce::Identifier;
 
     using Component = juce::Component;
     using Processor = audio::Processor;

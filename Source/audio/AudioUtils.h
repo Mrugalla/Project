@@ -10,16 +10,27 @@ namespace audio
 
     using AudioBuffer = juce::AudioBuffer<float>;
     using SIMD = juce::FloatVectorOperations;
+    using MIDIBuffer = juce::MidiBuffer;
     using String = juce::String;
+    using MIDIIt = juce::MidiBufferIterator;
+    using MIDIRef = MIDIIt::reference;
 
     using Smooth = smooth::Smooth<float>;
     using PID = param::PID;
     using Params = param::Params;
+    using Param = param::Param;
     using State = sta::State;
+
+    template<typename Float>
+    inline Float secsInSamples(Float secs, Float Fs) noexcept
+    {
+        return secs * Fs;
+    }
 
     template<typename Float>
     inline Float msInSamples(Float ms, Float Fs) noexcept
     {
-        return ms * Fs * static_cast<Float>(.001);
+        return secsInSamples(ms * static_cast<Float>(.001), Fs);
     }
+
 }

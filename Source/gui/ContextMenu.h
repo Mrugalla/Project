@@ -49,4 +49,13 @@ namespace gui
 	public:
 		ContextMenuButtons(Utils&);
 	};
+
+	class ContextMenuMacro :
+		public ContextMenu
+	{
+		Notify makeNotify2(ContextMenuMacro& popUp);
+
+	public:
+		ContextMenuMacro(Utils&);
+	};
 }
