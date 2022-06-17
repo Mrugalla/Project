@@ -1,5 +1,6 @@
 #pragma once
 #include "Knob.h"
+#include "SplineEditor.h"
 
 namespace gui
 {
@@ -8,20 +9,23 @@ namespace gui
     {
         LowLevel(Utils& u) :
             Comp(u, "", CursorType::Default),
+            spline(u, "Dis tha spline editor bro"),
             crushGain(u, "Crush Gain", PID::CrushGain),
             dummyParam(u, "Dummy Param", PID::AnotherDummyParam)
         {
             
             layout.init(
                 { 1, 2, 2, 1 },
-                { 1, 5, 1 }
+                { 1, 13, 2, 1 }
             );
 
+            addAndMakeVisible(spline);
             addAndMakeVisible(crushGain);
             addAndMakeVisible(dummyParam);
         }
 
     protected:
+        SplineEditor spline;
         Knob crushGain, dummyParam;
         
         void paint(Graphics&) override {}
@@ -30,8 +34,9 @@ namespace gui
         {
             layout.resized();
 
-            layout.place(crushGain, 1, 1, 1, 1, false);
-            layout.place(dummyParam, 2, 1, 1, 1, false);
+            layout.place(spline, 1, 1, 2, 1, false);
+            layout.place(crushGain, 1, 2, 1, 1, false);
+            layout.place(dummyParam, 2, 2, 1, 1, false);
         }
     };
 }

@@ -24,6 +24,10 @@ HOW TO USE:
 
 TO DO:
 
+SplineEditor
+	make points come from outside
+	wavetable from spline
+
 Macro Dropdown
 	Save All MaxModDepths and Bias-Patch
 	Load Some MaxModDepths and Bias-Patch (FileChooser?)

@@ -50,6 +50,7 @@
         <FILE id="Uad8Jv" name="State.h" compile="0" resource="0" file="Source/arch/State.h"/>
       </GROUP>
       <GROUP id="{DA435779-5001-4379-F809-3E7C21D55DC0}" name="gui">
+        <FILE id="hmN2Gl" name="SplineEditor.h" compile="0" resource="0" file="Source/gui/SplineEditor.h"/>
         <FILE id="g5xEoA" name="Menu.cpp" compile="1" resource="0" file="Source/gui/Menu.cpp"/>
         <FILE id="M9Lqvx" name="HighLevel.cpp" compile="1" resource="0" file="Source/gui/HighLevel.cpp"/>
         <FILE id="mE6xes" name="TextEditor.cpp" compile="1" resource="0" file="Source/gui/TextEditor.cpp"/>
@@ -106,9 +107,11 @@
         <FILE id="K88rdo" name="MidSide.h" compile="0" resource="0" file="Source/audio/MidSide.h"/>
         <FILE id="RFsXKN" name="NullNoiseSynth.h" compile="0" resource="0"
               file="Source/audio/NullNoiseSynth.h"/>
+        <FILE id="TV54He" name="Oscillator.h" compile="0" resource="0" file="Source/audio/Oscillator.h"/>
         <FILE id="Ew9Z1a" name="Oversampling.cpp" compile="1" resource="0"
               file="Source/audio/Oversampling.cpp"/>
         <FILE id="KE2g4j" name="Oversampling.h" compile="0" resource="0" file="Source/audio/Oversampling.h"/>
+        <FILE id="pucw6o" name="Phasor.h" compile="0" resource="0" file="Source/audio/Phasor.h"/>
         <FILE id="wvGOKd" name="PitchGlitcher.cpp" compile="1" resource="0"
               file="Source/audio/PitchGlitcher.cpp"/>
         <FILE id="wWm8Gd" name="PitchGlitcher.h" compile="0" resource="0" file="Source/audio/PitchGlitcher.h"/>
@@ -117,6 +120,7 @@
         <FILE id="Td7oEO" name="ProcessSuspend.h" compile="0" resource="0"
               file="Source/audio/ProcessSuspend.h"/>
         <FILE id="QAmb7f" name="Rectifier.h" compile="0" resource="0" file="Source/audio/Rectifier.h"/>
+        <FILE id="IXDptL" name="WaveTable.h" compile="0" resource="0" file="Source/audio/WaveTable.h"/>
         <FILE id="joPwDQ" name="WHead.cpp" compile="1" resource="0" file="Source/audio/WHead.cpp"/>
         <FILE id="aRvoAX" name="WHead.h" compile="0" resource="0" file="Source/audio/WHead.h"/>
       </GROUP>
