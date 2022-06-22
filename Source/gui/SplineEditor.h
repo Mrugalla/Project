@@ -1,22 +1,140 @@
 #pragma once
 #include "Comp.h"
 #include "../arch/Interpolation.h"
+#include "../arch/Range.h"
 
 namespace gui
 {
 	struct SplineEditor :
-		public Comp
+		public Comp,
+		public Timer
 	{
-		using Points = std::vector<PointF>;
+		static constexpr float MinDraggerWidth = .01f;
+		static constexpr float DraggerWidthStep = .01f;
+
+		enum XY{ X, Y };
+
+		struct SplinePoint
+		{
+			SplinePoint(const PointF& _rel) :
+				rel(_rel),
+				selected(false)
+			{}
+
+			PointF rel;
+			bool selected;
+		};
+
+		using Points = std::vector<SplinePoint>;
+
+		struct DraggerFall
+		{
+			DraggerFall(SplineEditor& e) :
+				editor(e),
+				posX(-1.f),
+				width(MinDraggerWidth)
+			{
+			}
+
+			void setPosition(float p)
+			{
+				posX = p;
+			}
+
+			void addWidth(float w)
+			{
+				width = juce::jlimit(MinDraggerWidth, 1.f, width + w);
+			}
+
+			void paint(Graphics& g)
+			{
+				if (posX == -1.f)
+					return;
+
+				const auto absWidth = editor.toAbsX(width);
+				const auto editorRight = editor.bounds.getRight();
+
+				auto x = editor.toAbsX(posX) - absWidth;
+				auto right = x + absWidth * 2.f;
+				if (x < editor.bounds.getX())
+					x = editor.bounds.getX();
+				if (right >= editorRight)
+					right = editorRight;
+				auto w = right - x;
+
+				const auto y = editor.bounds.getY();
+				const auto h = editor.bounds.getHeight();
+
+				g.fillRoundedRectangle(x, y, w, h, editor.utils.thicc);
+			}
+
+			bool isSelectable(float xRel) const noexcept
+			{
+				return xRel >= posX - width && xRel <= posX + width;
+			}
+
+		protected:
+			SplineEditor& editor;
+			float posX, width;
+		};
+
+		struct Grid
+		{
+			Grid(SplineEditor& e, bool _snap) :
+				editor(e),
+				range
+				{
+					makeRange::stepped(0.f, 1.f, 1.f / 16.f),
+					makeRange::stepped(0.f, 1.f, 1.f / 16.f)
+				},
+				snap(_snap)
+			{}
+
+			void paint(Graphics& g)
+			{
+				const auto gridSteps = 16.f;
+
+				const auto left = editor.bounds.getX();
+				const auto right = editor.bounds.getRight();
+				const auto top = editor.bounds.getY();
+				const auto bottom = editor.bounds.getBottom();
+
+				const auto inc = 1.f / gridSteps;
+				for (auto r = 0.f; r < 1.f; r += inc)
+				{
+					const auto yAbs = static_cast<int>(editor.toAbsY(r));
+					g.drawHorizontalLine(yAbs, left, right);
+
+					const auto xAbs = static_cast<int>(editor.toAbsX(r));
+					g.drawVerticalLine(xAbs, top, bottom);
+				}
+			}
+
+			PointF applySnap(const PointF& pRel) const noexcept
+			{
+				if (snap)
+					return	{ range[X].snapToLegalValue(pRel.x), range[X].snapToLegalValue(pRel.y) };
+				return { juce::jlimit(0.f, 1.f, pRel.x), juce::jlimit(0.f, 1.f, pRel.y) };
+			}
+		protected:
+			SplineEditor& editor;
+			std::array<RangeF, 2> range;
+			bool snap;
+		};
 
 		SplineEditor(Utils& u, const String& _tooltip) :
 			Comp(u, _tooltip, CursorType::Interact),
 			bounds(),
-			pointsRel(),
-			pointsAbs(),
-			curve()
+			points(),
+			curve(),
+			drag(*this),
+			grid(*this, false),
+			wannaUpdate(false),
+			dragXY()
 		{
 			updateCurve();
+
+			startTimerHz(24);
 		}
 
 		void paint(Graphics& g) override
@@ -35,17 +153,30 @@ namespace gui
 
 			for (auto i = 0; i < numPoints(); ++i)
 			{
-				const auto pt = pointsAbs[i];
+				const auto pt = grid.applySnap(points[i].rel);
+
+				const auto ptRelX = pt.x;
+
+				const auto isSelectable = drag.isSelectable(ptRelX);
+				const auto cornerSize = isSelectable ? thicc2 * 1.5f : thicc2;
+
+				const auto ptAbs = toAbs(pt);
+				
 				g.drawRoundedRectangle
 				(
-					pt.x - thicc,
-					pt.y - thicc,
-					thicc2,
-					thicc2,
+					ptAbs.x - thicc,
+					ptAbs.y - thicc,
+					cornerSize,
+					cornerSize,
 					thicc,
 					thicc
 				);
 			}
+
+			g.setColour(Colours::c(ColourID::Hover));
+			drag.paint(g);
+
+			grid.paint(g);
 		}
 
 		void resized() override
@@ -56,68 +187,140 @@ namespace gui
 
 		bool addPoint(const PointF& ptRel) noexcept
 		{
-			auto pt = limitRel(ptRel);
+			const auto pt = limitRel(ptRel);
 
-			if (existsRel(pt))
+			if (exists(pt))
 				return false;
 
-			pointsRel.push_back(pt);
-			pointsAbs.push_back(toAbs(ptRel));
+			points.push_back({ pt });
 			
 			return true;
 		}
 
-		size_t numPoints() const noexcept { return pointsRel.size(); }
-
-		void updateAbs()
+		size_t numPoints() const noexcept
 		{
-			pointsAbs.resize(numPoints());
-			for (auto i = 0; i < numPoints(); ++i)
-				pointsAbs[i] = toAbs(pointsRel[i]);
+			return points.size();
 		}
 
 		void updateCurve()
 		{
 			curve.clear();
 			sort();
-			updateAbs();
 
-			if (!pointsRel.empty())
+			if (points.empty())
+				return;
+
+			std::vector<PointF> ptAbs;
+			ptAbs.reserve(numPoints());
+			for (const auto& pt : points)
+				ptAbs.emplace_back(toAbs(grid.applySnap(pt.rel)));
+
+			const auto func = interpolate::polynomial::getFunc(ptAbs);
+			const auto thicc2 = utils.thicc * 2.f;
+
+
+			auto x = limitAbsX(bounds.getX());
+			auto y = limitAbsY(func(x));
+			curve.startNewSubPath(x, y);
+
+			while (x < bounds.getRight())
 			{
-				const auto func = interpolate::polynomial::getFunc(pointsAbs);
-				const auto thicc = utils.thicc;
-				
-				{
-					const auto x = limitAbsX(0.f);
-					const auto y = limitAbsY(func(x));
-					curve.startNewSubPath(x, y);
-				}
+				y = func(x);
+				curve.lineTo(limitAbsX(x), limitAbsY(y));
 
-				for (auto x = 1.f; x < bounds.getWidth(); x += thicc)
-				{
-					const auto y = func(x);
-					curve.lineTo(limitAbsX(x), limitAbsY(y));
-				}
+				x += thicc2;
 			}
+			
+			x = bounds.getRight();
+			y = func(x);
+			curve.lineTo(limitAbsX(x), limitAbsY(y));
+		}
+
+		void timerCallback() override
+		{
+			if (!wannaUpdate.load())
+				return;
+
+			updateCurve();
+			wannaUpdate.store(false);
+			repaint();
+		}
+
+		void deselect() noexcept
+		{
+			for (auto i = 0; i < numPoints(); ++i)
+				points[i].selected = false;
 		}
 
 	protected:
 		BoundsF bounds;
-		Points pointsRel, pointsAbs;
+		Points points;
 		Path curve;
+		DraggerFall drag;
+		Grid grid;
+		std::atomic<bool> wannaUpdate;
+		PointF dragXY;
 
 		// CONTROL:
 
+		void mouseExit(const Mouse&) override
+		{
+			drag.setPosition(-1.f);
+			repaint();
+		}
+		void mouseMove(const Mouse& mouse) override
+		{
+			drag.setPosition(toRelX(mouse.position.x));
+			repaint();
+		}
 		void mouseDown(const Mouse& mouse) override
 		{
+			dragXY = mouse.position;
+			
+			bool needsRepaint = false;
 
+			for (auto i = 0; i < numPoints(); ++i)
+			{
+				if (isSelectableRel(points[i].rel.x))
+				{
+					points[i].selected = true;
+					needsRepaint = true;
+				}
+			}
+
+			if (needsRepaint)
+				repaint();
 		}
+
 		void mouseDrag(const Mouse& mouse) override
 		{
+			drag.setPosition(toRelX(mouse.position.x));
+			if (selectionExists())
+			{
+				const auto nDragXY = mouse.position;
+				const auto distXY = nDragXY - dragXY;
 
+				for(auto& pt: points)
+					if (pt.selected)
+					{
+						const auto x = pt.rel.x;
+						const auto y = pt.rel.y;
+
+						pt.rel.x = toRelX(toAbsX(x) + distXY.x);
+						pt.rel.y = toRelY(toAbsY(y) + distXY.y);
+					}
+
+				dragXY = nDragXY;
+				wannaUpdate.store(true);
+			}
+			else
+				repaint();
 		}
+		
 		void mouseUp(const Mouse& mouse) override
 		{
+			bool needsUpdate = false;
+
 			if (mouse.mouseWasDraggedSinceMouseDown())
 			{
 				
@@ -126,33 +329,55 @@ namespace gui
 			{
 				if (mouse.mods.isLeftButtonDown())
 				{
-					addPoint(toRel(mouse.position));
+					if (addPoint(toRel(mouse.position)))
+						needsUpdate = true;
 				}
 				else if(mouse.mods.isRightButtonDown())
 				{
-					const auto newSize = static_cast<int>(numPoints()) - 1;
-					if(newSize != -1)
-						pointsRel.resize(newSize);
+					for (auto i = 0; i < numPoints(); ++i)
+					{
+						const auto sel = points[i].selected;
+						if (sel)
+						{
+							points.erase(points.begin() + i);
+							--i;
+							needsUpdate = true;
+						}
+					}
 				}
-				updateCurve();
-				repaint();
 			}
+
+			deselect();
+			repaint();
+			wannaUpdate.store(needsUpdate);
+		}
+		void mouseWheelMove(const Mouse&, const MouseWheel& wheel) override
+		{
+			const auto rev = wheel.isReversed ? -1.f : 1.f;
+			const auto moveY = wheel.deltaY * rev;
+			drag.addWidth(moveY > 0.f ? DraggerWidthStep : -DraggerWidthStep);
+			repaint();
 		}
 
 		// EVALUATION:
 
-		bool existsAbs(const PointF& pt)
+		bool isSelectableRel(float xRel) const noexcept
 		{
-			for (const auto& pAbs : pointsAbs)
-				if (pt.x == pAbs.x)
+			return drag.isSelectable(xRel);
+		}
+
+		bool selectionExists() const noexcept
+		{
+			for (auto& pt : points)
+				if (pt.selected)
 					return true;
 			return false;
 		}
 
-		bool existsRel(const PointF& pt)
+		bool exists(const PointF& pt) noexcept
 		{
-			for (const auto& pRel : pointsRel)
-				if (pt.x == pRel.x)
+			for (const auto& pRel : points)
+				if (pt.x == pRel.rel.x)
 					return true;
 			return false;
 		}
@@ -218,12 +443,37 @@ namespace gui
 
 		void sort()
 		{
-			auto sortFunc = [](const PointF& pt0, const PointF& pt1)
+			const auto sortFunc = [](const SplinePoint& pt0, const SplinePoint& pt1)
 			{
-				return pt0.x < pt1.x;
+				return pt0.rel.x < pt1.rel.x;
 			};
 
-			std::sort(pointsRel.begin(), pointsRel.end(), sortFunc);
+			std::sort(points.begin(), points.end(), sortFunc);
 		}
+	};
+
+	struct SplineEditorPanel :
+		public Comp
+	{
+		SplineEditorPanel(Utils& u, String&& _tooltip) :
+			Comp(u, "", CursorType::Default),
+			editor(u, _tooltip)
+		{
+			layout.init(
+				{ 1 },
+				{ 5, 1 }
+			);
+
+			addAndMakeVisible(editor);
+		}
+
+		void resized() override
+		{
+			layout.resized();
+
+			layout.place(editor, 0, 0, 1, 1, false);
+		}
+
+		SplineEditor editor;
 	};
 }

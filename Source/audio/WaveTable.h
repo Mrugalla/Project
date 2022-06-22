@@ -30,7 +30,7 @@ namespace audio
 			for (auto s = 0; s < Size; ++s, x += inc)
 				table[s] = func(x);
 
-			for (auto i = Size; i < table.size(); ++i)
+			for (auto i = Size; i < static_cast<int>(table.size()); ++i)
 				table[i] = table[i - Size];
 		}
 

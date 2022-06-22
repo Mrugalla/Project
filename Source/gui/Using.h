@@ -48,6 +48,7 @@ namespace gui
     using Identifier = juce::Identifier;
     using Drawable = juce::Drawable;
     using UniqueDrawable = std::unique_ptr<Drawable>;
+    using RangeF = juce::NormalisableRange<float>;
 
     using Component = juce::Component;
     using Processor = audio::Processor;

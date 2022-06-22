@@ -16,7 +16,7 @@ namespace gui
             
             layout.init(
                 { 1, 2, 2, 1 },
-                { 1, 13, 2, 1 }
+                { 1, 5, 2, 3, 1 }
             );
 
             addAndMakeVisible(spline);
@@ -25,7 +25,7 @@ namespace gui
         }
 
     protected:
-        SplineEditor spline;
+        SplineEditorPanel spline;
         Knob crushGain, dummyParam;
         
         void paint(Graphics&) override {}
@@ -35,8 +35,8 @@ namespace gui
             layout.resized();
 
             layout.place(spline, 1, 1, 2, 1, false);
-            layout.place(crushGain, 1, 2, 1, 1, false);
-            layout.place(dummyParam, 2, 2, 1, 1, false);
+            layout.place(crushGain, 1, 3, 1, 1, false);
+            layout.place(dummyParam, 2, 3, 1, 1, false);
         }
     };
 }

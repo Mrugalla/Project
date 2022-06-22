@@ -125,15 +125,15 @@ namespace gui
 			}
 		}
 
-		void mouseDown(const Mouse& mouse) override
+		void mouseDown(const Mouse&) override
 		{
 
 		}
-		void mouseDrag(const Mouse& mouse) override
+		void mouseDrag(const Mouse&) override
 		{
 
 		}
-		void mouseUp(const Mouse& mouse) override
+		void mouseUp(const Mouse&) override
 		{
 
 		}

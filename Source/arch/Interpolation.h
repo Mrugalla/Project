@@ -110,7 +110,11 @@ namespace interpolate
 					auto p = static_cast<Float>(1);
 
 					for (auto j = 1; j < n; ++j)
-						p *= (xp - pts[j].x) / (pts[0].x - pts[j].x);
+					{
+						const auto denom = pts[0].x - pts[j].x;
+						if (denom != 0.f)
+							p *= (xp - pts[j].x) / denom;
+					}
 
 					yp += p * pts[0].y;
 				}
@@ -121,7 +125,12 @@ namespace interpolate
 
 					for (auto j = 0; j < n; ++j)
 						if (i != j)
-							p *= (xp - pts[j].x) / (pts[i].x - pts[j].x);
+						{
+							const auto denom = pts[i].x - pts[j].x;
+							if (denom != 0.f)
+								p *= (xp - pts[j].x) / denom;
+						}
+							
 
 					yp += p * pts[i].y;
 				}
