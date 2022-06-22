@@ -214,7 +214,7 @@ namespace gui
 #endif
 		const auto patchBrowserOffset = PPDHasPatchBrowser ? 2.f : 0.f;
 
-		layout.place(menuButton, 1.f, 1.f, 1.f, 1.f, true);
+		layout.place(menuButton, 5.f, 1.f, 1.f, 1.f, true);
 		layout.place(parameterRandomizer, 7.f, 1.f, 1.f, 1.f, true);
 
 		layout.place(macro, 3.f, 3.f + patchBrowserOffset, 3.f, 1.f, true);

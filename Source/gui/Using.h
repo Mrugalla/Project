@@ -46,6 +46,8 @@ namespace gui
     using PropertiesFile = juce::PropertiesFile;
     using RangedDirectoryIterator = juce::RangedDirectoryIterator;
     using Identifier = juce::Identifier;
+    using Drawable = juce::Drawable;
+    using UniqueDrawable = std::unique_ptr<Drawable>;
 
     using Component = juce::Component;
     using Processor = audio::Processor;

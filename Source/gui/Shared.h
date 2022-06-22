@@ -18,45 +18,7 @@ namespace gui
         NumCols
     };
 
-    inline Colour getDefault(ColourID i) noexcept
-    {
-        switch (i)
-        {
-        case ColourID::Bg: return Colour(0xff181620);
-        case ColourID::Txt: return Colour(0xff009aff);
-        case ColourID::Inactive: return Colour(0xff808080);
-        case ColourID::Abort: return Colour(0xffff0000);
-        case ColourID::Interact: return Colour(0xff00bcab);
-        case ColourID::Darken: return Colour(0xea000000);
-        case ColourID::Hover: return Colour(0x756e89bd);
-        case ColourID::Mod: return Colour(0xffd20082);
-        case ColourID::Bias: return Colour(0xffcaaa00);
-        default: return Colour(0x00000000);
-        }
-    }
-    
-    inline String toString(ColourID i)
-    {
-        switch (i)
-        {
-        case ColourID::Bg: return "background";
-        case ColourID::Txt: return "text";
-        case ColourID::Abort: return "abort";
-        case ColourID::Interact: return "interact";
-        case ColourID::Inactive: return "inactive";
-        case ColourID::Darken: return "darken";
-        case ColourID::Hover: return "hover";
-        case ColourID::Transp: return "transp";
-        case ColourID::Mod: return "mod";
-        case ColourID::Bias: return "bias";
-        default: return "";
-        }
-    }
-
-    inline String toStringProps(ColourID i)
-    {
-        return "colour" + toString(i);
-    }
+    static constexpr int NumColours = static_cast<int>(ColourID::NumCols);
 
     class Colours
     {
@@ -65,39 +27,41 @@ namespace gui
         Colours() :
             cols(),
             props(nullptr)
-        {}
+        {
+            setInternal(ColourID::Transp, Colour(0x00000000));
+            setInternal(ColourID::Abort, Colour(0xffff0000));
+        }
+
+        Colour defaultColour() noexcept
+        {
+            return Colour(0xff6800ff);
+        }
 
         void init(Props* p)
         {
             props = p;
             if (props->isValidFile())
-                for (auto i = 0; i < static_cast<int>(ColourID::NumCols); ++i)
-                {
-                    const auto cID = static_cast<ColourID>(i);
-                    const auto colStr = props->getValue(toStringProps(cID), getDefault(cID).toString());
-                    set(i, juce::Colour::fromString(colStr));
-                }
+            {
+                const auto colStr = props->getValue(coloursID(), defaultColour().toString());
+                set(juce::Colour::fromString(colStr));
+            }
         }
 
-        bool set(const String& i, Colour col)
-        {
-            for (auto j = 0; j < cols.size(); ++j)
-                if (i == cols[j].toString())
-                    return set(j, col);
-            return false;
-        }
-
-        bool set(ColourID i, Colour col) noexcept
-        {
-            return set(static_cast<int>(i), col);
-        }
-
-        bool set(int i, Colour col) noexcept
+        bool set(Colour col)
         {
             if (props->isValidFile())
             {
-                cols[i] = col;
-                props->setValue(toStringProps(ColourID(i)), col.toString());
+                setInternal(ColourID::Interact, col);
+                props->setValue(coloursID(), col.toString());
+
+                setInternal(ColourID::Bg, col.darker(10.f).withMultipliedSaturation(.15f));
+                setInternal(ColourID::Txt, col.withMultipliedBrightness(.7f));
+                setInternal(ColourID::Mod, col.withRotatedHue(.4f));
+                setInternal(ColourID::Bias, col.withRotatedHue(.6f));
+                setInternal(ColourID::Darken, col.darker(2.f).withMultipliedAlpha(.5f));
+                setInternal(ColourID::Hover, col.brighter(2.f).withMultipliedAlpha(.3f));
+                setInternal(ColourID::Inactive, col.withMultipliedSaturation(.1f));
+                
                 if (props->needsToBeSaved())
                 {
                     props->save();
@@ -124,9 +88,19 @@ namespace gui
         }
 
         static Colours c;
-    protected:
+    private:
         Array cols;
         Props* props;
+
+        void setInternal(ColourID cID, Colour col) noexcept
+        {
+            cols[static_cast<int>(cID)] = col;
+        }
+
+        String coloursID()
+        {
+            return "coloursMain";
+        }
     };
 
     // GET FONT

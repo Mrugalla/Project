@@ -6,18 +6,17 @@ namespace gui
 	struct LogoComp :
 		public Comp
 	{
-		LogoComp(Utils& u, std::unique_ptr<juce::Drawable>&& svg) :
+		LogoComp(Utils& u, const char* _data, const int _size) :
 			Comp(u, "logo tooltip", CursorType::Default),
-			drawable(std::move(svg))
+			drawable(Drawable::createFromImageData(_data, _size))
 		{
 			addAndMakeVisible(*drawable);
 		}
 
-		std::unique_ptr<juce::Drawable> drawable;
+		UniqueDrawable drawable;
 
 		void paint(Graphics&) override
 		{
-
 		}
 
 		void resized() override

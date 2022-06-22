@@ -18,78 +18,39 @@ namespace gui
 
 	ColourSelector::ColourSelector(Utils& u) :
 		Comp(u, "", CursorType::Default),
-		selector(27, 4, 7),
+		selector(!CS::showAlphaChannel | CS::showColourAtTop | !CS::showSliders | CS::showColourspace, 4, 7),
 		revert(u, "Click here to revert to the last state of your coloursheme."),
 		deflt(u, "Click here to set the coloursheme back to its default state."),
-		colButtons(),
-		curSheme(),
-		colIdx(0)
+		curSheme(Colours::c(ColourID::Interact))
 	{
 		layout.init(
-			{ 5, 2 },
+			{ 1, 1 },
 			{ 8, 2 }
 		);
 
-		const auto numCols = static_cast<int>(ColourID::NumCols);
-
-		for (auto c = 0; c < numCols; ++c)
-			curSheme[c] = Colours::c(c);
-
-		colButtons.reserve(numCols);
-		for (auto i = 0; i < numCols; ++i)
-		{
-			colButtons.push_back(std::make_unique<Button>(
-				utils, "Select this colour to individualize it."
-				));
-
-			auto& btn = *colButtons.back();
-
-			makeTextButton(btn, toString(ColourID(i)), true, true);
-		}
-
-		makeButtonsGroup(colButtons, colIdx);
-
-		for (auto i = 0; i < numCols; ++i)
-		{
-			auto& btn = *colButtons[i];
-
-			btn.onClick.push_back([this, i](Button&)
-				{
-					colIdx = i;
-
-					selector.setCurrentColour(
-						Colours::c(i),
-						juce::NotificationType::dontSendNotification
-					);
-				});
-		}
-
-		for (auto& oc : colButtons[colIdx]->onClick)
-			oc(*colButtons[colIdx].get());
+		selector.setCurrentColour(curSheme, juce::NotificationType::dontSendNotification);
 
 		makeTextButton(revert, "Revert", false, true);
 		makeTextButton(deflt, "Default", false, true);
 
-		revert.onClick.push_back([this, numCols](Button&)
+		revert.onClick.push_back([this](Button&)
 			{
-				for (auto i = 0; i < numCols; ++i)
-					Colours::c.set(i, curSheme[i]);
+				Colours::c.set(curSheme);
+
 				selector.setCurrentColour(
-					curSheme[colIdx],
+					curSheme,
 					juce::NotificationType::dontSendNotification
 				);
 
 				notify(EvtType::ColourSchemeChanged);
 			});
-		deflt.onClick.push_back([this, numCols](Button&)
+		deflt.onClick.push_back([this](Button&)
 			{
-				for (auto i = 0; i < numCols; ++i)
-					Colours::c.set(i, getDefault(static_cast<ColourID>(i)));
+				Colours::c.set(Colours::c.defaultColour());
 
-				for (auto c = 0; c < numCols; ++c)
-					curSheme[c] = Colours::c(c);
+				curSheme = Colours::c(ColourID::Interact);
 				selector.setCurrentColour(
-					curSheme[colIdx],
+					curSheme,
 					juce::NotificationType::dontSendNotification
 				);
 
@@ -100,9 +61,6 @@ namespace gui
 		addAndMakeVisible(revert);
 		addAndMakeVisible(deflt);
 
-		for (auto& c : colButtons)
-			addAndMakeVisible(*c);
-
 		startTimerHz(12);
 	}
 
@@ -112,44 +70,20 @@ namespace gui
 	{
 		layout.resized();
 
-		{
-			const auto bounds = layout(0, 1, 1, 1);
-			const auto y = bounds.getY();
-			const auto w = bounds.getWidth() / 2.f;
-			const auto h = bounds.getHeight();
-			auto x = bounds.getX();
-
-			revert.setBounds(BoundsF(x, y, w, h).toNearestInt());
-			x += w;
-			deflt.setBounds(BoundsF(x, y, w, h).toNearestInt());
-		}
-
-		layout.place(selector, 0, 0, 1, 1, false);
-
-		{
-			const auto bounds = layout(1, 0, 1, 1);
-			const auto x = bounds.getX();
-			const auto w = bounds.getWidth();
-			const auto h = bounds.getHeight() / static_cast<float>(colButtons.size());
-			auto y = bounds.getY();
-
-			for (auto& c : colButtons)
-			{
-				c->setBounds(BoundsF(x, y, w, h).toNearestInt());
-				y += h;
-			}
-		}
+		layout.place(selector, 0, 0, 2, 1, false);
+		layout.place(revert, 0, 1, 1, 1, false);
+		layout.place(deflt, 1, 1, 1, 1, false);
 	}
 
 	void ColourSelector::timerCallback()
 	{
 		const auto curCol = selector.getCurrentColour();
-		const auto lastCol = Colours::c(colIdx);
+		const auto lastCol = Colours::c(ColourID::Interact);
 
 		if (curCol == lastCol)
 			return;
 
-		Colours::c.set(colIdx, curCol);
+		Colours::c.set(curCol);
 		notify(EvtType::ColourSchemeChanged);
 	}
 

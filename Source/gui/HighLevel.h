@@ -5,6 +5,7 @@
 #include "PatchBrowser.h"
 #endif
 
+#include "LogoComp.h"
 #include "Knob.h"
 #include "Menu.h"
 #include "MIDICCMonitor.h"
