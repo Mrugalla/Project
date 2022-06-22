@@ -170,7 +170,7 @@ namespace gui
         }
         // draw tick
         {
-            const auto tickLine = juce::Line<float>::fromStartAndAngle(centre, radiusExt, valAngle);
+            const auto tickLine = LineF::fromStartAndAngle(centre, radiusExt, valAngle);
             g.setColour(Colours::c(ColourID::Bg));
             g.drawLine(tickLine, thicc3);
             g.setColour(col);
@@ -274,7 +274,7 @@ namespace gui
         }
     }
 
-    void Knob::mouseWheelMove(const Mouse& mouse, const juce::MouseWheelDetails& wheel)
+    void Knob::mouseWheelMove(const Mouse& mouse, const MouseWheel& wheel)
     {
         if (mouse.mods.isAnyMouseButtonDown())
             return;
@@ -296,6 +296,8 @@ namespace gui
             label.repaint();
         }
     }
+
+
 
     KnobMeter::KnobMeter(Knob& _knob, const Val& _val) :
         knob(_knob),

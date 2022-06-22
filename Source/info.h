@@ -24,8 +24,16 @@ HOW TO USE:
 
 TO DO:
 
+Knob2
+	ModDial
+		rightclick to change state doesn't work yet
+	test if parameter locking works!
+	solve missing Meter
+	replace all Knobs with Knob2
+	replace functionality in context menu
+
 SplineEditor
-	make points come from outside
+	make points come from outside (maybe?)
 	wavetable from spline
 
 Macro Dropdown
