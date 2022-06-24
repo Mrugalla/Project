@@ -8,20 +8,16 @@ namespace gui
 		patchBrowser(u),
 		patchBrowserButton(u, patchBrowser),
 #endif
-		macro(u, "Macro", PID::Macro, false),
+		macro(u),
 		modDepthLocked(u, "(Un-)Lock all parameters' modulation depths to their current destinations."),
 		swapParamWithModDepth(u, "Swap all parameters values with their current destinations."),
 
 		parameterRandomizer(u),
 #if PPDHasGainIn
-		gainIn(u, "In", PID::GainIn),
-		meterIn(gainIn, u.getMeter(0)),
-		gainOut(u, "Out", PID::Gain),
-#else
-		gainOut(u, "Gain", PID::Gain),
+		gainIn(u),
 #endif
-		meterOut(gainOut, u.getMeter(PPDHasGainIn ? 1 : 0)),
-		mix(u, "Mix", PID::Mix),
+		gainOut(u),
+		mix(u),
 #if PPDHasUnityGain
 		unityGain(u, param::toTooltip(PID::UnityGain)),
 #endif
@@ -102,6 +98,8 @@ namespace gui
 			makeSymbolButton(swapParamWithModDepth, ButtonSymbol::SwapParamModDepth);
 		}
 
+		makeParameter(macro, PID::Macro, "Macro", false);
+
 #if PPDHasPatchBrowser
 		addAndMakeVisible(patchBrowserButton);
 #endif
@@ -109,9 +107,12 @@ namespace gui
 		addAndMakeVisible(parameterRandomizer);
 		parameterRandomizer.add(utils.getAllParams());
 #if PPDHasGainIn
+		makeParameter(gainIn, PID::GainIn, "In", true, &utils.getMeter(0));
 		addAndMakeVisible(gainIn);
 #endif
+		makeParameter(gainOut, PID::Gain, "Out", true, &utils.getMeter(PPDHasGainIn ? 1 : 0));
 		addAndMakeVisible(gainOut);
+		makeParameter(mix, PID::Mix, "Mix");
 		addAndMakeVisible(mix);
 #if PPDHasUnityGain
 		makeParameterSwitchButton(unityGain, PID::UnityGain, ButtonSymbol::UnityGain);

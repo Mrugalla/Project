@@ -52,7 +52,11 @@ Switch to mod-depth-control."/>
   </menu>
   <menu id="Colours" x="1" y="1;5" tooltip="Individualize the colour sheme of the plugin here.">
     <title y="0" />
-    <coloursheme y="1" id="coloursheme"/>
+    <colourscheme y="1" id="colourscheme"/>
+  </menu>
+  <menu id="The Manifest of Wisdom" x="1" y="1;13" tooltip="Use the manifest of wisdom to let your inspiration flow.">
+    <title y="0" />
+    <erkenntnisse y="1" id="erkenntnisse"/>
   </menu>
   <menu id="Thank You" x="40;40;40" y="3;13;2" tooltip="I always wanted to become a VST Developer. Thanks to everyone who makes this possible.">
     <title y="0" w="2" />

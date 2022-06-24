@@ -4,8 +4,9 @@
 
 #include <juce_core/juce_core.h>
 #include <juce_graphics/juce_graphics.h>
-#include <juce_data_structures/juce_data_structures.h>
 #include <juce_gui_basics/juce_gui_basics.h>
+#include <juce_data_structures/juce_data_structures.h>
+#include <juce_gui_extra/juce_gui_extra.h>
 
 #include "../Processor.h"
 #include "../param/Param.h"
@@ -49,6 +50,7 @@ namespace gui
     using Drawable = juce::Drawable;
     using UniqueDrawable = std::unique_ptr<Drawable>;
     using RangeF = juce::NormalisableRange<float>;
+    using Time = juce::Time;
 
     using Component = juce::Component;
     using Processor = audio::Processor;

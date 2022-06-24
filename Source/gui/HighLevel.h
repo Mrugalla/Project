@@ -36,10 +36,8 @@ namespace gui
 		ButtonParameterRandomizer parameterRandomizer;
 #if PPDHasGainIn
 		Knob gainIn;
-		KnobMeter meterIn;
 #endif
 		Knob gainOut;
-		KnobMeter meterOut;
 		Knob mix;
 #if PPDHasUnityGain
 		Button unityGain;
@@ -54,7 +52,6 @@ namespace gui
 #if PPDHasPolarity
 		Button polarity;
 #endif
-
 		MIDICCMonitor ccMonitor;
 
 		LowLevel* lowLevel;

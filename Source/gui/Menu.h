@@ -1,11 +1,11 @@
 #pragma once
-#include <juce_gui_extra/juce_gui_extra.h>
-#include "Button.h"
+#include "TextEditor.h"
 
 namespace gui
 {
 	Just getJust(const String&);
 
+	// not used yet:
 	struct ColourShifter :
 		public Comp
 	{
@@ -162,6 +162,155 @@ namespace gui
 		Button revert, deflt;
 		Colour curSheme;
 	};
+
+	///
+
+	struct ErkenntnisseComp :
+		public Comp,
+		public Timer
+	{
+		ErkenntnisseComp(Utils& u) :
+			Comp(u, "", CursorType::Default),
+			Timer(),
+			editor(u, "Enter or edit wisdom.", "Enter wisdom..."),
+			date(u, ""),
+			manifest(u, "Click here to manifest wisdom to the manifest of wisdom!"),
+			inspire(u, "Click here to get inspired by past wisdom of the manifest of wisdom!"),
+			revealFolder(u, "Click here to reveal the manifest of wisdom!")
+		{
+			const File folder(getFolder());
+			if (!folder.exists())
+				folder.createDirectory();
+
+			layout.init(
+				{ 1, 1, 1 },
+				{ 8, 1, 1 }
+			);
+
+			addAndMakeVisible(editor);
+			addAndMakeVisible(date);
+			date.mode = Label::Mode::TextToLabelBounds;
+
+			addAndMakeVisible(manifest);
+			addAndMakeVisible(inspire);
+			addAndMakeVisible(revealFolder);
+
+			makeTextButton(manifest, "Manifest");
+			makeTextButton(inspire, "Inspire");
+			makeTextButton(revealFolder, "Reveal\nFolder");
+
+			editor.onReturn = [&]()
+			{
+				saveToDisk();
+			};
+
+			manifest.onClick.push_back([&](Button&)
+			{
+				saveToDisk();
+			});
+
+			inspire.onClick.push_back([&](Button&)
+			{
+				const File folder(getFolder());
+				
+				const auto fileTypes = File::TypesOfFileToFind::findFiles;
+				const String extension(".txt");
+				const auto wildCard = "*" + extension;
+				const auto numFiles = folder.getNumberOfChildFiles(fileTypes, wildCard);
+				Random rand;
+				auto idx = rand.nextInt(numFiles);
+
+				const RangedDirectoryIterator files(
+					folder,
+					false,
+					wildCard,
+					fileTypes
+				);
+
+				for (const auto& it : files)
+				{
+					if (idx == 0)
+					{
+						const File file(it.getFile());
+						parse(file.getFileName());
+						editor.setText(file.loadFileAsString());
+						editor.repaint();
+						return;
+					}
+					else
+						--idx;
+				}
+			});
+
+			revealFolder.onClick.push_back([&](Button&)
+			{
+				const File folder(getFolder());
+				folder.revealToUser();
+			});
+
+			startTimerHz(4);
+		}
+
+		void timerCallback() override
+		{
+			if (editor.isShowing())
+				editor.enable();
+		}
+
+		void resized() override
+		{
+			layout.resized();
+
+			layout.place(editor, 0, 0, 3, 1, false);
+			layout.place(date, 0, 1, 3, 1, false);
+			layout.place(manifest, 0, 2, 1, 1, false);
+			layout.place(inspire, 1, 2, 1, 1, false);
+			layout.place(revealFolder, 2, 2, 1, 1, false);
+		}
+
+		void paint(Graphics&) override
+		{}
+
+		TextEditor editor;
+		Label date;
+		Button manifest, inspire, revealFolder;
+
+	private:
+		String getFolder()
+		{
+			auto specialLoc = File::getSpecialLocation(File::SpecialLocationType::userApplicationDataDirectory);
+
+			return specialLoc.getFullPathName() + "\\Mrugalla\\sharedState\\TheManifestOfWisdom\\";
+		}
+
+		void saveToDisk()
+		{
+			if (editor.isEmpty())
+				return parse("You have to enter some wisdom in order to manifest it.");
+
+			const auto now = Time::getCurrentTime();
+			const auto nowStr = now.toString(true, true, false, true).replaceCharacters(" ", "_").replaceCharacters(":", "_");
+
+			File file(getFolder() + nowStr + ".txt");
+
+			if (!file.existsAsFile())
+				file.create();
+			else
+				return parse("Relax! You can only manifest 1 wisdom per minute.");
+
+			file.appendText(editor.getText());
+
+			parse("Manifested: " + nowStr);
+		}
+
+		void parse(String&& msg)
+		{
+			date.setText(msg);
+			date.repaint();
+		}
+	};
+
+	/// MENU STUFF IN GENERAL:
 
 	struct ComponentWithBounds
 	{

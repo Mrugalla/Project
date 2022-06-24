@@ -50,10 +50,11 @@ namespace param
 
 	PID toPID(const String& id)
 	{
+		const auto nID = toID(id);
 		for (auto i = 0; i < NumParams; ++i)
 		{
 			auto pID = static_cast<PID>(i);
-			if (id == toID(toString(pID)))
+			if (nID == toID(toString(pID)))
 				return pID;
 		}
 		return PID::NumParams;

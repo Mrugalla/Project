@@ -232,13 +232,14 @@ namespace gui
 					sub->initLayout(xLayoutProp.toString(), yLayoutProp.toString());
 				}
 
-				enum Type { kTitle, kTxt, kColourSheme, kLink, kNumTypes };
+				enum Type { kTitle, kTxt, kColourScheme, kLink, kErkenntnisse, kNumTypes };
 				std::array<Identifier, kNumTypes> ids
 				{
 					"title",
 					"txt",
-					"coloursheme",
-					"link"
+					"colourscheme",
+					"link",
+					"erkenntnisse"
 				};
 
 				for (auto c = 0; c < node.vt.getNumChildren(); ++c)
@@ -269,7 +270,7 @@ namespace gui
 
 						comp = cmp;
 					}
-					else if (child.getType() == ids[kColourSheme])
+					else if (child.getType() == ids[kColourScheme])
 					{
 						auto cmp = new ColourSelector(utils);
 
@@ -281,6 +282,12 @@ namespace gui
 
 						makeTextButton(*cmp, child.getProperty("id").toString(), false, true);
 						makeURLButton(*cmp, child.getProperty("link"));
+
+						comp = cmp;
+					}
+					else if (child.getType() == ids[kErkenntnisse])
+					{
+						auto cmp = new ErkenntnisseComp(utils);
 
 						comp = cmp;
 					}

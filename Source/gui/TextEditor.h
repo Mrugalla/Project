@@ -8,8 +8,10 @@ namespace gui
 		public Comp,
 		public Timer
 	{
-		TextEditor(Utils&, const String&/*tooltip*/, Notify&&, const String &/*empty string*/ = "enter value..");
-
+		/* tooltip, empty string */
+		TextEditor(Utils&, const String&, Notify&&, const String& = "enter value..");
+		
+		/* tooltip, empty string */
 		TextEditor(Utils&, const String&, const String&);
 
 		void setVisible(bool) override;

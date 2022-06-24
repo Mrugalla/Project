@@ -24,12 +24,14 @@ HOW TO USE:
 
 TO DO:
 
+Label
+	TextToLabelBounds accounting for multiline text
+		size of text
+		where click in texteditor makes tick appear
+
 Knob2
-	ModDial
-		rightclick to change state doesn't work yet
 	test if parameter locking works!
-	solve missing Meter
-	replace all Knobs with Knob2
+		randomize
 	replace functionality in context menu
 
 SplineEditor

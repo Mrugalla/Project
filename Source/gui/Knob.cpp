@@ -2,220 +2,88 @@
 
 namespace gui
 {
-    Knob::Knob(Utils& u, String&& _name, PID _pID, bool _modulatable) :
-        Parametr(u, _pID, _modulatable),
-        Timer(),
-        knobBounds(0.f, 0.f, 0.f, 0.f),
-        label(u, std::move(_name)),
-        dragY(0.f),
-        valMeter(0.f),
-        cID(ColourID::Interact)
+    // KNOB
+
+    Knob::Knob(Utils& u, const String& _name, const String& _tooltip, CursorType _cursorType) :
+        Comp(u, _tooltip, _cursorType),
+        onEnter([](Knob&) {}),
+        onExit([](Knob&) {}),
+        onDown([](Knob&) {}),
+        onWheel([](Knob&) {}),
+        onResize([](Knob&) {}),
+        onDrag([](Knob&, PointF&) {}),
+        onUp([](Knob&, const Mouse&) {}),
+        onTimer([](Knob&) { return false; }),
+        onPaint([](Knob&, Graphics&) {}),
+        getInfo([](int) { return ""; }),
+        label(u, _name),
+        dragXY(),
+        knobBounds(),
+        values(),
+        comps(),
+        states(),
+        hidesCursor(true),
+        locked(false),
+        activeCursor(_cursorType)
     {
-        layout.init(
-            { 40, 40, 40 },
-            { 100, 40, 40 }
-        );
+        setName(_name);
 
         label.textCID = ColourID::Txt;
         label.just = Just::centred;
         label.mode = Label::Mode::TextToLabelBounds;
 
-        setName(std::move(_name));
         addAndMakeVisible(label);
-        startTimerHz(PPDFPSKnobs);
     }
 
-    void Knob::updateMeter(float v)
+    void Knob::init(std::vector<int>&& distX, std::vector<int>&& distY)
     {
-        valMeter = v;
-        repaint();
+        layout.init(
+            distX,
+            distY
+        );
     }
-
-    void Knob::setCID(ColourID c)
-    {
-        cID = c;
-        label.textCID = cID;
-    }
-
-    Label& Knob::getLabel() noexcept { return label; }
 
     void Knob::timerCallback()
     {
-        bool needsRepaint = false;
-
-        const auto lckd = param.isLocked();
-        if (locked != lckd)
-            setLocked(lckd);
-
-        const auto vn = param.getValue();
-        const auto mmd = param.getMaxModDepth();
-        const auto vm = param.getValMod();
-        const auto mb = param.getModBias();
-
-        if (valNorm != vn || maxModDepth != mmd || valMod != vm || modBias != mb)
-        {
-            valNorm = vn;
-            maxModDepth = mmd;
-            valMod = vm;
-            modBias = mb;
-            needsRepaint = true;
-        }
-
-        if (needsRepaint)
+        if (onTimer(*this))
             repaint();
     }
 
     void Knob::paint(juce::Graphics& g)
     {
-        const auto thicc = utils.thicc;
-        const auto thicc2 = thicc * 2.f;
-        const auto thicc3 = thicc * 3.f;
-        Stroke strokeType(thicc, Stroke::JointStyle::curved, Stroke::EndCapStyle::rounded);
-        const auto radius = knobBounds.getWidth() * .5f;
-        const auto radiusBetween = radius - thicc;
-        const auto radiusInner = radius - thicc2;
-        PointF centre(
-            radius + knobBounds.getX(),
-            radius + knobBounds.getY()
-        );
-
-        const auto col = Colours::c(ColourID::Interact);
-
-        if (valMeter != 0.f)
-        {
-            g.setColour(Colours::c(ColourID::Txt));
-            Path meterArc;
-
-            const auto meterAngle = AngleRange * valMeter - AngleWidth;
-
-            meterArc.addCentredArc(
-                centre.x, centre.y,
-                radiusBetween, radiusBetween,
-                0.f,
-                -AngleWidth, meterAngle,
-                true
-            );
-
-            strokeType.setStrokeThickness(thicc2);
-            g.strokePath(meterArc, strokeType);
-            strokeType.setStrokeThickness(thicc);
-        }
-
-        //draw outlines
-        {
-            g.setColour(col);
-            Path outtaArc;
-
-            outtaArc.addCentredArc(
-                centre.x, centre.y,
-                radius, radius,
-                0.f,
-                -AngleWidth, AngleWidth,
-                true
-            );
-            outtaArc.addCentredArc(
-                centre.x, centre.y,
-                radiusInner, radiusInner,
-                0.f,
-                -AngleWidth, AngleWidth,
-                true
-            );
-
-            g.strokePath(outtaArc, strokeType);
-        }
-
-        const auto valNormAngle = valNorm * AngleRange;
-        const auto valAngle = -AngleWidth + valNormAngle;
-        const auto radiusExt = radius + thicc;
-
-        // draw modulation
-        if (modulatable)
-        {
-            const auto valModAngle = valMod * AngleRange;
-            const auto modAngle = -AngleWidth + valModAngle;
-            const auto modTick = juce::Line<float>::fromStartAndAngle(centre, radiusExt, modAngle);
-
-            g.setColour(Colours::c(ColourID::Bg));
-            g.drawLine(modTick, thicc * 4.f);
-
-            const auto maxModDepthAngle = juce::jlimit(-AngleWidth, AngleWidth, valNormAngle + maxModDepth * AngleRange - AngleWidth);
-            const auto biasAngle = AngleRange * modBias - AngleWidth;
-
-            g.setColour(Colours::c(ColourID::Bias));
-            {
-                Path biasPath;
-                biasPath.addCentredArc(
-                    centre.x, centre.y,
-                    radiusInner, radiusInner,
-                    0.f,
-                    0.f, biasAngle,
-                    true
-                );
-                g.strokePath(biasPath, strokeType);
-            }
-
-            g.setColour(Colours::c(ColourID::Mod));
-            g.drawLine(modTick.withShortenedStart(radiusInner), thicc2);
-            {
-                Path modPath;
-                modPath.addCentredArc(
-                    centre.x, centre.y,
-                    radius, radius,
-                    0.f,
-                    maxModDepthAngle, valAngle,
-                    true
-                );
-                g.strokePath(modPath, strokeType);
-            }
-        }
-        // draw tick
-        {
-            const auto tickLine = LineF::fromStartAndAngle(centre, radiusExt, valAngle);
-            g.setColour(Colours::c(ColourID::Bg));
-            g.drawLine(tickLine, thicc3);
-            g.setColour(col);
-            g.drawLine(tickLine.withShortenedStart(radiusInner), thicc2);
-        }
+        onPaint(*this, g);
     }
 
     void Knob::resized()
     {
-        const auto thicc = utils.thicc;
-
         layout.resized();
-
-        knobBounds = layout(0, 0, 3, 2, true).reduced(thicc);
-        layout.place(modDial, 1, 1, 1, 1, true);
-        layout.place(label, 0, 2, 3, 1, false);
+        onResize(*this);
     }
 
     void Knob::mouseEnter(const Mouse& mouse)
     {
         Comp::mouseEnter(mouse);
-        label.setText(param.getCurrentValueAsText());
-        label.repaint();
+        onEnter(*this);
     }
 
     void Knob::mouseExit(const Mouse&)
     {
-        label.setText(getName());
-        label.repaint();
+        onExit(*this);
     }
 
     void Knob::mouseDown(const Mouse& mouse)
     {
         if (mouse.mods.isLeftButtonDown())
         {
-            hideCursor();
+            if (hidesCursor)
+                hideCursor();
 
-            if (param.isInGesture())
-                return;
-            param.beginGesture();
-            dragY = mouse.position.y / utils.getDragSpeed();
-            {
-                label.setText(param.getCurrentValueAsText());
-                label.repaint();
-            }
+            dragXY.setXY(
+                mouse.position.x,
+                mouse.position.y
+            );
+
+            onDown(*this);
         }
     }
 
@@ -223,98 +91,543 @@ namespace gui
     {
         if (mouse.mods.isLeftButtonDown())
         {
-            const auto dragYNew = mouse.position.y / utils.getDragSpeed();
-            auto dragOffset = dragYNew - dragY;
+            auto dragOffset = mouse.position - dragXY;
             if (mouse.mods.isShiftDown())
                 dragOffset *= SensitiveDrag;
-            const auto newValue = juce::jlimit(0.f, 1.f, param.getValue() - dragOffset);
-            param.setValueNotifyingHost(newValue);
-            dragY = dragYNew;
-            {
-                label.setText(param.getCurrentValueAsText());
-                label.repaint();
-            }
-            notify(EvtType::ParametrDragged, this);
+            onDrag(*this, dragOffset);
+            dragXY = mouse.position;
         }
     }
 
     void Knob::mouseUp(const Mouse& mouse)
     {
-        if (mouse.mods.isLeftButtonDown())
-        {
-            if (!mouse.mouseWasDraggedSinceMouseDown())
-            {
-                if (mouse.mods.isCtrlDown())
-                    param.setValueNotifyingHost(param.getDefaultValue());
-                else
-                {
-                    juce::Point<float> centre(
-                        static_cast<float>(getWidth()) * .5f,
-                        static_cast<float>(getHeight()) * .5f
-                    );
-                    const juce::Line<float> fromCentre(centre, mouse.position);
-                    const auto angle = fromCentre.getAngle();
+        onUp(*this, mouse);
 
-                    const auto newValue = juce::jlimit(0.f, 1.f, (angle + AngleWidth) / AngleRange);
-                    param.setValue(newValue);
-                }
-            }
-            param.endGesture();
-        }
-        else if (mouse.mods.isRightButtonDown())
-            if (!mouse.mouseWasDraggedSinceMouseDown())
-                if (mouse.mods.isCtrlDown())
-                    param.setValueWithGesture(param.getDefaultValue());
-                else
-                    notify(EvtType::ParametrRightClicked, this);
-        showCursor(*this);
-        {
-            label.setText(param.getCurrentValueAsText());
-            label.repaint();
-        }
+        if (hidesCursor)
+            showCursor(*this);
     }
 
     void Knob::mouseWheelMove(const Mouse& mouse, const MouseWheel& wheel)
     {
         if (mouse.mods.isAnyMouseButtonDown())
             return;
+
         const bool reversed = wheel.isReversed ? -1.f : 1.f;
         const bool isTrackPad = wheel.deltaY * wheel.deltaY < .0549316f;
         if (isTrackPad)
-            dragY = reversed * wheel.deltaY;
+            dragXY.setXY(
+                reversed * wheel.deltaX,
+                reversed * wheel.deltaY
+            );
         else
         {
+            const auto deltaXPos = wheel.deltaX > 0.f ? 1.f : -1.f;
             const auto deltaYPos = wheel.deltaY > 0.f ? 1.f : -1.f;
-            dragY = reversed * WheelDefaultSpeed * deltaYPos;
+            dragXY.setXY(
+                reversed * WheelDefaultSpeed * deltaXPos,
+                reversed * WheelDefaultSpeed * deltaYPos
+            );
         }
+
         if (mouse.mods.isShiftDown())
-            dragY *= SensitiveDrag;
-        const auto newValue = juce::jlimit(0.f, 1.f, param.getValue() + dragY);
-        param.setValueWithGesture(newValue);
+            dragXY *= SensitiveDrag;
+
+        onWheel(*this);
+    }
+
+    void Knob::setLocked(bool lckd)
+    {
+        locked = lckd;
+        if (locked)
         {
-            label.setText(param.getCurrentValueAsText());
-            label.repaint();
+            setCursorType(CursorType::Inactive);
+            setAlpha(.2f);
+        }
+        else
+        {
+            setCursorType(activeCursor);
+            setAlpha(1.f);
         }
     }
 
+    // FREE FUNC
 
-
-    KnobMeter::KnobMeter(Knob& _knob, const Val& _val) :
-        knob(_knob),
-        val(_val),
-        env(0.f)
+    void makeParameter(Knob& knob, PID pID, const String& name, bool modulatable, const std::atomic<float>* meter)
     {
-        startTimerHz(static_cast<int>(PPDFPSMeters));
+        const bool hasMeter = meter != nullptr;
+
+        knob.getInfo = [pID](int i)
+        {
+            if (i == 0)
+                return toString(pID);
+            return String();
+        };
+
+        knob.setName(name);
+        knob.label.setText(name);
+        knob.setTooltip(param::toTooltip(pID));
+
+        auto& utils = knob.getUtils();
+        auto param = utils.getParam(pID);
+        const auto angleWidth = PiQuart * 3.f;
+        const auto angleRange = angleWidth * 2.f;
+
+        knob.locked = param->isLocked();
+
+        knob.onEnter = [param](Knob& k)
+        {
+            k.label.setText(param->getCurrentValueAsText());
+            k.label.repaint();
+        };
+
+        knob.onExit = [](Knob& k)
+        {
+            k.label.setText(k.getName());
+            k.label.repaint();
+        };
+
+        knob.onDown = [param](Knob& k)
+        {
+            if (param->isInGesture())
+                return;
+            param->beginGesture();
+
+            k.label.setText(param->getCurrentValueAsText());
+            k.label.repaint();
+        };
+
+        knob.onDrag = [param](Knob& k, const PointF& dragOffset)
+        {
+            const auto speed = 1.f / k.getUtils().getDragSpeed();
+
+            const auto newValue = juce::jlimit(0.f, 1.f, param->getValue() - dragOffset.y * speed);
+            param->setValueNotifyingHost(newValue);
+
+            k.label.setText(param->getCurrentValueAsText());
+            k.label.repaint();
+
+            k.notify(EvtType::ParametrDragged, &k);
+        };
+
+        knob.onUp = [param, angleWidth, angleRange](Knob& k, const Mouse& mouse)
+        {
+            if (mouse.mods.isLeftButtonDown())
+            {
+                if (!mouse.mouseWasDraggedSinceMouseDown())
+                {
+                    if (mouse.mods.isCtrlDown())
+                        param->setValueNotifyingHost(param->getDefaultValue());
+                    else
+                    {
+                        PointF centre(
+                            static_cast<float>(k.getWidth()) * .5f,
+                            static_cast<float>(k.getHeight()) * .5f
+                        );
+                        const LineF fromCentre(centre, mouse.position);
+                        const auto angle = fromCentre.getAngle();
+
+                        const auto newValue = juce::jlimit(0.f, 1.f, (angle + angleWidth) / angleRange);
+                        param->setValue(newValue);
+                    }
+                }
+                param->endGesture();
+            }
+            else if (mouse.mods.isRightButtonDown())
+                if (!mouse.mouseWasDraggedSinceMouseDown())
+                    if (mouse.mods.isCtrlDown())
+                        param->setValueWithGesture(param->getDefaultValue());
+                    else
+                        k.notify(EvtType::ParametrRightClicked, &k);
+
+            k.label.setText(param->getCurrentValueAsText());
+            k.label.repaint();
+        };
+
+        knob.onWheel = [param](Knob& k)
+        {
+            const auto newValue = juce::jlimit(0.f, 1.f, param->getValue() + k.dragXY.y);
+            param->setValueWithGesture(newValue);
+
+            k.label.setText(param->getCurrentValueAsText());
+            k.label.repaint();
+        };
+
+        enum { Value, MaxModDepth, ValMod, ModBias, Meter, NumValues };
+        knob.values.reserve(NumValues);
+        auto& values = knob.values;
+
+        values.emplace_back(param->getValue());
+        values.emplace_back(param->getMaxModDepth());
+        values.emplace_back(param->getValMod());
+        values.emplace_back(param->getModBias());
+        values.emplace_back(0.f);
+
+        if (meter != nullptr)
+            knob.onTimer = [param, meter](Knob& k)
+        {
+            const auto lckd = param->isLocked();
+            if (k.locked != lckd)
+                k.locked = lckd;
+
+            const auto vn = param->getValue();
+            const auto mmd = param->getMaxModDepth();
+            const auto vm = param->getValMod();
+            const auto mb = param->getModBias();
+            const auto metr = std::floor(meter->load() * 128.f) * .0078125f;
+
+            auto& vals = k.values;
+
+            if (vals[Value] != vn || vals[MaxModDepth] != mmd || vals[ValMod] != vm || vals[ModBias] != mb || vals[Meter] != metr)
+            {
+                vals[Value] = vn;
+                vals[MaxModDepth] = mmd;
+                vals[ValMod] = vm;
+                vals[ModBias] = mb;
+                vals[Meter] = metr;
+                return true;
+            }
+
+            return false;
+        };
+        else
+            knob.onTimer = [param](Knob& k)
+        {
+            const auto lckd = param->isLocked();
+            if (k.locked != lckd)
+                k.setLocked(lckd);
+
+            const auto vn = param->getValue();
+            const auto mmd = param->getMaxModDepth();
+            const auto vm = param->getValMod();
+            const auto mb = param->getModBias();
+
+            auto& vals = k.values;
+
+            if (vals[Value] != vn || vals[MaxModDepth] != mmd || vals[ValMod] != vm || vals[ModBias] != mb)
+            {
+                vals[Value] = vn;
+                vals[MaxModDepth] = mmd;
+                vals[ValMod] = vm;
+                vals[ModBias] = mb;
+                return true;
+            }
+
+            return false;
+        };
+
+        enum { ModDial, NumComps };
+        auto modDial = std::make_unique<Knob>(knob.getUtils(), "M", "Drag this to modulate the macro's modulation depth.", CursorType::Mod);
+        {
+            auto& dial = *modDial;
+
+            auto& label = dial.label;
+            label.mode = Label::Mode::TextToLabelBounds;
+            label.textCID = ColourID::Bg;
+
+            enum { StateMaxModDepth, StateModBias, NumStates };
+            dial.states.push_back(StateMaxModDepth);
+
+            dial.onResize = [](Knob& k)
+            {
+                k.knobBounds = k.getLocalBounds().toFloat();
+                const auto thicc = k.getUtils().thicc * .5f;
+                k.label.setBounds(k.knobBounds.reduced(thicc).toNearestInt());
+            };
+
+            dial.onPaint = [](Knob& k, Graphics& g)
+            {
+                auto state = k.states[0];
+
+                Colour col;
+                switch (state)
+                {
+                case StateMaxModDepth:
+                    col = Colours::c(ColourID::Mod);
+                    break;
+                case StateModBias:
+                    col = Colours::c(ColourID::Bias);
+                    break;
+                }
+                g.setColour(col);
+                g.fillEllipse(k.knobBounds);
+            };
+
+            dial.onDrag = [param](Knob& k, PointF& dragOffset)
+            {
+                auto state = k.states[0];
+                auto& utils = k.getUtils();
+                if (state == StateModBias)
+                    dragOffset *= .5f;
+                const auto speed = 1.f / utils.getDragSpeed();
+                dragOffset *= speed;
+
+                float newValue;
+                switch (state)
+                {
+                case StateMaxModDepth:
+                    newValue = param->getMaxModDepth() - dragOffset.y;
+                    param->setMaxModDepth(newValue);
+                    break;
+                case StateModBias:
+                    newValue = param->getModBias() - dragOffset.y;
+                    param->setModBias(newValue);
+                    break;
+                }
+            };
+
+            dial.onUp = [param](Knob& k, const Mouse& mouse)
+            {
+                if (!mouse.mouseWasDraggedSinceMouseDown())
+                {
+                    auto& state = k.states[0];
+
+                    if (mouse.mods.isCtrlDown())
+                    {
+                        switch (state)
+                        {
+                        case StateMaxModDepth:
+                            param->setMaxModDepth(0.f);
+                            break;
+                        case StateModBias:
+                            param->setModBias(.5f);
+                            break;
+                        }
+                    }
+                    else if (mouse.mods.isRightButtonDown())
+                    {
+                        state = (state + 1) % NumStates;
+
+                        switch (state)
+                        {
+                        case StateMaxModDepth:
+                            k.label.setText("M");
+                            k.setCursorType(CursorType::Mod);
+                            k.activeCursor = CursorType::Mod;
+                            break;
+                        case StateModBias:
+                            k.label.setText("B");
+                            k.setCursorType(CursorType::Bias);
+                            k.activeCursor = CursorType::Bias;
+                            break;
+                        }
+
+                        repaintWithChildren(&k);
+                    }
+                }
+            };
+
+            knob.comps.push_back(std::move(modDial));
+            knob.addAndMakeVisible(*knob.comps.back());
+        }
+
+        knob.onResize = [](Knob& k)
+        {
+            const auto thicc = k.getUtils().thicc;
+            auto& layout = k.getLayout();
+
+            k.knobBounds = layout(0, 0, 3, 2, true).reduced(thicc);
+            layout.place(k.label, 0, 2, 3, 1, false);
+            layout.place(*k.comps[ModDial], 1, 1, 1, 1, true);
+
+        };
+
+        knob.onPaint = [angleWidth, angleRange, modulatable, hasMeter](Knob& k, Graphics& g)
+        {
+            const auto& vals = k.values;
+            const auto thicc = k.getUtils().thicc;
+            const auto thicc2 = thicc * 2.f;
+            const auto thicc3 = thicc * 3.f;
+            Stroke strokeType(thicc, Stroke::JointStyle::curved, Stroke::EndCapStyle::rounded);
+            const auto radius = k.knobBounds.getWidth() * .5f;
+            const auto radiusBetween = radius - thicc;
+            const auto radiusInner = radius - thicc2;
+            PointF centre(
+                radius + k.knobBounds.getX(),
+                radius + k.knobBounds.getY()
+            );
+
+            const auto col = Colours::c(ColourID::Interact);
+
+            if (hasMeter)
+                if (vals[Meter] != 0.f)
+                {
+                    g.setColour(Colours::c(ColourID::Txt));
+                    Path meterArc;
+
+                    const auto meterAngle = angleRange * vals[Meter] - angleWidth;
+
+                    meterArc.addCentredArc(
+                        centre.x, centre.y,
+                        radiusBetween, radiusBetween,
+                        0.f,
+                        -angleWidth, meterAngle,
+                        true
+                    );
+
+                    strokeType.setStrokeThickness(thicc2);
+                    g.strokePath(meterArc, strokeType);
+                    strokeType.setStrokeThickness(thicc);
+                }
+
+            //draw outlines
+            {
+                g.setColour(col);
+                Path outtaArc;
+
+                outtaArc.addCentredArc(
+                    centre.x, centre.y,
+                    radius, radius,
+                    0.f,
+                    -angleWidth, angleWidth,
+                    true
+                );
+                outtaArc.addCentredArc(
+                    centre.x, centre.y,
+                    radiusInner, radiusInner,
+                    0.f,
+                    -angleWidth, angleWidth,
+                    true
+                );
+
+                g.strokePath(outtaArc, strokeType);
+            }
+
+            const auto valNormAngle = vals[Value] * angleRange;
+            const auto valAngle = -angleWidth + valNormAngle;
+            const auto radiusExt = radius + thicc;
+
+            // draw modulation
+            if (modulatable)
+            {
+                const auto valModAngle = vals[ValMod] * angleRange;
+                const auto modAngle = -angleWidth + valModAngle;
+                const auto modTick = LineF::fromStartAndAngle(centre, radiusExt, modAngle);
+
+                g.setColour(Colours::c(ColourID::Bg));
+                g.drawLine(modTick, thicc * 4.f);
+
+                const auto maxModDepthAngle = juce::jlimit(-angleWidth, angleWidth, valNormAngle + vals[MaxModDepth] * angleRange - angleWidth);
+                const auto biasAngle = angleRange * vals[ModBias] - angleWidth;
+
+                g.setColour(Colours::c(ColourID::Bias));
+                {
+                    Path biasPath;
+                    biasPath.addCentredArc(
+                        centre.x, centre.y,
+                        radiusInner, radiusInner,
+                        0.f,
+                        0.f, biasAngle,
+                        true
+                    );
+                    g.strokePath(biasPath, strokeType);
+                }
+
+                g.setColour(Colours::c(ColourID::Mod));
+                g.drawLine(modTick.withShortenedStart(radiusInner), thicc2);
+                {
+                    Path modPath;
+                    modPath.addCentredArc(
+                        centre.x, centre.y,
+                        radius, radius,
+                        0.f,
+                        maxModDepthAngle, valAngle,
+                        true
+                    );
+                    g.strokePath(modPath, strokeType);
+                }
+            }
+            // draw tick
+            {
+                const auto tickLine = LineF::fromStartAndAngle(centre, radiusExt, valAngle);
+                g.setColour(Colours::c(ColourID::Bg));
+                g.drawLine(tickLine, thicc3);
+                g.setColour(col);
+                g.drawLine(tickLine.withShortenedStart(radiusInner), thicc2);
+            }
+        };
+
+        knob.init(
+            { 40, 40, 40 },
+            { 100, 40, 40 }
+        );
+
+        knob.startTimerHz(PPDFPSKnobs);
     }
 
-    void KnobMeter::timerCallback()
+    // CONTEXT MENU
+
+    Notify ContextMenuKnobs::makeNotify2(ContextMenuKnobs& popUp)
     {
-        auto e = val.load();
-        e = std::floor(e * 128.f) * .0078125f;
-        if (env == e)
-            return;
-        env = e;
-        knob.updateMeter(env > 1.f ? 1.f : env);
+        return [&pop = popUp](EvtType type, const void* stuff)
+        {
+            if (type == EvtType::ParametrRightClicked)
+            {
+                const auto& knob = *static_cast<const Knob*>(stuff);
+                auto& utils = pop.getUtils();
+                
+                const auto pIDStr = knob.getInfo(0);
+                const PID pID = param::toPID(pIDStr);
+                auto& param = *utils.getParam(pID);
+
+                pop.setButton([&p = param](Button&)
+                {
+                    Random rand;
+                    p.setValueWithGesture(rand.nextFloat());
+                }, 0);
+                pop.setButton([&p = param](Button&)
+                {
+                    juce::Random rand;
+                    auto val = p.getValue();
+                    val += .05f * (rand.nextFloat() - .5f);
+                    p.setValueWithGesture(juce::jlimit(0.f, 1.f, val));
+                }, 1);
+                pop.setButton([&p = param](Button&)
+                {
+                    const auto val = p.getDefaultValue();
+                    p.setValueWithGesture(val);
+                }, 2);
+                pop.setButton([&p = param](Button&)
+                {
+                    p.setDefaultValue(p.getValue());
+                }, 3);
+                pop.setButton([&p = param](Button&)
+                {
+                    p.switchLock();
+                }, 4);
+                pop.setButton([&u = utils, pID = pID](Button&)
+                {
+                    u.assignMIDILearn(pID);
+                }, 5);
+                pop.setButton([&u = utils, pID = pID](Button&)
+                {
+                    u.removeMIDILearn(pID);
+                }, 6);
+                pop.setButton([&u = utils, &k = knob](Button&)
+                {
+                    u.getEventSystem().notify(EvtType::EnterParametrValue, &k);
+                }, 7);
+
+                pop.place(&knob);
+            }
+        };
+    }
+
+    ContextMenuKnobs::ContextMenuKnobs(Utils& u) :
+        ContextMenu(u)
+    {
+        evts.push_back({ utils.getEventSystem(), makeNotify2(*this) });
+
+        buttons.reserve(7);
+        addButton("Randomize", "Randomize this parameter value.");
+        addButton("Rand Relative", "Randomize this parameter value relative to its current value.");
+        addButton("Load Default", "Resets this parameter value to its default value.");
+        addButton("Save Default", "Saves this parameter value as its default one.");
+        addButton("Lock / Unlock", "Parameter values are locked into place, even when changing presets.");
+        addButton("MIDI Learn", "Click here to assign this parameter to a hardware control.");
+        addButton("MIDI Unlearn", "Click here to remove this parameter from its hardware control(s).");
+        addButton("Enter Value", "Click here to enter a parameter value with your keyboard");
+
+        init();
     }
 }
 

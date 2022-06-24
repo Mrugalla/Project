@@ -36,6 +36,7 @@ namespace gui
 
 		void enableParameter(PID, int /*val*/);
 
+		/* tooltip */
 		Button(Utils&, String&& /*tooltip*/ = "");
 
 		Label& getLabel() noexcept;
@@ -70,7 +71,8 @@ namespace gui
 
 	Button::OnPaint buttonOnPaintDefault();
 
-	void makeTextButton(Button&, const String& /*txt*/, bool /*withToggle*/ = false, int /*targetToggleState*/ = 1);
+	/* button; text/name; withToggle; targetToggleState */
+	void makeTextButton(Button&, const String&, bool = false, int = 1);
 
 	enum class ButtonSymbol
 	{

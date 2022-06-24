@@ -1,6 +1,5 @@
 #pragma once
 #include "Button.h"
-#include "GUIParams.h"
 #include "TextEditor.h"
 
 namespace gui
@@ -32,15 +31,7 @@ namespace gui
 		void resized() override;
 	};
 
-	class ContextMenuKnobs :
-		public ContextMenu
-	{
-		Notify makeNotify2(ContextMenuKnobs& popUp);
 	
-	public:
-		ContextMenuKnobs(Utils&);
-	};
-
 	class ContextMenuButtons :
 		public ContextMenu
 	{
@@ -49,6 +40,7 @@ namespace gui
 	public:
 		ContextMenuButtons(Utils&);
 	};
+
 
 	class ContextMenuMacro :
 		public ContextMenu

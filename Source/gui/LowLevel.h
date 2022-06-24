@@ -13,8 +13,8 @@ namespace gui
             crushGain(u),
             dummyParam(u)
         {
-            makeParameter(crushGain, PID::CrushGain, "Crush Gain", true);
-            makeParameter(dummyParam, PID::AnotherDummyParam, "Dummy Param", true);
+            makeParameter(crushGain, PID::CrushGain, "Crush Gain");
+            makeParameter(dummyParam, PID::AnotherDummyParam, "Dummy Param");
 
             layout.init(
                 { 1, 2, 2, 1 },
@@ -28,7 +28,7 @@ namespace gui
 
     protected:
         SplineEditorPanel spline;
-        Knob2 crushGain, dummyParam;
+        Knob crushGain, dummyParam;
         
         void paint(Graphics&) override {}
 
