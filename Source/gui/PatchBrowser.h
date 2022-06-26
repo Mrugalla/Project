@@ -230,12 +230,12 @@ namespace gui
 			auto& patch = *patches.back();
 
 			patch.onClick.push_back([&list = patches](Button& btn)
-				{
-					for (auto& p : list)
-						p->toggleState = 0;
+			{
+				for (auto& p : list)
+					p->toggleState = 0;
 
-					btn.toggleState = 1;
-				});
+				btn.toggleState = 1;
+			});
 
 			patch.onClick.push_back([&, &file = patch.file](Button& btn)
 			{
@@ -247,9 +247,9 @@ namespace gui
 			});
 
 			patch.onMouseWheel.push_back([&](const Mouse& mouse, const MouseWheel& wheel)
-				{
-					mouseWheelMove(mouse, wheel);
-				});
+			{
+				mouseWheelMove(mouse, wheel);
+			});
 
 			addAndMakeVisible(patch);
 			select(&patch);
@@ -834,6 +834,15 @@ namespace gui
 						browser.setVisible(true);
 					}
 				});
+		}
+
+		void paint(Graphics& g) override
+		{
+			Button::paint(g);
+			g.setColour(Colours::c(ColourID::Hover));
+			const auto thicc = utils.thicc;
+			const auto bounds = getLocalBounds().toFloat().reduced(thicc);
+			g.drawRoundedRectangle(bounds, thicc, thicc);
 		}
 
 	protected:

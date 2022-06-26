@@ -9,8 +9,11 @@ namespace gui
 		patchBrowserButton(u, patchBrowser),
 #endif
 		macro(u),
-		modDepthLocked(u, "(Un-)Lock all parameters' modulation depths to their current destinations."),
-		swapParamWithModDepth(u, "Swap all parameters values with their current destinations."),
+		modDepthLocked(u, "(Un-)Lock this patch's modulation patch."),
+		swapParamWithModDepth(u, "Swap parameter patch with modulation patch."),
+		saveModPatch(u, "Save the current Modulation Patch to disk."),
+		loadModPatch(u, "Load some Modulation Patch from disk."),
+		removeCurModPatch(u, "Remove all current modulations from this patch."),
 
 		parameterRandomizer(u),
 #if PPDHasGainIn
@@ -37,7 +40,9 @@ namespace gui
 		lowLevel(_lowLevel),
 
 		menu(nullptr),
-		menuButton(u, "Click here to open or close the panel with the advanced settings.")
+		menuButton(u, "Click here to open or close the panel with the advanced settings."),
+
+		fileChooser(nullptr)
 	{
 #if PPDHasPatchBrowser
 		layout.init(
@@ -96,6 +101,164 @@ namespace gui
 				});
 
 			makeSymbolButton(swapParamWithModDepth, ButtonSymbol::SwapParamModDepth);
+		}
+
+		addAndMakeVisible(saveModPatch);
+		{
+			saveModPatch.onClick.push_back([](Button& btn)
+			{
+				auto& utils = btn.getUtils();
+				const auto& params = utils.getParams();
+
+				sta::State modPatch;
+
+				for (auto i = 1; i < param::NumParams; ++i)
+				{
+					const auto& prm = *params[i];
+					const String key(param::Param::getIDString(prm.id));
+					String id("value");
+					const auto val = prm.range.convertFrom0to1(prm.calcValModOf(1.f));
+
+					modPatch.set(key, id, val, false);
+				}
+
+				auto& props = utils.getProps();
+				auto& user = *props.getUserSettings();
+				auto file = user.getFile();
+				auto pathStr = file.getFullPathName();
+				for (auto i = pathStr.length() - 1; i != 0; --i)
+					if (pathStr.substring(i, i + 1) == File::getSeparatorString())
+					{
+						pathStr = pathStr.substring(0, i + 1) + "Patches";
+						break;
+					}
+						
+
+				file = File(pathStr);
+				if (!file.isDirectory())
+					file.createDirectory();
+
+				const auto author = user.getValue("patchBrowserLastAuthor", "user");
+				String name = "modPatch";
+
+				const auto fileTypes = File::TypesOfFileToFind::findFiles;
+				const String extension(".patch");
+				const auto wildCard = "*" + extension;
+				const RangedDirectoryIterator files(
+					file,
+					true,
+					wildCard,
+					fileTypes
+				);
+
+				auto idx = 0;
+				for (const auto& it : files)
+				{
+					const auto patchFile = it.getFile();
+					if (patchFile.getFileName().contains(name))
+						++idx;
+				}
+
+				name += String(idx);
+
+				file = File(file.getFullPathName() + "\\" + getFileName(name, author));
+				file.appendText(modPatch.getState().toXmlString());
+
+				file.revealToUser();
+			});
+
+			makeSymbolButton(saveModPatch, ButtonSymbol::Save);
+		}
+		
+		addAndMakeVisible(loadModPatch);
+		{
+			loadModPatch.onClick.push_back([&](Button&)
+			{
+				auto& props = utils.getProps();
+				auto& user = *props.getUserSettings();
+				auto file = user.getFile();
+				auto pathStr = file.getFullPathName();
+				for (auto i = pathStr.length() - 1; i != 0; --i)
+					if (pathStr.substring(i, i + 1) == File::getSeparatorString())
+					{
+						pathStr = pathStr.substring(0, i + 1) + "Patches";
+						break;
+					}
+
+				file = File(pathStr);
+				if (!file.isDirectory())
+					file.createDirectory();
+
+				const auto fileTypes = File::TypesOfFileToFind::findFiles;
+				const String extension(".patch");
+				const auto wildCard = "*_-_*" + extension;
+				const RangedDirectoryIterator files(
+					file,
+					true,
+					wildCard,
+					fileTypes
+				);
+
+				fileChooser = std::make_unique<FileChooser>(
+					"Load ModPatch",
+					file,
+					wildCard
+				);
+
+				using Flag = juce::FileBrowserComponent::FileChooserFlags;
+				auto flags = Flag::canSelectFiles
+					+ !Flag::canSelectMultipleItems
+					+ Flag::openMode;
+				fileChooser->launchAsync(flags, [&u = utils, &chooser = fileChooser](const FileChooser& fc)
+				{
+					auto result = fc.getResult();
+					if (!result.existsAsFile())
+						return;
+
+					sta::State modPatch(result.loadFileAsString());
+					auto& params = u.getParams();
+
+					for (auto i = 1; i < param::NumParams; ++i)
+					{
+						const auto id = static_cast<PID>(i);
+						const auto idStr = param::Param::getIDString(id);
+
+						const auto mmdPtr = modPatch.get(idStr, "value");
+						if (mmdPtr != nullptr)
+						{
+							auto& prm = *params[i];
+
+							const auto val = prm.getValue();
+							const auto mmd = prm.range.convertTo0to1(static_cast<float>(*mmdPtr));
+							
+							prm.setMaxModDepth(mmd - val);
+							prm.setModBias(.5f);
+						}
+					}
+
+					chooser.reset(nullptr);
+				});
+			});
+
+			makeSymbolButton(loadModPatch, ButtonSymbol::Load);
+		}
+
+		addAndMakeVisible(removeCurModPatch);
+		{
+			removeCurModPatch.onClick.push_back([](Button& btn)
+			{
+				auto& utils = btn.getUtils();
+				auto& params = utils.getParams();
+
+				for (auto i = 0; i < param::NumParams; ++i)
+				{
+					auto& param = *params[i];
+					param.setModBias(.5f);
+					param.setMaxModDepth(0.f);
+				}
+			});
+
+			makeSymbolButton(removeCurModPatch, ButtonSymbol::Remove);
 		}
 
 		makeParameter(macro, PID::Macro, "Macro", false);
@@ -184,24 +347,22 @@ namespace gui
 
 	void HighLevel::paint(Graphics& g)
 	{
-		//g.setColour(juce::Colours::white.withAlpha(.2f));
-		//layout.paint(g);
-
 		g.setFont(getFontDosisMedium());
 		g.setColour(Colours::c(ColourID::Hover));
 
-		//layout.label(g, "<", 7.f, 3.f, .5f, 1.f, false);
-		//layout.label(g, ">", 7.5f, 3.f, .5f, 1.f, false);
-		//layout.label(g, "v", 1.5f, 5.f, .5f, .25f, true);
-
 		g.fillRect(layout.right());
 
-#if PPDGainIn
 		const auto thicc = utils.thicc;
 		const auto thicc3 = thicc * 3.f;
 		const Stroke stroke(thicc, Stroke::JointStyle::curved, Stroke::EndCapStyle::rounded);
+
+		const auto macroArea = layout(1.f, 5.f, 7.f, 1.f);
+		g.drawFittedText("Modulation:", macroArea.toNearestInt(), Just::centredTop, 1);
+		drawRectEdges(g, macroArea, thicc3, stroke);
+
+#if PPDHasGainIn
 		const auto gainArea = layout(1.f, 7.f, 7.f, 1.f);
-		g.drawFittedText("Gain", gainArea.toNearestInt(), Just::centredTop, 1);
+		g.drawFittedText("Gain:", gainArea.toNearestInt(), Just::centredTop, 1);
 		drawRectEdges(g, gainArea, thicc3, stroke);
 #endif
 	}
@@ -218,13 +379,18 @@ namespace gui
 		layout.place(menuButton, 5.f, 1.f, 1.f, 1.f, true);
 		layout.place(parameterRandomizer, 7.f, 1.f, 1.f, 1.f, true);
 
-		layout.place(macro, 3.f, 3.f + patchBrowserOffset, 3.f, 1.f, true);
+		layout.place(macro, 3.f, 3.f + patchBrowserOffset + .2f, 3.f, .8f, false);
+
+		layout.place(saveModPatch, 1.f, 3.f + patchBrowserOffset, 1.f, .3333f, true);
+		layout.place(loadModPatch, 1.f, 3.f + patchBrowserOffset + .3333f, 1.f, .3333f, true);
+		layout.place(removeCurModPatch, 1.f, 3.f + patchBrowserOffset + .6666f, 1.f, .3333f, true);
+
 		layout.place(modDepthLocked, 7.f, 3.f + patchBrowserOffset, 1.f, .5f, true);
 		layout.place(swapParamWithModDepth, 7.f, 3.5f + patchBrowserOffset, 1.f, .5f, true);
 
-#if PPDGainIn
+#if PPDHasGainIn
 		layout.place(gainIn, 1.f, 5.f + patchBrowserOffset, 2.5f, 2.f, true);
-#if PPDUnityGain
+#if PPDHasUnityGain
 		layout.place(unityGain, 3.6f, 5.2f + patchBrowserOffset, 1.8f, .6f, true);
 #endif
 		layout.place(gainOut, 5.5f, 5.f + patchBrowserOffset, 2.5f, 2.f, true);

@@ -121,6 +121,8 @@ namespace gui
 		}
 	}
 
+	BoundsF boundsOf(const Font&, const String&) noexcept;
+
 	namespace imgPP
 	{
 		void blur(Image&, Graphics&, int /*its*/ = 3) noexcept;

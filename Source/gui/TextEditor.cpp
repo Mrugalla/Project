@@ -10,6 +10,7 @@ namespace gui
 		onReturn([]() {}),
 		onType([]() {}),
 		onRemove([]() {}),
+		onClick([]() {}),
 
 		label(u, ""),
 		emptyString(_emptyString), txt(""),
@@ -29,6 +30,7 @@ namespace gui
 		onReturn([]() {}),
 		onType([]() {}),
 		onRemove([]() {}),
+		onClick([]() {}),
 
 		label(u, ""),
 		emptyString(_emptyString), txt(""),
@@ -131,6 +133,7 @@ namespace gui
 
 		enable();
 		updateLabel();
+		onClick();
 	}
 
 	void TextEditor::paint(Graphics& g)

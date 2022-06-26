@@ -87,6 +87,176 @@ namespace gui
 		notify(EvtType::ColourSchemeChanged);
 	}
 
+	// ErkenntnisseComp
+
+	ErkenntnisseComp::ErkenntnisseComp(Utils& u) :
+		Comp(u, "", CursorType::Default),
+		Timer(),
+		editor(u, "Enter or edit wisdom.", "Enter wisdom..."),
+		date(u, ""),
+		manifest(u, "Click here to manifest wisdom to the manifest of wisdom!"),
+		inspire(u, "Click here to get inspired by past wisdom of the manifest of wisdom!"),
+		reveal(u, "Click here to reveal wisdom from the manifest of wisdom!"),
+		clear(u, "Click here to clear the wisdom editor to write more wisdom!")
+	{
+		const File folder(getFolder());
+		if (!folder.exists())
+			folder.createDirectory();
+
+		layout.init(
+			{ 1, 1, 1, 1 },
+			{ 8, 1, 1 }
+		);
+
+		addAndMakeVisible(editor);
+		addAndMakeVisible(date);
+
+		date.mode = Label::Mode::TextToLabelBounds;
+		manifest.getLabel().mode = date.mode;
+		inspire.getLabel().mode = date.mode;
+		reveal.getLabel().mode = date.mode;
+		clear.getLabel().mode = date.mode;
+
+		addAndMakeVisible(manifest);
+		addAndMakeVisible(inspire);
+		addAndMakeVisible(reveal);
+		addAndMakeVisible(clear);
+
+		makeTextButton(manifest, "Manifest");
+		makeTextButton(inspire, "Inspire");
+		makeTextButton(reveal, "Reveal");
+		makeTextButton(clear, "Clear");
+
+		editor.onReturn = [&]()
+		{
+			saveToDisk();
+		};
+
+		editor.onClick = [&]()
+		{
+			editor.enable();
+		};
+
+		manifest.onClick.push_back([&](Button&)
+			{
+				saveToDisk();
+			});
+
+		inspire.onClick.push_back([&](Button&)
+			{
+				const File folder(getFolder());
+
+				const auto fileTypes = File::TypesOfFileToFind::findFiles;
+				const String extension(".txt");
+				const auto wildCard = "*" + extension;
+				const auto numFiles = folder.getNumberOfChildFiles(fileTypes, wildCard);
+				if (numFiles == 0)
+					return parse("I am deeply sorry. There is no wisdom in the manifest of wisdom yet.");
+
+				Random rand;
+				auto idx = rand.nextInt(numFiles);
+
+				const RangedDirectoryIterator files(
+					folder,
+					false,
+					wildCard,
+					fileTypes
+				);
+
+				for (const auto& it : files)
+				{
+					if (idx == 0)
+					{
+						const File file(it.getFile());
+						parse(file.getFileName());
+						editor.setText(file.loadFileAsString());
+						editor.disable();
+						return;
+					}
+					else
+						--idx;
+				}
+			});
+
+		reveal.onClick.push_back([&](Button&)
+			{
+				const File file(getFolder() + date.getText());
+				if (file.exists())
+					file.revealToUser();
+
+				const File folder(getFolder());
+				folder.revealToUser();
+			});
+
+		clear.onClick.push_back([&](Button&)
+			{
+				editor.clear();
+				editor.enable();
+				parse("");
+			});
+
+		startTimerHz(4);
+	}
+
+	void ErkenntnisseComp::timerCallback()
+	{
+		if (editor.isShowing())
+		{
+			editor.enable();
+			stopTimer();
+		}
+	}
+
+	void ErkenntnisseComp::resized()
+	{
+		layout.resized();
+
+		layout.place(editor, 0, 0, 4, 1, false);
+		layout.place(date, 0, 1, 4, 1, false);
+
+		layout.place(manifest, 0, 2, 1, 1, false);
+		layout.place(inspire, 1, 2, 1, 1, false);
+		layout.place(reveal, 2, 2, 1, 1, false);
+		layout.place(clear, 3, 2, 1, 1, false);
+	}
+
+	void ErkenntnisseComp::paint(Graphics&)
+	{}
+
+	String ErkenntnisseComp::getFolder()
+	{
+		auto specialLoc = File::getSpecialLocation(File::SpecialLocationType::userApplicationDataDirectory);
+
+		return specialLoc.getFullPathName() + "\\Mrugalla\\sharedState\\TheManifestOfWisdom\\";
+	}
+
+	void ErkenntnisseComp::saveToDisk()
+	{
+		if (editor.isEmpty())
+			return parse("You have to enter some wisdom in order to manifest it.");
+
+		const auto now = Time::getCurrentTime();
+		const auto nowStr = now.toString(true, true, false, true).replaceCharacters(" ", "_").replaceCharacters(":", "_");
+
+		File file(getFolder() + nowStr + ".txt");
+
+		if (!file.existsAsFile())
+			file.create();
+		else
+			return parse("Relax! You can only manifest 1 wisdom per minute.");
+
+		file.appendText(editor.getText());
+		editor.disable();
+
+		parse("Manifested: " + nowStr);
+	}
+
+	void ErkenntnisseComp::parse(String&& msg)
+	{
+		date.setText(msg);
+		date.repaint();
+	}
+
 	// ComponentWithBounds
 
 	template<typename CompType>
@@ -266,7 +436,8 @@ namespace gui
 						auto cmp = new Label(utils, child.getProperty("text").toString());
 						cmp->just = getJust(child.getProperty("just").toString());
 						cmp->font = getFontDosisRegular();
-						cmp->setMinFontHeight(17.f);
+						cmp->mode = Label::Mode::TextToLabelBounds;
+						cmp->setMinFontHeight(12.f);
 
 						comp = cmp;
 					}

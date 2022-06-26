@@ -259,8 +259,6 @@ namespace gui
 				if (withToggle && button.toggleState == targetToggleState)
 					g.fillRoundedRectangle(area, thicc);
 
-				g.drawRoundedRectangle(area, thicc, thicc);
-
 				if (button.isMouseOver())
 				{
 					g.fillRoundedRectangle(area, thicc);
@@ -304,9 +302,6 @@ namespace gui
 				g.setColour(Colours::c(ColourID::Hover));
 				if (withToggle && button.toggleState == targetToggleState)
 					g.fillRoundedRectangle(bounds, thicc);
-
-				if (symbol != ButtonSymbol::Empty)
-					g.drawRoundedRectangle(bounds, thicc, thicc);
 
 				if (button.isMouseOver())
 				{
@@ -605,6 +600,118 @@ namespace gui
 					);
 
 					g.fillRoundedRectangle(bodyBounds, thicc);
+				}
+				else if (symbol == ButtonSymbol::Save)
+				{
+					const auto thicc3 = thicc * 2.f;
+					bounds = maxQuadIn(bounds).reduced(thicc3);
+
+					Path path;
+					const auto x = bounds.getX();
+					const auto y = bounds.getY();
+					const auto width = bounds.getWidth();
+					const auto height = bounds.getHeight();
+					const auto btm = bounds.getBottom();
+					const auto right = bounds.getRight();
+					
+					const auto x2 = x + width * .2f;
+					const auto x8 = x + width * .8f;
+					const auto y2 = y + height * .2f;
+					const auto y6 = y + height * .6f;
+
+					path.startNewSubPath(bounds.getTopLeft());
+					path.lineTo(x, btm);
+					path.lineTo(right, btm);
+					path.lineTo(right, y2);
+					path.lineTo(x8, y);
+					path.closeSubPath();
+
+					path.startNewSubPath(x2, btm);
+					path.lineTo(x2, y6);
+					path.lineTo(x8, y6);
+					path.lineTo(x8, btm);
+
+					Stroke stroke(thicc, Stroke::JointStyle::beveled, Stroke::EndCapStyle::butt);
+					g.strokePath(path, stroke);
+				}
+				else if (symbol == ButtonSymbol::Load)
+				{
+					const auto thicc3 = thicc * 2.f;
+					bounds = maxQuadIn(bounds).reduced(thicc3);
+
+					const auto x = bounds.getX();
+					const auto y = bounds.getY();
+					const auto width = bounds.getWidth();
+					const auto height = bounds.getHeight();
+					const auto btm = bounds.getBottom();
+					const auto right = bounds.getRight();
+
+					const auto x4 = x + width * .4f;
+					const auto x5 = x + width * .5f;
+					const auto x6 = x + width * .6f;
+
+					const auto y5 = x + height * .5f;
+					const auto y7 = x + height * .7f;
+
+					const auto y8 = x + height * .8f;
+
+					Path path;
+
+					path.startNewSubPath(x5, y);
+					path.lineTo(x5, y7);
+					
+					path.startNewSubPath(x4, y5);
+					path.lineTo(x5, y7);
+					path.lineTo(x6, y5);
+
+					path.startNewSubPath(x, y8);
+					path.lineTo(x, btm);
+					path.lineTo(right, btm);
+					path.lineTo(right, y8);
+
+					Stroke stroke(thicc, Stroke::JointStyle::beveled, Stroke::EndCapStyle::butt);
+					g.strokePath(path, stroke);
+				}
+				else if (symbol == ButtonSymbol::Remove)
+				{
+					const auto thicc3 = thicc * 2.f;
+					bounds = maxQuadIn(bounds).reduced(thicc3);
+
+					const auto x = bounds.getX();
+					const auto y = bounds.getY();
+					const auto width = bounds.getWidth();
+					const auto height = bounds.getHeight();
+					const auto btm = bounds.getBottom();
+					const auto right = bounds.getRight();
+
+					const auto x1 = x + width * .1f;
+					const auto x2 = x + width * .2f;
+					const auto x8 = x + width * .8f;
+					const auto x9 = x + width * .9f;
+
+					const auto y2 = x + height * .2f;
+					const auto y3 = x + height * .3f;
+
+					Path path;
+
+					path.startNewSubPath(x1, y2);
+					path.lineTo(x9, y2);
+					path.lineTo(right, y3);
+					path.lineTo(x, y3);
+					path.closeSubPath();
+
+					path.startNewSubPath(x1, y3);
+					path.lineTo(x2, btm);
+					path.lineTo(x8, btm);
+					path.lineTo(x9, y3);
+
+					path.startNewSubPath(x2, y2);
+					path.lineTo(x2, y);
+					path.lineTo(x8, y);
+					path.lineTo(x8, y2);
+
+					Stroke stroke(thicc, Stroke::JointStyle::beveled, Stroke::EndCapStyle::butt);
+					g.strokePath(path, stroke);
 				}
 			});
 	}

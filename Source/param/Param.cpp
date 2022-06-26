@@ -146,7 +146,7 @@ namespace param
 
 	void Param::savePatch(juce::ApplicationProperties& appProps) const
 	{
-		const auto idStr = getIDString();
+		const auto idStr = getIDString(id);
 
 		const auto v = range.convertFrom0to1(getValue());
 		state.set(idStr, "value", v, true);
@@ -164,7 +164,7 @@ namespace param
 
 	void Param::loadPatch(juce::ApplicationProperties& appProps)
 	{
-		const auto idStr = getIDString();
+		const auto idStr = getIDString(id);
 
 		const auto lckd = isLocked();
 		if (!lckd)
@@ -248,7 +248,10 @@ namespace param
 		endChangeGesture();
 	}
 
-	float Param::getMaxModDepth() const noexcept { return maxModDepth.load(); };
+	float Param::getMaxModDepth() const noexcept
+	{
+		return maxModDepth.load();
+	};
 
 	void Param::setMaxModDepth(float v) noexcept
 	{
@@ -258,9 +261,28 @@ namespace param
 		maxModDepth.store(juce::jlimit(-1.f, 1.f, v));
 	}
 
-	float Param::getValMod() const noexcept { return valMod.load(); }
+	float Param::calcValModOf(float macro) const noexcept
+	{
+		const auto norm = getValue();
 
-	float Param::getValModDenorm() const noexcept { return range.convertFrom0to1(valMod.load()); }
+		const auto mmd = maxModDepth.load();
+		const auto pol = mmd > 0.f ? 1.f : -1.f;
+		const auto md = mmd * pol;
+		const auto mdSkew = biased(0.f, md, modBias.load(), macro);
+		const auto mod = mdSkew * pol;
+
+		return juce::jlimit(0.f, 1.f, norm + mod);
+	}
+
+	float Param::getValMod() const noexcept
+	{
+		return valMod.load();
+	}
+
+	float Param::getValModDenorm() const noexcept
+	{
+		return range.convertFrom0to1(valMod.load());
+	}
 
 	void Param::setModBias(float b) noexcept
 	{
@@ -271,9 +293,15 @@ namespace param
 		modBias.store(b);
 	}
 
-	float Param::getModBias() const noexcept { return modBias.load(); }
+	float Param::getModBias() const noexcept
+	{
+		return modBias.load();
+	}
 
-	void Param::setModDepthLocked(bool e) noexcept { modDepthLocked = e; }
+	void Param::setModDepthLocked(bool e) noexcept
+	{
+		modDepthLocked = e;
+	}
 
 	void Param::setDefaultValue(float norm) noexcept
 	{
@@ -283,15 +311,7 @@ namespace param
 	// called by processor to update modulation value(s)
 	void Param::modulate(float macro) noexcept
 	{
-		const auto norm = getValue();
-
-		const auto mmd = maxModDepth.load();
-		const auto pol = mmd > 0.f ? 1.f : -1.f;
-		const auto md = mmd * pol;
-		const auto mdSkew = biased(0.f, md, modBias.load(), macro);
-		const auto mod = mdSkew * pol;
-
-		valMod.store(juce::jlimit(0.f, 1.f, norm + mod));
+		valMod.store(calcValModOf(macro));
 	}
 
 	float Param::getDefaultValue() const { return range.convertTo0to1(valDenormDefault); }
@@ -329,9 +349,9 @@ namespace param
 
 	void Param::switchLock() noexcept { setLocked(!isLocked()); }
 
-	String Param::getIDString() const
+	String Param::getIDString(PID pID)
 	{
-		return "params/" + toID(toString(id));
+		return "params/" + toID(toString(pID));
 	}
 
 	float Param::biased(float start, float end, float bias/*[0,1]*/, float x) const noexcept
@@ -770,7 +790,7 @@ namespace param
 		state.set(idStr, "moddepthlocked", isModDepthLocked() ? 1 : 0);
 	}
 
-	String Params::getIDString() const
+	String Params::getIDString()
 	{
 		return "params";
 	}
@@ -806,7 +826,10 @@ namespace param
 			p->setModDepthLocked(e);
 	}
 
-	void Params::switchModDepthLocked() noexcept { setModDepthLocked(!isModDepthLocked()); }
+	void Params::switchModDepthLocked() noexcept
+	{
+		setModDepthLocked(!isModDepthLocked());
+	}
 
 	// MACRO PROCESSOR
 

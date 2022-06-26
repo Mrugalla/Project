@@ -32,6 +32,7 @@ namespace gui
 		Knob macro;
 		Button modDepthLocked;
 		Button swapParamWithModDepth;
+		Button saveModPatch, loadModPatch, removeCurModPatch;
 
 		ButtonParameterRandomizer parameterRandomizer;
 #if PPDHasGainIn
@@ -57,5 +58,7 @@ namespace gui
 		LowLevel* lowLevel;
 		std::unique_ptr<Menu> menu;
 		Button menuButton;
+
+		std::unique_ptr<FileChooser> fileChooser;
 	};
 }

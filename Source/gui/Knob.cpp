@@ -11,7 +11,8 @@ namespace gui
         onDown([](Knob&) {}),
         onWheel([](Knob&) {}),
         onResize([](Knob&) {}),
-        onDrag([](Knob&, PointF&) {}),
+        onDoubleClick([](Knob&) {}),
+        onDrag([](Knob&, PointF&, bool) {}),
         onUp([](Knob&, const Mouse&) {}),
         onTimer([](Knob&) { return false; }),
         onPaint([](Knob&, Graphics&) {}),
@@ -92,9 +93,8 @@ namespace gui
         if (mouse.mods.isLeftButtonDown())
         {
             auto dragOffset = mouse.position - dragXY;
-            if (mouse.mods.isShiftDown())
-                dragOffset *= SensitiveDrag;
-            onDrag(*this, dragOffset);
+            auto shiftDown = mouse.mods.isShiftDown();
+            onDrag(*this, dragOffset, shiftDown);
             dragXY = mouse.position;
         }
     }
@@ -135,6 +135,11 @@ namespace gui
         onWheel(*this);
     }
 
+    void Knob::mouseDoubleClick(const Mouse&)
+    {
+        onDoubleClick(*this);
+    }
+
     void Knob::setLocked(bool lckd)
     {
         locked = lckd;
@@ -149,6 +154,7 @@ namespace gui
             setAlpha(1.f);
         }
     }
+
 
     // FREE FUNC
 
@@ -196,8 +202,11 @@ namespace gui
             k.label.repaint();
         };
 
-        knob.onDrag = [param](Knob& k, const PointF& dragOffset)
+        knob.onDrag = [param](Knob& k, PointF& dragOffset, bool shiftDown)
         {
+            if (shiftDown)
+                dragOffset *= SensitiveDrag;
+            
             const auto speed = 1.f / k.getUtils().getDragSpeed();
 
             const auto newValue = juce::jlimit(0.f, 1.f, param->getValue() - dragOffset.y * speed);
@@ -250,6 +259,11 @@ namespace gui
 
             k.label.setText(param->getCurrentValueAsText());
             k.label.repaint();
+        };
+
+        knob.onDoubleClick = [param](Knob&)
+        {
+            param->setValueNotifyingHost(param->getDefaultValue());
         };
 
         enum { Value, MaxModDepth, ValMod, ModBias, Meter, NumValues };
@@ -316,120 +330,136 @@ namespace gui
         };
 
         enum { ModDial, NumComps };
-        auto modDial = std::make_unique<Knob>(knob.getUtils(), "M", "Drag this to modulate the macro's modulation depth.", CursorType::Mod);
+
+        if (modulatable)
         {
-            auto& dial = *modDial;
-
-            auto& label = dial.label;
-            label.mode = Label::Mode::TextToLabelBounds;
-            label.textCID = ColourID::Bg;
-
-            enum { StateMaxModDepth, StateModBias, NumStates };
-            dial.states.push_back(StateMaxModDepth);
-
-            dial.onResize = [](Knob& k)
+            auto modDial = std::make_unique<Knob>(knob.getUtils(), "M", "Drag this to modulate the macro's modulation depth.", CursorType::Mod);
             {
-                k.knobBounds = k.getLocalBounds().toFloat();
-                const auto thicc = k.getUtils().thicc * .5f;
-                k.label.setBounds(k.knobBounds.reduced(thicc).toNearestInt());
-            };
+                auto& dial = *modDial;
 
-            dial.onPaint = [](Knob& k, Graphics& g)
-            {
-                auto state = k.states[0];
+                auto& label = dial.label;
+                label.mode = Label::Mode::TextToLabelBounds;
+                label.textCID = ColourID::Bg;
 
-                Colour col;
-                switch (state)
+                enum { StateMaxModDepth, StateModBias, NumStates };
+                dial.states.push_back(StateMaxModDepth);
+
+                dial.onResize = [](Knob& k)
                 {
-                case StateMaxModDepth:
-                    col = Colours::c(ColourID::Mod);
-                    break;
-                case StateModBias:
-                    col = Colours::c(ColourID::Bias);
-                    break;
-                }
-                g.setColour(col);
-                g.fillEllipse(k.knobBounds);
-            };
+                    k.knobBounds = k.getLocalBounds().toFloat();
+                    const auto thicc = k.getUtils().thicc * .5f;
+                    k.label.setBounds(k.knobBounds.reduced(thicc).toNearestInt());
+                };
 
-            dial.onDrag = [param](Knob& k, PointF& dragOffset)
-            {
-                auto state = k.states[0];
-                auto& utils = k.getUtils();
-                if (state == StateModBias)
-                    dragOffset *= .5f;
-                const auto speed = 1.f / utils.getDragSpeed();
-                dragOffset *= speed;
-
-                float newValue;
-                switch (state)
+                dial.onPaint = [](Knob& k, Graphics& g)
                 {
-                case StateMaxModDepth:
-                    newValue = param->getMaxModDepth() - dragOffset.y;
-                    param->setMaxModDepth(newValue);
-                    break;
-                case StateModBias:
-                    newValue = param->getModBias() - dragOffset.y;
-                    param->setModBias(newValue);
-                    break;
-                }
-            };
+                    auto state = k.states[0];
 
-            dial.onUp = [param](Knob& k, const Mouse& mouse)
-            {
-                if (!mouse.mouseWasDraggedSinceMouseDown())
-                {
-                    auto& state = k.states[0];
-
-                    if (mouse.mods.isCtrlDown())
+                    Colour col;
+                    switch (state)
                     {
-                        switch (state)
+                    case StateMaxModDepth:
+                        col = Colours::c(ColourID::Mod);
+                        break;
+                    case StateModBias:
+                        col = Colours::c(ColourID::Bias);
+                        break;
+                    }
+                    g.setColour(col);
+                    g.fillEllipse(k.knobBounds);
+                };
+
+                dial.onDrag = [param](Knob& k, PointF& dragOffset, bool shiftDown)
+                {
+                    if (shiftDown)
+                        dragOffset *= SensitiveDrag;
+
+                    auto state = k.states[0];
+                    auto& utils = k.getUtils();
+                    if (state == StateModBias)
+                        dragOffset *= .5f;
+                    const auto speed = 1.f / utils.getDragSpeed();
+                    dragOffset *= speed;
+
+                    float newValue;
+                    switch (state)
+                    {
+                    case StateMaxModDepth:
+                        newValue = param->getMaxModDepth() - dragOffset.y;
+                        param->setMaxModDepth(newValue);
+                        break;
+                    case StateModBias:
+                        newValue = param->getModBias() - dragOffset.y;
+                        param->setModBias(newValue);
+                        break;
+                    }
+                };
+
+                dial.onUp = [param](Knob& k, const Mouse& mouse)
+                {
+                    if (!mouse.mouseWasDraggedSinceMouseDown())
+                    {
+                        if (mouse.mods.isCtrlDown())
                         {
-                        case StateMaxModDepth:
                             param->setMaxModDepth(0.f);
-                            break;
-                        case StateModBias:
                             param->setModBias(.5f);
-                            break;
                         }
-                    }
-                    else if (mouse.mods.isRightButtonDown())
-                    {
-                        state = (state + 1) % NumStates;
-
-                        switch (state)
+                        else if (mouse.mods.isRightButtonDown())
                         {
-                        case StateMaxModDepth:
-                            k.label.setText("M");
-                            k.setCursorType(CursorType::Mod);
-                            k.activeCursor = CursorType::Mod;
-                            break;
-                        case StateModBias:
-                            k.label.setText("B");
-                            k.setCursorType(CursorType::Bias);
-                            k.activeCursor = CursorType::Bias;
-                            break;
+                            auto& state = k.states[0];
+                            state = (state + 1) % NumStates;
+
+                            switch (state)
+                            {
+                            case StateMaxModDepth:
+                                k.label.setText("M");
+                                k.setCursorType(CursorType::Mod);
+                                k.activeCursor = CursorType::Mod;
+                                break;
+                            case StateModBias:
+                                k.label.setText("B");
+                                k.setCursorType(CursorType::Bias);
+                                k.activeCursor = CursorType::Bias;
+                                break;
+                            }
+
+                            repaintWithChildren(&k);
                         }
-
-                        repaintWithChildren(&k);
                     }
-                }
-            };
+                };
 
-            knob.comps.push_back(std::move(modDial));
-            knob.addAndMakeVisible(*knob.comps.back());
+                dial.onDoubleClick = [param](Knob&)
+                {
+                    param->setMaxModDepth(0.f);
+                    param->setModBias(.5f);
+                };
+
+                knob.comps.push_back(std::move(modDial));
+                knob.addAndMakeVisible(*knob.comps.back());
+            }
         }
+        
+        if(modulatable)
+            knob.onResize = [](Knob& k)
+            {
+                const auto thicc = k.getUtils().thicc;
+                auto& layout = k.getLayout();
 
-        knob.onResize = [](Knob& k)
+                k.knobBounds = layout(0, 0, 3, 2, true).reduced(thicc);
+                layout.place(k.label, 0, 2, 3, 1, false);
+                layout.place(*k.comps[ModDial], 1, 1, 1, 1, true);
+            };
+        else
         {
-            const auto thicc = k.getUtils().thicc;
-            auto& layout = k.getLayout();
+            knob.onResize = [](Knob& k)
+            {
+                const auto thicc = k.getUtils().thicc;
+                auto& layout = k.getLayout();
 
-            k.knobBounds = layout(0, 0, 3, 2, true).reduced(thicc);
-            layout.place(k.label, 0, 2, 3, 1, false);
-            layout.place(*k.comps[ModDial], 1, 1, 1, 1, true);
-
-        };
+                k.knobBounds = layout(0, 0, 3, 2, true).reduced(thicc);
+                layout.place(k.label, 0, 2, 3, 1, false);
+            };
+        }
 
         knob.onPaint = [angleWidth, angleRange, modulatable, hasMeter](Knob& k, Graphics& g)
         {

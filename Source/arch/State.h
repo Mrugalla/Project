@@ -17,6 +17,8 @@ namespace sta
 	public:
 		State();
 
+		State(const String&);
+
 		void savePatch(const Proc&, juce::MemoryBlock&) const;
 
 		void savePatch(juce::File&) const;
@@ -31,18 +33,25 @@ namespace sta
 
 		void loadPatch(const ValueTree&);
 
+		/*key, id, val, undoable*/
 		void set(String&& /*key*/, String&& /*id*/, Var&&, bool /*undoable*/ = true);
 
+		/*key, id, val, undoable*/
 		void set(String&& /*key*/, const String& /*id*/, Var&&, bool /*undoable*/ = true);
 
+		/*key, id, val, undoable*/
 		void set(const String& /*key*/, String&& /*id*/, Var&&, bool /*undoable*/ = true);
 
+		/*key, id, val, undoable*/
 		void set(const String& /*key*/, const String& /*id*/, Var&&, bool /*undoable*/ = true);
 
+		/*key, id*/
 		const Var* get(String&& /*key*/, String&& /*id*/) const;
 
+		/*key, id*/
 		const Var* get(String&& /*key*/, const String& /*id*/) const;
 
+		/*key, id*/
 		const Var* get(const String& /*key*/, const String& /*id*/) const;
 
 		void undo();

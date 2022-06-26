@@ -12,16 +12,20 @@ namespace gui
 		static constexpr float MinDraggerWidth = .01f;
 		static constexpr float DraggerWidthStep = .01f;
 
+		static constexpr int GridStepOrder = 6;
+		static constexpr int MinGridSteps = 1, MaxGridSteps = 1 << GridStepOrder;
+
 		enum XY{ X, Y };
 
 		struct SplinePoint
 		{
-			SplinePoint(const PointF& _rel) :
+			SplinePoint(const PointF& _rel, const PointF& _relSnap) :
 				rel(_rel),
+				relSnap(_relSnap),
 				selected(false)
 			{}
 
-			PointF rel;
+			PointF rel, relSnap;
 			bool selected;
 		};
 
@@ -85,40 +89,79 @@ namespace gui
 				range
 				{
 					makeRange::stepped(0.f, 1.f, 1.f / 16.f),
-					makeRange::stepped(0.f, 1.f, 1.f / 16.f)
+					makeRange::stepped(0.f, 1.f, 1.f / 12.f)
 				},
+				stepsXY{ 16, 12 },
 				snap(_snap)
 			{}
 
 			void paint(Graphics& g)
 			{
-				const auto gridSteps = 16.f;
-
 				const auto left = editor.bounds.getX();
 				const auto right = editor.bounds.getRight();
 				const auto top = editor.bounds.getY();
 				const auto bottom = editor.bounds.getBottom();
 
-				const auto inc = 1.f / gridSteps;
-				for (auto r = 0.f; r < 1.f; r += inc)
 				{
-					const auto yAbs = static_cast<int>(editor.toAbsY(r));
-					g.drawHorizontalLine(yAbs, left, right);
-
-					const auto xAbs = static_cast<int>(editor.toAbsX(r));
-					g.drawVerticalLine(xAbs, top, bottom);
+					
+					const auto inc = 1.f / stepsXY[X];
+					auto r = inc;
+					for(auto i = 1; i < stepsXY[X]; ++i, r += inc)
+					{
+						const auto xAbs = static_cast<int>(editor.toAbsX(r));
+						g.drawVerticalLine(xAbs, top, bottom);
+					}
+				}
+				{
+					const auto inc = 1.f / stepsXY[Y];
+					auto r = inc;
+					for (auto i = 1; i < stepsXY[Y]; ++i, r += inc)
+					{
+						const auto yAbs = static_cast<int>(editor.toAbsY(r));
+						g.drawHorizontalLine(yAbs, left, right);
+					}
 				}
 			}
 
 			PointF applySnap(const PointF& pRel) const noexcept
 			{
 				if (snap)
-					return	{ range[X].snapToLegalValue(pRel.x), range[X].snapToLegalValue(pRel.y) };
+					return	{ range[X].snapToLegalValue(pRel.x), range[Y].snapToLegalValue(pRel.y) };
 				return { juce::jlimit(0.f, 1.f, pRel.x), juce::jlimit(0.f, 1.f, pRel.y) };
 			}
+
+			int getSteps(XY xy) const noexcept
+			{
+				return stepsXY[xy];
+			}
+
+			void setStepsXY(int val, XY xy) noexcept
+			{
+				const auto nVal = juce::jlimit(MinGridSteps, MaxGridSteps, val);
+				if (stepsXY[xy] == nVal)
+					return;
+				stepsXY[xy] = nVal;
+				range[xy] = makeRange::stepped(0.f, 1.f, 1.f / static_cast<float>(stepsXY[xy]));
+				editor.repaint();
+			}
+
+			bool doesSnap() const noexcept
+			{
+				return snap;
+			}
+
+			void setSnap(bool e) noexcept
+			{
+				if (snap == e)
+					return;
+
+				snap = e;
+			}
+
 		protected:
 			SplineEditor& editor;
 			std::array<RangeF, 2> range;
+			std::array<int, 2> stepsXY;
 			bool snap;
 		};
 
@@ -142,18 +185,14 @@ namespace gui
 			const auto thicc = utils.thicc;
 			const auto thicc2 = thicc * 2.f;
 			const Stroke stroke(thicc, Stroke::JointStyle::beveled, Stroke::EndCapStyle::butt);
-
-			auto col = Colours::c(ColourID::Hover);
-			g.setColour(col);
-			g.fillRoundedRectangle(bounds, thicc);
 			
-			col = Colours::c(ColourID::Interact);
+			auto col = Colours::c(ColourID::Interact);
 			g.setColour(col);
 			g.strokePath(curve, stroke);
 
 			for (auto i = 0; i < numPoints(); ++i)
 			{
-				const auto pt = grid.applySnap(points[i].rel);
+				const auto pt = points[i].relSnap;
 
 				const auto ptRelX = pt.x;
 
@@ -192,7 +231,7 @@ namespace gui
 			if (exists(pt))
 				return false;
 
-			points.push_back({ pt });
+			points.push_back({ pt, grid.applySnap(pt) });
 			
 			return true;
 		}
@@ -213,11 +252,10 @@ namespace gui
 			std::vector<PointF> ptAbs;
 			ptAbs.reserve(numPoints());
 			for (const auto& pt : points)
-				ptAbs.emplace_back(toAbs(grid.applySnap(pt.rel)));
+				ptAbs.emplace_back(toAbs(pt.relSnap));
 
 			const auto func = interpolate::polynomial::getFunc(ptAbs);
 			const auto thicc2 = utils.thicc * 2.f;
-
 
 			auto x = limitAbsX(bounds.getX());
 			auto y = limitAbsY(func(x));
@@ -250,6 +288,26 @@ namespace gui
 		{
 			for (auto i = 0; i < numPoints(); ++i)
 				points[i].selected = false;
+		}
+
+		int getSteps(XY xy) const noexcept
+		{
+			return grid.getSteps(xy);
+		}
+
+		void setStepsXY(int val, XY xy) noexcept
+		{
+			grid.setStepsXY(val, xy);
+		}
+
+		bool doesSnap() const noexcept
+		{
+			return grid.doesSnap();
+		}
+
+		void setSnap(bool e) noexcept
+		{
+			grid.setSnap(e);
 		}
 
 	protected:
@@ -308,6 +366,8 @@ namespace gui
 
 						pt.rel.x = toRelX(toAbsX(x) + distXY.x);
 						pt.rel.y = toRelY(toAbsY(y) + distXY.y);
+
+						pt.relSnap = grid.applySnap(pt.rel);
 					}
 
 				dragXY = nDragXY;
@@ -452,28 +512,113 @@ namespace gui
 		}
 	};
 
+
+	inline void makeGridStepKnob(SplineEditor& editor, Knob& knob, SplineEditor::XY xy)
+	{
+		const String xyStr(xy == SplineEditor::XY::X ? "x" : "y");
+
+		enum { kVal, numVals };
+
+		{
+			const auto steps = static_cast<float>(editor.getSteps(xy));
+			const auto maxSteps = static_cast<float>(SplineEditor::MaxGridSteps);
+			knob.values.push_back(steps / maxSteps);
+		}
+
+		knob.onPaint = [&e = editor, xy, xyStr](Knob& k, Graphics& g)
+		{
+			const auto steps = e.getSteps(xy);
+			g.setColour(Colours::c(ColourID::Interact));
+			g.drawFittedText(xyStr + ": " + String(steps), k.getLocalBounds(), Just::centred, 1);
+		};
+
+		knob.onDrag = [&e = editor, xy](Knob& k, PointF& drag, bool shiftDown)
+		{
+			const auto maxSteps = static_cast<float>(SplineEditor::MaxGridSteps);
+
+			const auto speed = (shiftDown ? SensitiveDrag : 1.f) / e.getUtils().getDragSpeed();
+
+			const auto val = k.values[kVal] - drag.y * speed;
+			k.values[kVal] = juce::jlimit(0.f, 1.f, val);
+
+			const auto nSteps = static_cast<int>(k.values[kVal] * maxSteps);
+
+			e.setStepsXY(nSteps, xy);
+			k.repaint();
+		};
+	}
+
 	struct SplineEditorPanel :
 		public Comp
 	{
+		enum { kGridX, kGridY, kNumKnobs };
+		enum { kSnap, kNumButtons };
+
 		SplineEditorPanel(Utils& u, String&& _tooltip) :
 			Comp(u, "", CursorType::Default),
-			editor(u, _tooltip)
+			editor(u, _tooltip),
+			knobs
+			{
+				Knob(u, "Grid X", "Adjust the grid of the x-achsis with this parameter."),
+				Knob(u, "Grid Y", "Adjust the grid of the y-achsis with this parameter.")
+			},
+			buttons
+			{
+				Button(u)
+			}
 		{
 			layout.init(
-				{ 1 },
-				{ 5, 1 }
+				{ 1, 1, 1 },
+				{ 2, 13, 2 }
 			);
 
 			addAndMakeVisible(editor);
+
+			for (auto& k : knobs)
+				addAndMakeVisible(k);
+
+			for (auto& b : buttons)
+				addAndMakeVisible(b);
+
+			for(auto i = 0; i < 2; ++i)
+			{
+				const auto xy = static_cast<SplineEditor::XY>(i);
+
+				auto& knob = knobs[kGridX + i];
+
+				makeGridStepKnob(editor, knob, xy);
+			}
+			
+			{
+				auto& snap = buttons[kSnap];
+				makeToggleButton(snap, "Snap");
+				snap.toggleState = editor.doesSnap() ? 1 : 0;
+
+				snap.onClick.push_back([&e = editor](Button&)
+				{
+					e.setSnap(!e.doesSnap());
+				});
+			}
+			
 		}
 
 		void resized() override
 		{
 			layout.resized();
 
-			layout.place(editor, 0, 0, 1, 1, false);
+			layout.place(editor, 0, 1, 3, 1, false);
+
+			layout.place(buttons[kSnap], 0, 0, 1, 1, false);
+			layout.place(knobs[kGridX], 1, 0, 1, 1, false);
+			layout.place(knobs[kGridY], 2, 0, 1, 1, false);
 		}
 
+		void paint(Graphics&) override
+		{}
+
+	protected:
 		SplineEditor editor;
+		std::array<Knob, kNumKnobs> knobs;
+		std::array<Button, kNumButtons> buttons;
 	};
 }

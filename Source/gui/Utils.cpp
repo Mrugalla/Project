@@ -22,10 +22,16 @@ namespace gui
 		return audioProcessor.params;
 	}
 
+	const Params& Utils::getParams() const noexcept
+	{
+		return audioProcessor.params;
+	}
+
 	std::vector<Param*>& Utils::getAllParams() noexcept
 	{
 		return params.data();
 	}
+	
 	const std::vector<Param*>& Utils::getAllParams() const noexcept
 	{
 		return params.data();
@@ -40,10 +46,12 @@ namespace gui
 	{
 		audioProcessor.midiLearn.assignParam(params[pID]);
 	}
+	
 	void Utils::removeMIDILearn(PID pID) noexcept
 	{
 		audioProcessor.midiLearn.removeParam(params[pID]);
 	}
+	
 	const audio::MIDILearn& Utils::getMIDILearn() const noexcept
 	{
 		return audioProcessor.midiLearn;
@@ -163,5 +171,40 @@ namespace gui
 			auto idx = static_cast<int>(rand.nextFloat() * max);
 			str += legalChars[idx];
 		}
+	}
+
+	int snapToJordanPolyaSequence(int number, int maxOrder) noexcept
+	{
+		// number snap to next in 1, 2, 4, 6, 8, 12, 16, 24, 32..
+
+		auto x0 = 1;
+		auto minDist = 1 << maxOrder;
+		auto minDif = minDist;
+		for (auto i = 1; i <= maxOrder; ++i)
+		{
+			const auto x1 = 1 << i;
+			const auto x2 = (x0 + x1) / 2;
+
+			const auto x2Dist = x2 - number;
+			const auto x1Dist = x1 - number;
+
+			const auto x2Dif = std::abs(x2Dist);
+			const auto x1Dif = std::abs(x1Dist);
+
+			if (minDif > x2Dif)
+			{
+				minDif = x2Dif;
+				minDist = x2Dist;
+			}
+			if (minDif > x1Dif)
+			{
+				minDif = x1Dif;
+				minDist = x1Dist;
+			}
+
+			x0 = x1;
+		}
+
+		return number + minDist;
 	}
 }

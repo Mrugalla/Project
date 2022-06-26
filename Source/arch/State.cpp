@@ -6,6 +6,13 @@ sta::State::State() :
 {
 }
 
+sta::State::State(const String& str) :
+	state("state"),
+	undoer()
+{
+	state = state.fromXml(str);
+}
+
 void sta::State::savePatch(const Proc& p, juce::MemoryBlock& destData) const
 {
 	std::unique_ptr<juce::XmlElement> xml(state.createXml());

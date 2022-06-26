@@ -24,18 +24,18 @@ HOW TO USE:
 
 TO DO:
 
-Label
-	TextToLabelBounds accounting for multiline text
-		size of text
-		where click in texteditor makes tick appear
+when saving a modpatch the preset browser needs to update its list too
 
 Knob2
-	test if parameter locking works!
-		randomize
-	replace functionality in context menu
+	..
 
 SplineEditor
-	make points come from outside (maybe?)
+	Sometimes selection range shows wrong range
+		and that feels bad
+	Add Feature: Non-removable Points
+	Snap to Grid
+		sometimes makes points on draggable
+	make points come from outside architecturally (maybe?)
 	wavetable from spline
 
 Macro Dropdown
@@ -47,14 +47,7 @@ Macro Dropdown
 	Remove All MaxModDepth and Bias
 
 Colours
-	throw some colours out of the options menu
-	like Transparent or Darken
-
-Knob & Scrollbar
-	..
-
-Shader
-	..
+	figure out natural hue steps
 
 ScrollBar
 	some things still not handled by scrollbarcomp alone
@@ -69,29 +62,22 @@ FormularParser
 		values push_backs in calculate and calculateX needed?
 		make callbacks instead of buffers?
 
-Param
-	...
-
-ParameterRandomizer
-	...
-
-Comp
-	make cpp of stuff
-
 TextEditor
 	minimize > back > click > tick doesn't move > 2nd click > does move
+	multiline text
+		where does click put tick?
 
 sta::State
-	contains valueTree as well as ApplicationProperties for max workflow!
+	rewrite with different types of state:
+		per instance
+		per plugin id
+		per developer
 	implement undo/redo
 
 MIDI Learn
 	1 cc to n parameters?
 	different midi channnels (16 * 128 CCs instead of 128)
 	possible to save and load default state of whole midi learn patch
-
-ScrollBar
-	have own header/cpp
 
 ContextMenu
 	implement context menu(s) for
@@ -117,12 +103,6 @@ FirstTimeAction(s)
 	thing that only makes lookuptables when the plugin is started the first time
 	tutorial
 
-ProcessorBase
-	...
-
-LowLevel UI Elements
-	...
-
 Pre Processor Defines (PPD)
 	PPDSidechainable
 
@@ -130,15 +110,11 @@ HighLevel UI Elements
 	undo/redo buttons
 	sidechain activated?
 
-Meters
-	...
-
-Knob
-	...
-
 -------------------------------------------------------------------
 
-FEATURE IDEAS:
+FEATURE REQUESTS:
+
+show total time spent with mrugalla plugins
 
 Achievements System?
 	discuss relevance, pros and cons

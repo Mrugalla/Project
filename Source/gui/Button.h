@@ -87,6 +87,9 @@ namespace gui
 		Abort,
 		SwapParamModDepth,
 		ModDepthLock,
+		Save,
+		Load,
+		Remove,
 		NumSymbols
 	};
 

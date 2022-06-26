@@ -60,17 +60,17 @@ Switch to mod-depth-control."/>
   </menu>
   <menu id="Thank You" x="40;40;40" y="3;13;2" tooltip="I always wanted to become a VST Developer. Thanks to everyone who makes this possible.">
     <title y="0" w="2" />
-    <txt id="ThanksText" x=".1" y="1.1" w="2.8" h=".8" just="topLeft" text=
+    <txt id="ThanksText" x=".1" y="1" w="2.8" h="1" just="topLeft" text=
 "Hi,
 
 my name is Florian Mrugalla and I am now making beats since
 I was a child. VST is a technology owned by Steinberg, their
 trademark. But it's actually much more than that. VST plugins
-enable musicians to come together in passionate discussions
-and even mangage to throw us into deep transcendental
-moments of trance on a regular basis.
+enable us to come together and engage in passionate discussions
+and they mangage to throw us into deep transcendental moments
+of trance on a regular basis.
 
-That's why I consider VST a lifestyle!
+That is why I consider VST a lifestyle!
 
 I always wanted to make my own VST plugins and here I am!
 Let's go on a journey together with my creations now.

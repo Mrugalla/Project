@@ -39,6 +39,7 @@ namespace gui
 		const std::vector<Param*>& getAllParams() const noexcept;
 
 		Params& getParams() noexcept;
+		const Params& getParams() const noexcept;
 
 		juce::ValueTree getState() const noexcept;
 
@@ -75,4 +76,7 @@ namespace gui
 
 	void appendRandomString(String&, Random&, int/*length*/,
 		const String& /*legalChars*/ = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
+
+	/*number to snap, max order of sequence 1 << x*/
+	int snapToJordanPolyaSequence(int, int) noexcept;
 }

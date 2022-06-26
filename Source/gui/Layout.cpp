@@ -329,6 +329,36 @@ namespace gui
 		g.drawFittedText(txt, bounds.toNearestInt(), Just::centredTop, 1);
 	}
 
+	BoundsF boundsOf(const Font& font, const String& text) noexcept
+	{
+		auto maxStrWidth = 0.f;
+		auto numLines = 1.f;
+		{
+			auto sIdx = 0;
+			for (auto i = 1; i < text.length(); ++i)
+			{
+				if (text[i] == '\n' || text[i] == '\r')
+				{
+					const auto lineWidth = font.getStringWidthFloat(text.substring(sIdx, i));
+					if (maxStrWidth < lineWidth)
+						maxStrWidth = lineWidth;
+					++i;
+					sIdx = i;
+					++numLines;
+				}
+			}
+			const auto lineWidth = font.getStringWidthFloat(text.substring(sIdx));
+			if (maxStrWidth < lineWidth)
+				maxStrWidth = lineWidth;
+		}
+
+		auto fontHeight = font.getHeight();
+
+		const auto strHeight = fontHeight * numLines;
+
+		return { 0.f, 0.f, maxStrWidth, strHeight };
+	}
+
 	void imgPP::blur(Image& img, Graphics& g, int its) noexcept
 	{
 		const auto w = img.getWidth();

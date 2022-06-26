@@ -123,6 +123,9 @@ namespace param
 
 		void setMaxModDepth(float) noexcept;
 
+		/*macro*/
+		float calcValModOf(float) const noexcept;
+
 		float getValMod() const noexcept;
 
 		float getValModDenorm() const noexcept;
@@ -162,6 +165,8 @@ namespace param
 
 		float biased(float /*start*/, float /*end*/, float /*bias [0,1]*/, float /*x*/) const noexcept;
 
+		static String getIDString(PID);
+
 		const PID id;
 		const Range range;
 	protected:
@@ -175,8 +180,6 @@ namespace param
 		std::atomic<bool> locked, inGesture;
 
 		bool modDepthLocked;
-	private:
-		String getIDString() const;
 	};
 
 	namespace strToVal
@@ -240,7 +243,7 @@ namespace param
 
 		void savePatch(juce::ApplicationProperties&) const;
 
-		String getIDString() const;
+		static String getIDString();
 
 		int getParamIdx(const String& /*nameOrID*/) const;
 

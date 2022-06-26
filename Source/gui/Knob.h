@@ -10,7 +10,7 @@ namespace gui
         public Timer
     {
         using Func = std::function<void(Knob&)>;
-        using OnDrag = std::function<void(Knob&, PointF&)>;
+        using OnDrag = std::function<void(Knob&, PointF&, bool)>;
         using OnUp = std::function<void(Knob&, const Mouse&)>;
         using OnTimer = std::function<bool(Knob&)>;
         using OnPaint = std::function<void(Knob&, Graphics&)>;
@@ -38,9 +38,11 @@ namespace gui
 
         void mouseWheelMove(const Mouse&, const MouseWheel&) override;
 
+        void mouseDoubleClick(const Mouse&) override;
+
         void setLocked(bool);
 
-        Func onEnter, onExit, onDown, onWheel, onResize;
+        Func onEnter, onExit, onDown, onWheel, onResize, onDoubleClick;
         OnDrag onDrag;
         OnUp onUp;
         OnTimer onTimer;

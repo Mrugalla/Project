@@ -51,10 +51,11 @@ namespace gui
     using UniqueDrawable = std::unique_ptr<Drawable>;
     using RangeF = juce::NormalisableRange<float>;
     using Time = juce::Time;
-
+    using FileChooser = juce::FileChooser;
     using Component = juce::Component;
+    
     using Processor = audio::Processor;
-
+    
     using PID = param::PID;
     using Param = param::Param;
     using Params = param::Params;

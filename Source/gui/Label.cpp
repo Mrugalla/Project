@@ -71,19 +71,23 @@ namespace gui
 		else if (mode == Mode::TextToLabelBounds)
 		{
 			const auto thicc = utils.thicc;
-
-			float maxStrWidth = 0.f;
+			const auto width = static_cast<float>(getWidth());
+			const auto height = static_cast<float>(getHeight());
+			/*
+			auto maxStrWidth = 0.f;
+			auto numLines = 0.f;
 			{
 				auto sIdx = 0;
 				for (auto i = 1; i < text.length(); ++i)
 				{
-					if (text[i] == '\n')
+					if (text[i] == '\n' || text[i] == '\r')
 					{
 						const auto lineWidth = font.getStringWidthFloat(text.substring(sIdx, i));
 						if (maxStrWidth < lineWidth)
 							maxStrWidth = lineWidth;
 						++i;
 						sIdx = i;
+						++numLines;
 					}
 				}
 				const auto lineWidth = font.getStringWidthFloat(text.substring(sIdx));
@@ -91,17 +95,35 @@ namespace gui
 					maxStrWidth = lineWidth;
 			}
 
-			const auto width = static_cast<float>(getWidth());
-			const auto ratio = width / maxStrWidth;
-
 			auto fontHeight = font.getHeight();
-			fontHeight *= ratio;
 
-			const auto height = static_cast<float>(getHeight());
-			if (fontHeight > height)
-				fontHeight = height;
+			const auto strHeight = fontHeight * numLines;
 
-			nHeight = std::max(fontHeight - thicc, nHeight);
+			const auto widthRatio = width / maxStrWidth;
+			const auto heightRatio = height / strHeight;
+
+			auto nFontHeight = font.getHeight() * widthRatio;
+			
+			if (nFontHeight > height)
+				nFontHeight = height;
+
+			nHeight = std::max(nFontHeight - thicc, minFontHeight);
+			*/
+			
+			const auto fontBounds = boundsOf(font, text);
+
+			const PointF dif(
+				fontBounds.getWidth() - width,
+				fontBounds.getHeight() - height
+			);
+
+			float ratio;
+			if (dif.x > dif.y)
+				ratio = width / fontBounds.getWidth();
+			else
+				ratio = height / fontBounds.getHeight();
+
+			nHeight = std::max(minFontHeight, font.getHeight() * ratio - thicc);
 		}
 
 		else if (mode == Mode::None)
