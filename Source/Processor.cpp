@@ -45,7 +45,10 @@ namespace audio
         startTimerHz(6);
     }
 
-    const String ProcessorBackEnd::getName() const { return JucePlugin_Name; }
+    const String ProcessorBackEnd::getName() const
+    {
+        return JucePlugin_Name;
+    }
 
     double ProcessorBackEnd::getTailLengthSeconds() const { return 0.; }
 
@@ -170,7 +173,7 @@ namespace audio
 #if PPDHasPolarity
             , (params[PID::Polarity]->getValMod() > .5f ? -1.f : 1.f)
 #endif
-#if PPDHasUnityGain
+#if PPDHasUnityGain && PPDHasGainIn
             , params[PID::UnityGain]->getValMod()
 #endif
         );
@@ -220,6 +223,21 @@ namespace audio
         dryWetMix.processOutGain(samples, numChannels, numSamples);
         meters.processOut(constSamples, numChannels, numSamples);
         dryWetMix.processMix(samples, numChannels, numSamples);
+
+#if JUCE_DEBUG
+        for (auto ch = 0; ch < numChannels; ++ch)
+        {
+            auto smpls = samples[ch];
+
+            for (auto s = 0; s < numSamples; ++s)
+            {
+                if (smpls[s] > 1.f)
+                    smpls[s] = 1.f;
+                else if (smpls[s] < -1.f)
+                    smpls[s] = -1.f;
+            }
+        }
+#endif
     }
 
     // PROCESSOR

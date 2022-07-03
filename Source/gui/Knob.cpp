@@ -261,9 +261,17 @@ namespace gui
             k.label.repaint();
         };
 
-        knob.onDoubleClick = [param](Knob&)
+        knob.onDoubleClick = [param](Knob& k)
         {
-            param->setValueNotifyingHost(param->getDefaultValue());
+            const auto dVal = param->getDefaultValue();
+
+            while (param->isInGesture()){}
+            param->setValueWithGesture(dVal);
+
+            k.label.setText(param->getCurrentValueAsText());
+            k.label.repaint();
+
+            k.notify(EvtType::ParametrDragged, &k);
         };
 
         enum { Value, MaxModDepth, ValMod, ModBias, Meter, NumValues };
@@ -467,10 +475,13 @@ namespace gui
             const auto thicc = k.getUtils().thicc;
             const auto thicc2 = thicc * 2.f;
             const auto thicc3 = thicc * 3.f;
-            Stroke strokeType(thicc, Stroke::JointStyle::curved, Stroke::EndCapStyle::rounded);
+            const auto thicc5 = thicc * 5.f;
+            Stroke strokeType(thicc, Stroke::JointStyle::curved, Stroke::EndCapStyle::butt);
             const auto radius = k.knobBounds.getWidth() * .5f;
-            const auto radiusBetween = radius - thicc;
-            const auto radiusInner = radius - thicc2;
+            const auto radiusInner = radius * .8f;
+            const auto radDif = (radius - radiusInner) * .8f;
+            const auto radiusBetween = radiusInner + radDif;
+            
             PointF centre(
                 radius + k.knobBounds.getX(),
                 radius + k.knobBounds.getY()
@@ -494,7 +505,7 @@ namespace gui
                         true
                     );
 
-                    strokeType.setStrokeThickness(thicc2);
+                    strokeType.setStrokeThickness(radDif);
                     g.strokePath(meterArc, strokeType);
                     strokeType.setStrokeThickness(thicc);
                 }
@@ -502,24 +513,28 @@ namespace gui
             //draw outlines
             {
                 g.setColour(col);
-                Path outtaArc;
+                Path arcOutline;
 
-                outtaArc.addCentredArc(
+                arcOutline.addCentredArc(
                     centre.x, centre.y,
                     radius, radius,
                     0.f,
                     -angleWidth, angleWidth,
                     true
                 );
-                outtaArc.addCentredArc(
+                g.strokePath(arcOutline, strokeType);
+                
+                Path arcInline;
+                arcInline.addCentredArc(
                     centre.x, centre.y,
                     radiusInner, radiusInner,
                     0.f,
                     -angleWidth, angleWidth,
                     true
                 );
-
-                g.strokePath(outtaArc, strokeType);
+                auto stroke2 = strokeType;
+                stroke2.setStrokeThickness(radDif);
+                g.strokePath(arcInline, stroke2);
             }
 
             const auto valNormAngle = vals[Value] * angleRange;
@@ -549,7 +564,10 @@ namespace gui
                         0.f, biasAngle,
                         true
                     );
-                    g.strokePath(biasPath, strokeType);
+                    auto bStroke = strokeType;
+                    bStroke.setStrokeThickness(radDif);
+
+                    g.strokePath(biasPath, bStroke);
                 }
 
                 g.setColour(Colours::c(ColourID::Mod));
@@ -568,11 +586,11 @@ namespace gui
             }
             // draw tick
             {
-                const auto tickLine = LineF::fromStartAndAngle(centre, radiusExt, valAngle);
+                const auto tickLine = LineF::fromStartAndAngle(centre, radius, valAngle);
                 g.setColour(Colours::c(ColourID::Bg));
-                g.drawLine(tickLine, thicc3);
+                g.drawLine(tickLine, thicc5);
                 g.setColour(col);
-                g.drawLine(tickLine.withShortenedStart(radiusInner), thicc2);
+                g.drawLine(tickLine.withShortenedStart(radiusInner - thicc), thicc3);
             }
         };
 
@@ -658,6 +676,71 @@ namespace gui
         addButton("Enter Value", "Click here to enter a parameter value with your keyboard");
 
         init();
+    }
+
+    // TEXT EDITOR KNOB
+
+    Notify TextEditorKnobs::makeNotify(TextEditorKnobs& tek)
+    {
+        return [&editor = tek](EvtType type, const void* stuff)
+        {
+            if (type == EvtType::ClickedEmpty)
+            {
+                editor.disable();
+                editor.setVisible(false);
+            }
+            if (type == EvtType::EnterParametrValue)
+            {
+                editor.disable();
+                editor.txt.clear();
+
+                const auto& knob = *static_cast<const Knob*>(stuff);
+                const auto pID = param::toPID(knob.getInfo(0));
+                auto& utils = editor.getUtils();
+                auto& param = *utils.getParam(pID);
+
+                editor.onEscape = [&tek = editor]()
+                {
+                    tek.disable();
+                };
+
+                editor.onReturn = [&tek = editor, &prm = param]()
+                {
+                    if (tek.txt.isNotEmpty())
+                    {
+                        const auto val = juce::jlimit(0.f, 1.f, prm.getValueForText(tek.txt));
+                        prm.setValueWithGesture(val);
+                    }
+                    tek.disable();
+                };
+
+                const auto mouse = juce::Desktop::getInstance().getMainMouseSource();
+                const auto screenPos = utils.getScreenPosition();
+                const auto parametrScreenPos = knob.getScreenPosition();
+                const auto parametrPos = parametrScreenPos - screenPos;
+                const Point parametrCentre(
+                    knob.getWidth() / 2,
+                    knob.getHeight() / 2
+                );
+                editor.setCentrePosition(parametrPos + parametrCentre);
+                editor.enable();
+            }
+        };
+    }
+
+    TextEditorKnobs::TextEditorKnobs(Utils& u) :
+        TextEditor(u, "Enter a value for this parameter.", makeNotify(*this))
+    {
+
+    }
+
+    void TextEditorKnobs::paint(Graphics& g)
+    {
+        const auto thicc = utils.thicc;
+        g.setColour(Colours::c(ColourID::Darken));
+        g.fillRoundedRectangle(getLocalBounds().toFloat(), thicc);
+
+        TextEditor::paint(g);
     }
 }
 

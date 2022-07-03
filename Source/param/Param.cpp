@@ -31,7 +31,7 @@ namespace param
 #if PPDHasPolarity
 		case PID::Polarity: return "Polarity";
 #endif
-#if PPDHasUnityGain
+#if PPDHasUnityGain && PPDHasGainIn
 		case PID::UnityGain: return "Unity Gain";
 #endif
 #if PPDHasStereoConfig
@@ -76,7 +76,7 @@ namespace param
 #if PPDHasPolarity
 		case PID::Polarity: return "Invert the wet signal's polarity.";
 #endif
-#if PPDHasUnityGain
+#if PPDHasUnityGain && PPDHasGainIn
 		case PID::UnityGain: return "If enabled the inversed input gain gets added to the output gain.";
 #endif
 #if PPDHasStereoConfig
@@ -111,6 +111,7 @@ namespace param
 		case Unit::Polarity: return CharPtr("\xc2\xb0");
 		case Unit::StereoConfig: return "";
 		case Unit::Voices: return "v";
+		case Unit::Pan: return "%";
 		default: return "";
 		}
 	}
@@ -140,7 +141,7 @@ namespace param
 		locked(false),
 		inGesture(false),
 
-		modDepthLocked(true)
+		modDepthLocked(false)
 	{
 	}
 
@@ -173,7 +174,7 @@ namespace param
 			if (var)
 			{
 				const auto val = static_cast<float>(*var);
-				const auto valD = range.convertTo0to1(val);
+				const auto valD = range.convertTo0to1(range.snapToLegalValue(val));
 				setValueNotifyingHost(valD);
 			}
 			var = state.get(idStr, "maxmoddepth");
@@ -193,7 +194,7 @@ namespace param
 			if (user->isValidFile())
 			{
 				const auto vdd = user->getDoubleValue(idStr + "valDefault", static_cast<double>(valDenormDefault));
-				setDefaultValue(range.convertTo0to1(static_cast<float>(vdd)));
+				setDefaultValue(range.convertTo0to1(range.snapToLegalValue(static_cast<float>(vdd))));
 			}
 		}
 	}
@@ -545,6 +546,35 @@ namespace param::strToVal
 		};
 	}
 
+	StrToValFunc pan(const Params& params)
+	{
+		return[p = parse(), &prms = params](const String& txt)
+		{
+			if (txt == "center" || txt == "centre")
+				return 0.f;
+
+			const auto text = txt.trimCharactersAtEnd("MSLR").toLowerCase();
+			const auto sc = prms[PID::StereoConfig];
+			if (sc->getValMod() < .5f)
+			{
+				if (txt == "l" || txt == "left")
+					return -1.f;
+				else if (txt == "r" || txt == "right")
+					return 1.f;
+			}
+			else
+			{
+
+				if (txt == "m" || txt == "mid")
+					return -1.f;
+				else if (txt == "s" || txt == "side")
+					return 1.f;
+			}
+				
+			const auto val = p(text, 0.f);
+			return val * .01f;
+		};
+	}
 }
 
 namespace param::valToStr
@@ -659,6 +689,37 @@ namespace param::valToStr
 		};
 	}
 
+	ValToStrFunc pan(const Params& params)
+	{
+		return [&prms = params](float v)
+		{
+			if (v == 0.f)
+				return String("C");
+
+			const auto sc = prms[PID::StereoConfig];
+			const auto vm = sc->getValMod();
+			const auto isMidSide = vm > .5f;
+			if (!isMidSide)
+			{
+				if (v == -1.f)
+					return String("Left");
+				else if (v == 1.f)
+					return String("Right");
+				else
+					return String(std::floor(v * 100.f)) + (v < 0.f ? " L" : " R");
+			}
+			else
+			{
+				if (v == -1.f)
+					return String("Mid");
+				else if (v == 1.f)
+					return String("Side");
+				else
+					return String(std::floor(v * 100.f)) + (v < 0.f ? " M" : " S");
+			}
+		};
+	}
+
 }
 
 namespace param
@@ -733,6 +794,14 @@ namespace param
 		return new Param(id, range, valDenormDefault, valToStrFunc, strToValFunc, state, unit);
 	}
 
+	Param* makeParamPan(PID id, State& state, const Params& params)
+	{
+		ValToStrFunc valToStrFunc = valToStr::pan(params);
+		StrToValFunc strToValFunc = strToVal::pan(params);
+
+		return new Param(id, { -1.f, 1.f }, 0.f, valToStrFunc, strToValFunc, state, Unit::Pan);
+	}
+
 	// PARAMS
 
 	Params::Params(AudioProcessor& audioProcessor, State& _state) :
@@ -749,7 +818,7 @@ namespace param
 #if PPDHasPolarity
 		params.push_back(makeParam(PID::Polarity, state, 0.f, makeRange::toggle(), Unit::Polarity));
 #endif
-#if PPDHasUnityGain
+#if PPDHasUnityGain && PPDHasGainIn
 		params.push_back(makeParam(PID::UnityGain, state, (PPD_UnityGainDefault ? 1.f : 0.f), makeRange::toggle(), Unit::Polarity));
 #endif
 #if PPDHasHQ

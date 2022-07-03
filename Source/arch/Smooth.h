@@ -14,6 +14,8 @@ namespace smooth
 		void makeFromDecayInHz(Float, Float/*Fs*/) noexcept;
 		void makeFromDecayInMs(Float, Float/*Fs*/) noexcept;
 
+		void copyCutoffFrom(const Smooth<Float>&) noexcept;
+
 		Smooth(const Float /*_startVal*/ = static_cast<Float>(0));
 
 		void reset();

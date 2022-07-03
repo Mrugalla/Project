@@ -21,7 +21,7 @@ namespace gui
 #endif
 		gainOut(u),
 		mix(u),
-#if PPDHasUnityGain
+#if PPDHasUnityGain && PPDHasGainIn
 		unityGain(u, param::toTooltip(PID::UnityGain)),
 #endif
 #if PPDHasHQ
@@ -277,7 +277,7 @@ namespace gui
 		addAndMakeVisible(gainOut);
 		makeParameter(mix, PID::Mix, "Mix");
 		addAndMakeVisible(mix);
-#if PPDHasUnityGain
+#if PPDHasUnityGain && PPDHasGainIn
 		makeParameterSwitchButton(unityGain, PID::UnityGain, ButtonSymbol::UnityGain);
 		addAndMakeVisible(unityGain);
 #endif

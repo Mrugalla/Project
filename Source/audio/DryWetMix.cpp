@@ -87,7 +87,7 @@ namespace audio
 #if PPDHasPolarity
 		, float polarityP
 #endif
-#if PPDHasUnityGain
+#if PPDHasUnityGain && PPDHasGainIn
 		, float unityGainP
 #endif
 	) noexcept
@@ -105,9 +105,9 @@ namespace audio
 		for (auto ch = 0; ch < numChannels; ++ch)
 			for (auto s = 0; s < numSamples; ++s)
 				samples[ch][s] *= gainInBuf[s];
-#if PPDHasUnityGain
-		gainP -= gainInP * unityGainP;
 #endif
+#if PPDHasUnityGain && PPDHasGainIn
+		gainP -= gainInP * unityGainP;
 #endif
 
 		auto mixBuf = bufs[MixW].data();

@@ -52,15 +52,5 @@ namespace gui
 
 		bool keyPressed(const KeyPress&) override;
 	};
-
-	struct TextEditorKnobs :
-		public TextEditor
-	{
-		Notify makeNotify(TextEditorKnobs&);
-
-		TextEditorKnobs(Utils&);
-
-		void paint(Graphics&) override;
-	};
 }
 

@@ -32,6 +32,14 @@ void smooth::Smooth<Float>::makeFromDecayInMs(Float d, Float Fs) noexcept
 }
 
 template<typename Float>
+void smooth::Smooth<Float>::copyCutoffFrom(const smooth::Smooth<Float>& other) noexcept
+{
+	a0 = other.a0;
+	b1 = other.b1;
+	eps = other.eps;
+}
+
+template<typename Float>
 smooth::Smooth<Float>::Smooth(const Float _startVal) :
 	a0(static_cast<Float>(1)),
 	b1(static_cast<Float>(0)),

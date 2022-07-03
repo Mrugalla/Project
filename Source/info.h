@@ -24,10 +24,21 @@ HOW TO USE:
 
 TO DO:
 
+Colours
+	if chosen white modulations not visible anymore
+	dark colours make it too dark
+
+highlevel
+	remove dc offset switch (steep highpass)
+		FIR or IIR? which freq? how steep?
+
 when saving a modpatch the preset browser needs to update its list too
 
-Knob2
-	..
+Pan Knob
+	when value near 0 definitely draw C and not 0
+
+Knob
+	double-clicks don't always work
 
 SplineEditor
 	Sometimes selection range shows wrong range

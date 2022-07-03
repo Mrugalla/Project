@@ -26,7 +26,7 @@ namespace param
 #if PPDHasPolarity
 		Polarity,
 #endif
-#if PPDHasUnityGain
+#if PPDHasUnityGain && PPDHasGainIn
 		UnityGain,
 #endif
 #if PPDHasHQ
@@ -74,6 +74,7 @@ namespace param
 		Polarity,
 		StereoConfig,
 		Voices,
+		Pan,
 		NumUnits
 	};
 
@@ -182,56 +183,6 @@ namespace param
 		bool modDepthLocked;
 	};
 
-	namespace strToVal
-	{
-		std::function<float(String, const float/*altVal*/)> parse();
-
-		StrToValFunc power();
-		StrToValFunc solo();
-		StrToValFunc mute();
-		StrToValFunc percent();
-		StrToValFunc hz();
-		StrToValFunc phase();
-		StrToValFunc oct();
-		StrToValFunc oct2();
-		StrToValFunc semi();
-		StrToValFunc fine();
-		StrToValFunc ratio();
-		StrToValFunc lrms();
-		StrToValFunc freeSync();
-		StrToValFunc polarity();
-		StrToValFunc ms();
-		StrToValFunc db();
-		StrToValFunc voices();
-	}
-
-	namespace valToStr
-	{
-		ValToStrFunc mute();
-		ValToStrFunc solo();
-		ValToStrFunc power();
-		ValToStrFunc percent();
-		ValToStrFunc hz();
-		ValToStrFunc phase();
-		ValToStrFunc phase360();
-		ValToStrFunc oct();
-		ValToStrFunc oct2();
-		ValToStrFunc semi();
-		ValToStrFunc fine();
-		ValToStrFunc ratio();
-		ValToStrFunc lrms();
-		ValToStrFunc freeSync();
-		ValToStrFunc polarity();
-		ValToStrFunc ms();
-		ValToStrFunc db();
-		ValToStrFunc empty();
-		ValToStrFunc voices();
-	}
-
-	Param* makeParam(PID, State&,
-		float /*valDenormDefault*/ = 1.f, const Range& = Range(0.f, 1.f),
-		Unit = Unit::Percent);
-
 	struct Params
 	{
 		using AudioProcessor = juce::AudioProcessor;
@@ -266,6 +217,60 @@ namespace param
 		State& state;
 		std::atomic<float> modDepthLocked;
 	};
+
+	namespace strToVal
+	{
+		std::function<float(String, const float/*altVal*/)> parse();
+
+		StrToValFunc power();
+		StrToValFunc solo();
+		StrToValFunc mute();
+		StrToValFunc percent();
+		StrToValFunc hz();
+		StrToValFunc phase();
+		StrToValFunc oct();
+		StrToValFunc oct2();
+		StrToValFunc semi();
+		StrToValFunc fine();
+		StrToValFunc ratio();
+		StrToValFunc lrms();
+		StrToValFunc freeSync();
+		StrToValFunc polarity();
+		StrToValFunc ms();
+		StrToValFunc db();
+		StrToValFunc voices();
+		StrToValFunc pan(const Params&);
+	}
+
+	namespace valToStr
+	{
+		ValToStrFunc mute();
+		ValToStrFunc solo();
+		ValToStrFunc power();
+		ValToStrFunc percent();
+		ValToStrFunc hz();
+		ValToStrFunc phase();
+		ValToStrFunc phase360();
+		ValToStrFunc oct();
+		ValToStrFunc oct2();
+		ValToStrFunc semi();
+		ValToStrFunc fine();
+		ValToStrFunc ratio();
+		ValToStrFunc lrms();
+		ValToStrFunc freeSync();
+		ValToStrFunc polarity();
+		ValToStrFunc ms();
+		ValToStrFunc db();
+		ValToStrFunc empty();
+		ValToStrFunc voices();
+		ValToStrFunc pan(const Params&);
+	}
+
+	Param* makeParam(PID, State&,
+		float /*valDenormDefault*/ = 1.f, const Range& = Range(0.f, 1.f),
+		Unit = Unit::Percent);
+
+	Param* makeParamPan(PID, State&, const Params&);
 
 	struct MacroProcessor
 	{

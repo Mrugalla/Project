@@ -50,7 +50,7 @@ namespace audio
 #if PPDHasPolarity
 			, float
 #endif
-#if PPDHasUnityGain
+#if PPDHasUnityGain && PPDHasGainIn
 			, float
 #endif
 		) noexcept;

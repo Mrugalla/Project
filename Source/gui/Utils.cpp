@@ -14,8 +14,15 @@ namespace gui
 		Colours::c.init(audioProcessor.props.getUserSettings());
 	}
 
-	Param* Utils::getParam(PID pID) noexcept { return params[pID]; }
-	const Param* Utils::getParam(PID pID) const noexcept { return params[pID]; }
+	Param* Utils::getParam(PID pID) noexcept
+	{
+		return params[pID];
+	}
+
+	const Param* Utils::getParam(PID pID) const noexcept
+	{
+		return params[pID];
+	}
 
 	Params& Utils::getParams() noexcept
 	{

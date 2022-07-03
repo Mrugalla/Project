@@ -67,4 +67,17 @@ namespace gui
 
 		ContextMenuKnobs(Utils&);
 	};
+
+
+
+    struct TextEditorKnobs :
+        public TextEditor
+    {
+        Notify makeNotify(TextEditorKnobs&);
+
+        TextEditorKnobs(Utils&);
+
+        void paint(Graphics&) override;
+    };
+
 }
