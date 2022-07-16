@@ -8,17 +8,28 @@ namespace audio
         return new gui::Editor(*this);
     }
 
+    juce::AudioProcessor::BusesProperties ProcessorBackEnd::makeBusesProperties()
+    {
+        BusesProperties bp;
+        bp.addBus(true, "Input", ChannelSet::stereo(), true);
+        bp.addBus(false, "Output", ChannelSet::stereo(), true);
+#if PPDHasSidechain
+        if (!juce::JUCEApplicationBase::isStandaloneApp())
+        {
+            bp.addBus(true, "Sidechain", ChannelSet::stereo(), true);
+        }
+#endif
+        return bp;
+    }
+
     ProcessorBackEnd::ProcessorBackEnd() :
-        juce::AudioProcessor(BusesProperties()
-            .withInput("Input", ChannelSet::stereo(), true)
-            .withOutput("Output", ChannelSet::stereo(), true)
-        ),
+        juce::AudioProcessor(makeBusesProperties()),
         props(),
         sus(*this),
         state(),
         params(*this, state),
         macroProcessor(params),
-        midiLearn(params, state),
+        midiManager(params, state),
 #if PPDHasHQ
         oversampler(),
 #endif
@@ -62,13 +73,38 @@ namespace audio
 
     void ProcessorBackEnd::changeProgramName(int, const juce::String&) {}
 
-    bool ProcessorBackEnd::isBusesLayoutSupported(const BusesLayout& layouts) const
+    bool ProcessorBackEnd::canAddBus(bool isInput) const
     {
-        if (layouts.getMainOutputChannelSet() != ChannelSet::mono()
-            && layouts.getMainOutputChannelSet() != ChannelSet::stereo())
+        if (wrapperType == wrapperType_Standalone)
             return false;
 
-        return layouts.getMainOutputChannelSet() == layouts.getMainInputChannelSet();
+        return PPDHasSidechain ? isInput : false;
+    }
+
+    bool ProcessorBackEnd::isBusesLayoutSupported(const BusesLayout& layouts) const
+    {
+        const auto mono = ChannelSet::mono();
+        const auto stereo = ChannelSet::stereo();
+        
+        const auto mainIn = layouts.getMainInputChannelSet();
+        const auto mainOut = layouts.getMainOutputChannelSet();
+
+        if (mainIn != mainOut)
+            return false;
+
+        if (mainOut != stereo && mainOut != mono)
+            return false;
+
+#if PPDHasSidechain
+        if (wrapperType != wrapperType_Standalone)
+        {
+            const auto scIn = layouts.getChannelSet(true, 1);
+            if (!scIn.isDisabled())
+                if (scIn != stereo && scIn != mono)
+                    return false;
+        }
+#endif
+        return true;
     }
 
     ProcessorBackEnd::AppProps* ProcessorBackEnd::getProps() noexcept
@@ -79,13 +115,13 @@ namespace audio
     void ProcessorBackEnd::savePatch()
     {
         params.savePatch(props);
-        midiLearn.savePatch();
+        midiManager.savePatch();
     }
 
     void ProcessorBackEnd::loadPatch()
     {
         params.loadPatch(props);
-        midiLearn.loadPatch();
+        midiManager.loadPatch();
         forcePrepareToPlay();
     }
 
@@ -125,119 +161,25 @@ namespace audio
     void ProcessorBackEnd::processBlockBypassed(AudioBuffer& buffer, juce::MidiBuffer&)
     {
         macroProcessor();
-        if (sus.suspendIfNeeded(buffer))
+
+        auto mainBus = getBus(true, 0);
+        auto mainBuffer = mainBus->getBusBuffer(buffer);
+
+        if (sus.suspendIfNeeded(mainBuffer))
             return;
-        const auto numSamples = buffer.getNumSamples();
+        const auto numSamples = mainBuffer.getNumSamples();
         if (numSamples == 0)
             return;
-        auto samples = buffer.getArrayOfWritePointers();
-        const auto constSamples = buffer.getArrayOfReadPointers();
-        const auto numChannels = buffer.getNumChannels();
+
+        auto samples = mainBuffer.getArrayOfWritePointers();
+        const auto constSamples = mainBuffer.getArrayOfReadPointers();
+        const auto numChannels = mainBuffer.getNumChannels();
 
         dryWetMix.processBypass(samples, numChannels, numSamples);
 #if PPDHasGainIn
         meters.processIn(constSamples, numChannels, numSamples);
 #endif
         meters.processOut(constSamples, numChannels, numSamples);
-    }
-
-    AudioBuffer* ProcessorBackEnd::processBlockStart(AudioBuffer& buffer, juce::MidiBuffer& midi) noexcept
-    {
-        midiLearn(midi);
-
-        macroProcessor();
-
-        const auto numSamples = buffer.getNumSamples();
-        if (numSamples == 0)
-            return nullptr;
-
-        if (params[PID::Power]->getValMod() < .5f)
-        {
-            processBlockBypassed(buffer, midi);
-            return nullptr;
-        }
-
-        const auto numChannels = buffer.getNumChannels() == 1 ? 1 : 2;
-
-        auto samples = buffer.getArrayOfWritePointers();
-
-        dryWetMix.saveDry(
-            samples,
-            numChannels,
-            numSamples,
-#if PPDHasGainIn
-            params[PID::GainIn]->getValueDenorm(),
-#endif
-            params[PID::Mix]->getValMod(),
-            params[PID::Gain]->getValModDenorm()
-#if PPDHasPolarity
-            , (params[PID::Polarity]->getValMod() > .5f ? -1.f : 1.f)
-#endif
-#if PPDHasUnityGain && PPDHasGainIn
-            , params[PID::UnityGain]->getValMod()
-#endif
-        );
-#if PPDHasGainIn
-        const auto constSamples = buffer.getArrayOfReadPointers();
-        meters.processIn(constSamples, numChannels, numSamples);
-#endif
-#if PPDHasStereoConfig
-        midSideEnabled = numChannels == 2 && params[PID::StereoConfig]->getValMod() > .5f;
-        if (midSideEnabled)
-        {
-            encodeMS(samples, numSamples);
-            {
-#if PPDHasHQ
-                return &oversampler.upsample(buffer);
-#else
-                return &buffer;
-#endif
-            }
-        }
-        else
-#endif
-        {
-#if PPDHasHQ
-            return &oversampler.upsample(buffer);
-#else
-            return &buffer;
-#endif
-        }
-    }
-
-    void ProcessorBackEnd::processBlockEnd(AudioBuffer& buffer) noexcept
-    {
-#if PPDHasHQ
-        oversampler.downsample(buffer);
-#endif
-        const auto samples = buffer.getArrayOfWritePointers();
-        const auto constSamples = buffer.getArrayOfReadPointers();
-        const auto numChannels = buffer.getNumChannels();
-        const auto numSamples = buffer.getNumSamples();
-
-#if PPDHasStereoConfig
-        if (midSideEnabled)
-            decodeMS(samples, numSamples);
-#endif
-
-        dryWetMix.processOutGain(samples, numChannels, numSamples);
-        meters.processOut(constSamples, numChannels, numSamples);
-        dryWetMix.processMix(samples, numChannels, numSamples);
-
-#if JUCE_DEBUG
-        for (auto ch = 0; ch < numChannels; ++ch)
-        {
-            auto smpls = samples[ch];
-
-            for (auto s = 0; s < numSamples; ++s)
-            {
-                if (smpls[s] > 1.f)
-                    smpls[s] = 1.f;
-                else if (smpls[s] < -1.f)
-                    smpls[s] = -1.f;
-            }
-        }
-#endif
     }
 
     // PROCESSOR
@@ -260,6 +202,8 @@ namespace audio
 #endif
         const auto sampleRateF = static_cast<float>(sampleRate);
 
+        
+
         dryWetMix.prepare(sampleRateF, maxBlockSize, latency);
 
         meters.prepare(sampleRateF, maxBlockSize);
@@ -271,28 +215,130 @@ namespace audio
 
     void Processor::processBlock(AudioBuffer& buffer, juce::MidiBuffer& midi)
     {
-        const juce::ScopedNoDenormals noDenormals;
+        const ScopedNoDenormals noDenormals;
 
-        if (sus.suspendIfNeeded(buffer))
+        //midiLearn(midi);
+        macroProcessor();
+
+        auto mainBus = getBus(true, 0);
+        auto mainBuffer = mainBus->getBusBuffer(buffer);
+        
+        if (sus.suspendIfNeeded(mainBuffer))
             return;
 
-        auto buf = processBlockStart(buffer, midi);
-        if (buf == nullptr)
+        const auto numSamples = mainBuffer.getNumSamples();
+        if (numSamples == 0)
             return;
 
-        processBlockCustom(
-            buf->getArrayOfWritePointers(),
-            buf->getNumChannels(),
-            buf->getNumSamples()
+        midiManager(midi, numSamples);
+
+        if (params[PID::Power]->getValMod() < .5f)
+            return processBlockBypassed(buffer, midi);
+
+        const auto samples = mainBuffer.getArrayOfWritePointers();
+        const auto constSamples = mainBuffer.getArrayOfReadPointers();
+        const auto numChannels = mainBuffer.getNumChannels();
+
+        dryWetMix.saveDry(
+            samples,
+            numChannels,
+            numSamples,
+#if PPDHasGainIn
+            params[PID::GainIn]->getValueDenorm(),
+#endif
+            params[PID::Mix]->getValMod(),
+            params[PID::Gain]->getValModDenorm()
+#if PPDHasPolarity
+            , (params[PID::Polarity]->getValMod() > .5f ? -1.f : 1.f)
+#endif
+#if PPDHasUnityGain && PPDHasGainIn
+            , params[PID::UnityGain]->getValMod()
+#endif
         );
 
-        processBlockEnd(buffer);
+#if PPDHasGainIn
+        meters.processIn(constSamples, numChannels, numSamples);
+#endif
+
+#if PPDHasStereoConfig
+        midSideEnabled = numChannels == 2 && params[PID::StereoConfig]->getValMod() > .5f;
+        if (midSideEnabled)
+            encodeMS(samples, numSamples, 0);
+#endif
+
+#if PPDHasHQ
+            auto resampledBuf = &oversampler.upsample(buffer);
+#else
+            auto resampledBuf = &buffer;
+#endif
+            auto resampledMainBuf = mainBus->getBusBuffer(*resampledBuf);
+            
+#if PPDHasSidechain
+        if (wrapperType != wrapperType_Standalone)
+        {
+            auto scBus = getBus(true, 1);
+            if (scBus != nullptr)
+                if(scBus->isEnabled())
+                {
+                    auto scBuffer = scBus->getBusBuffer(*resampledBuf);
+
+                    processBlockCustom(
+                        resampledMainBuf.getArrayOfWritePointers(),
+                        resampledMainBuf.getNumChannels(),
+                        resampledMainBuf.getNumSamples(),
+                        scBuffer.getArrayOfWritePointers(),
+                        scBuffer.getNumChannels()
+                    );
+                }
+        }
+        else
+        {
+
+        }
+#else
+        processBlockCustom(
+            resampledMainBuf.getArrayOfWritePointers(),
+            resampledMainBuf.getNumChannels(),
+            resampledMainBuf.getNumSamples()
+        );
+#endif
+            
+#if PPDHasHQ
+        oversampler.downsample(mainBuffer);
+#endif
+
+#if PPDHasStereoConfig
+        if (midSideEnabled)
+            decodeMS(samples, numSamples, 0);
+#endif
+        
+        dryWetMix.processOutGain(samples, numChannels, numSamples);
+        meters.processOut(constSamples, numChannels, numSamples);
+        dryWetMix.processMix(samples, numChannels, numSamples);
+
+#if JUCE_DEBUG
+        for (auto ch = 0; ch < numChannels; ++ch)
+        {
+            auto smpls = samples[ch];
+
+            for (auto s = 0; s < numSamples; ++s)
+            {
+                if (smpls[s] > 1.f)
+                    smpls[s] = 1.f;
+                else if (smpls[s] < -1.f)
+                    smpls[s] = -1.f;
+            }
+        }
+#endif
     }
 
-    void Processor::processBlockCustom(float** samples, int numChannels, int numSamples) noexcept
+    void Processor::processBlockCustom(float** samples, int numChannels, int numSamples
+#if PPDHasSidechain
+        , float** samplesSC, int numChannelsSC
+#endif
+    ) noexcept
     {
-        const auto crushGain = params[PID::CrushGain]->getValModDenorm();
-        crush(samples, numChannels, numSamples, crushGain);
+        
     }
 
     void Processor::releaseResources() {}

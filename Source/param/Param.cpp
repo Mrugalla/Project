@@ -554,14 +554,17 @@ namespace param::strToVal
 				return 0.f;
 
 			const auto text = txt.trimCharactersAtEnd("MSLR").toLowerCase();
+#if PPDHasStereoConfig
 			const auto sc = prms[PID::StereoConfig];
 			if (sc->getValMod() < .5f)
+#endif
 			{
 				if (txt == "l" || txt == "left")
 					return -1.f;
 				else if (txt == "r" || txt == "right")
 					return 1.f;
 			}
+#if PPDHasStereoConfig
 			else
 			{
 
@@ -570,11 +573,14 @@ namespace param::strToVal
 				else if (txt == "s" || txt == "side")
 					return 1.f;
 			}
+#endif
 				
 			const auto val = p(text, 0.f);
 			return val * .01f;
 		};
 	}
+
+
 }
 
 namespace param::valToStr
@@ -696,10 +702,13 @@ namespace param::valToStr
 			if (v == 0.f)
 				return String("C");
 
+#if PPDHasStereoConfig
 			const auto sc = prms[PID::StereoConfig];
 			const auto vm = sc->getValMod();
 			const auto isMidSide = vm > .5f;
+
 			if (!isMidSide)
+#endif
 			{
 				if (v == -1.f)
 					return String("Left");
@@ -708,6 +717,7 @@ namespace param::valToStr
 				else
 					return String(std::floor(v * 100.f)) + (v < 0.f ? " L" : " R");
 			}
+#if PPDHasStereoConfig
 			else
 			{
 				if (v == -1.f)
@@ -717,6 +727,7 @@ namespace param::valToStr
 				else
 					return String(std::floor(v * 100.f)) + (v < 0.f ? " M" : " S");
 			}
+#endif
 		};
 	}
 
@@ -814,7 +825,7 @@ namespace param
 		params.push_back(makeParam(PID::GainIn, state, 0.f, makeRange::withCentre(PPD_GainIn_Min, PPD_GainIn_Max, 0.f), Unit::Decibel));
 #endif
 		params.push_back(makeParam(PID::Mix, state));
-		params.push_back(makeParam(PID::Gain, state, 0.f, makeRange::withCentre(PPD_GainOut_Min, PPD_GainIn_Max, 0.f), Unit::Decibel));
+		params.push_back(makeParam(PID::Gain, state, 0.f, makeRange::withCentre(PPD_GainOut_Min, PPD_GainOut_Max, 0.f), Unit::Decibel));
 #if PPDHasPolarity
 		params.push_back(makeParam(PID::Polarity, state, 0.f, makeRange::toggle(), Unit::Polarity));
 #endif

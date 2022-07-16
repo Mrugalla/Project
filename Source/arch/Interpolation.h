@@ -75,10 +75,10 @@ namespace interpolate
 	inline T cubicHermiteSpline(const T* buffer, T readHead) noexcept
 	{
 		const auto iFloor = std::floor(readHead);
-		auto i1 = static_cast<int>(iFloor);
-		auto i0 = i1 + 1;
-		auto i2 = i1 + 2;
-		auto i3 = i1 + 3;
+		auto i0 = static_cast<int>(iFloor);
+		auto i1 = i0 + 1;
+		auto i2 = i0 + 2;
+		auto i3 = i0 + 3;
 
 		const auto t = readHead - iFloor;
 		const auto v0 = buffer[i0];

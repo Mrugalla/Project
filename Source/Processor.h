@@ -3,15 +3,13 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_events/juce_events.h>
 
+#include "audio/MIDIManager.h"
 #include "audio/MIDILearn.h"
 #include "audio/ProcessSuspend.h"
 #include "audio/DryWetMix.h"
 #include "audio/MidSide.h"
 #include "audio/Oversampling.h"
 #include "audio/Meter.h"
-#include "audio/Rectifier.h"
-#include "audio/Bitcrusher.h"
-#include "audio/NullNoiseSynth.h"
 
 #include "audio/AudioUtils.h"
 
@@ -38,6 +36,7 @@ namespace audio
         void changeProgramName(int, const juce::String&) override;
         bool isBusesLayoutSupported(const BusesLayout&) const override;
         AppProps* getProps() noexcept;
+        bool canAddBus(bool) const override;
 
         void savePatch();
         void loadPatch();
@@ -46,6 +45,8 @@ namespace audio
         bool acceptsMidi() const override;
         bool producesMidi() const override;
         bool isMidiEffect() const override;
+
+        juce::AudioProcessor::BusesProperties makeBusesProperties();
 
         /////////////////////////////////////////////
         /////////////////////////////////////////////
@@ -58,7 +59,7 @@ namespace audio
         State state;
         Params params;
         MacroProcessor macroProcessor;
-        MIDILearn midiLearn;
+        MIDIManager midiManager;
 
         DryWetMix dryWetMix;
 #if PPDHasHQ
@@ -72,12 +73,6 @@ namespace audio
 
         void processBlockBypassed(AudioBuffer&, juce::MidiBuffer&) override;
 
-    protected:
-        AudioBuffer* processBlockStart(AudioBuffer&, juce::MidiBuffer&) noexcept;
-
-        void processBlockEnd(AudioBuffer&) noexcept;
-    
-private:
 #if PPDHasStereoConfig
         bool midSideEnabled;
 #endif
@@ -94,7 +89,12 @@ private:
 
         void processBlock(AudioBuffer&, juce::MidiBuffer&);
         
-        void processBlockCustom(float** /*samples*/ , int /*numChannels*/, int /*numSamples*/) noexcept;
+        /* samples,numChannels,numSamples,samplesSC,numChannelsSC */
+        void processBlockCustom(float**, int, int
+#if PPDHasSidechain
+            , float**, int
+#endif
+        ) noexcept;
 
         void releaseResources() override;
 
