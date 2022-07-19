@@ -11,6 +11,7 @@
 #include "../Processor.h"
 #include "../param/Param.h"
 #include "../arch/State.h"
+#include "../audio/MIDIManager.h"
 
 #include <array>
 #include <functional>
@@ -59,6 +60,7 @@ namespace gui
     using PID = param::PID;
     using Param = param::Param;
     using Params = param::Params;
+    using MIDIVoicesArray = audio::MIDIVoicesArray;
 
     static constexpr float Tau = 6.28318530718f;
     static constexpr float Pi = Tau * .5f;;

@@ -65,6 +65,11 @@ namespace gui
 
 		AppProps& getProps() noexcept;
 
+		const MIDIVoicesArray& getMIDIVoicesArray() const noexcept
+		{
+			return audioProcessor.midiVoices.voices;
+		}
+
 		Component& pluginTop;
 		float thicc;
 	protected:

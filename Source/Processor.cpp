@@ -37,6 +37,7 @@ namespace audio
 #if PPDHasStereoConfig
         , midSideEnabled(false)
 #endif
+		, midiVoices(midiManager)
     {
         {
             juce::PropertiesFile::Options options;
@@ -185,7 +186,8 @@ namespace audio
     // PROCESSOR
 
     Processor::Processor() :
-        ProcessorBackEnd()
+        ProcessorBackEnd(),
+        resonator(midiVoices)
     {
     }
 
@@ -202,7 +204,9 @@ namespace audio
 #endif
         const auto sampleRateF = static_cast<float>(sampleRate);
 
-        
+        midiVoices.prepare(blockSizeUp);
+
+        resonator.prepare(sampleRateUpF, blockSizeUp);
 
         dryWetMix.prepare(sampleRateF, maxBlockSize, latency);
 
@@ -217,7 +221,6 @@ namespace audio
     {
         const ScopedNoDenormals noDenormals;
 
-        //midiLearn(midi);
         macroProcessor();
 
         auto mainBus = getBus(true, 0);
@@ -263,7 +266,13 @@ namespace audio
 #if PPDHasStereoConfig
         midSideEnabled = numChannels == 2 && params[PID::StereoConfig]->getValMod() > .5f;
         if (midSideEnabled)
+        {
             encodeMS(samples, numSamples, 0);
+#if PPDHasSidechain
+            encodeMS(samples, numSamples, 1);
+#endif
+        } 
+
 #endif
 
 #if PPDHasHQ
@@ -309,7 +318,12 @@ namespace audio
 
 #if PPDHasStereoConfig
         if (midSideEnabled)
-            decodeMS(samples, numSamples, 0);
+        {
+			decodeMS(samples, numSamples, 0);
+#if PPDHasSidechain
+			encodeMS(samples, numSamples, 1);
+#endif
+        }
 #endif
         
         dryWetMix.processOutGain(samples, numChannels, numSamples);
@@ -338,7 +352,9 @@ namespace audio
 #endif
     ) noexcept
     {
-        
+        auto fb = params[PID::ResonatorFeedback]->getValModDenorm();
+
+        resonator(samples, numChannels, numSamples, fb);
     }
 
     void Processor::releaseResources() {}

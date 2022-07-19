@@ -9,6 +9,7 @@
 #include "Knob.h"
 #include "Menu.h"
 #include "MIDICCMonitor.h"
+#include "MIDIVoicesComp.h"
 #include "LowLevel.h"
 
 namespace gui
@@ -54,6 +55,7 @@ namespace gui
 		Button polarity;
 #endif
 		MIDICCMonitor ccMonitor;
+		MIDIVoicesComp midiVoices;
 
 		LowLevel* lowLevel;
 		std::unique_ptr<Menu> menu;

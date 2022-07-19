@@ -11,6 +11,8 @@
 #include "audio/Oversampling.h"
 #include "audio/Meter.h"
 
+#include "audio/Resonator.h"
+
 #include "audio/AudioUtils.h"
 
 namespace audio
@@ -66,6 +68,7 @@ namespace audio
         Oversampler oversampler;
 #endif
         Meters meters;
+        MIDIVoices midiVoices;
 
         void forcePrepareToPlay();
 
@@ -104,5 +107,6 @@ namespace audio
 
         juce::AudioProcessorEditor* createEditor() override;
 
+        Resonator resonator;
     };
 }

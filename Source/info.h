@@ -25,6 +25,9 @@ HOW TO USE:
 
 TO DO:
 
+GainIn GainOut Meters
+	crash -nan if too much gain
+
 Colours
 	if chosen white modulations not visible anymore
 	dark colours make it too dark

@@ -36,6 +36,7 @@ namespace gui
 #endif
 
 		ccMonitor(u, u.getMIDILearn()),
+		midiVoices(u),
 
 		lowLevel(_lowLevel),
 
@@ -47,12 +48,12 @@ namespace gui
 #if PPDHasPatchBrowser
 		layout.init(
 			{ 1, 8, 1, 8, 1, 8, 1, 8, 1, 1 },
-			{ 1, 8, 1, 5, 1, 21, 1, 21, 1, 21, 1, 8, 5 }
+			{ 1, 8, 1, 5, 1, 21, 1, 21, 1, 21, 1, 8, 8, 2 }
 		);
 #else
 		layout.init(
 			{ 1, 8, 1, 8, 1, 8, 1, 8, 1, 1 },
-			{ 1, 8, 1, 21, 1, 21, 1, 21, 1, 8, 5 }
+			{ 1, 8, 1, 21, 1, 21, 1, 21, 1, 8, 8, 2 }
 		);
 #endif
 
@@ -334,6 +335,8 @@ namespace gui
 			});
 		addAndMakeVisible(menuButton);
 
+		addAndMakeVisible(midiVoices);
+
 		setInterceptsMouseClicks(false, true);
 	}
 
@@ -409,7 +412,8 @@ namespace gui
 #endif
 		layout.place(hq, 7.f, 9.f + patchBrowserOffset, 1.f, 1.f, true);
 
-		layout.place(ccMonitor, 1.f, 10.f + patchBrowserOffset, 3.f, 1.f, false);
+		layout.place(ccMonitor, 1.f, 10.f + patchBrowserOffset, 7.f, 1.f, false);
+		layout.place(midiVoices, 1.f, 11.f + patchBrowserOffset, 7.f, 1.f, false);
 
 #if PPDHasPatchBrowser
 		patchBrowser.setBounds(lowLevel->getBounds());

@@ -41,8 +41,7 @@ namespace param
 		case PID::Power: return "Power";
 
 			// LOW LEVEL PARAMS:
-		case PID::CrushGain: return "Crush Gain";
-		case PID::AnotherDummyParam: return "AnotherDummyParam";
+		case PID::ResonatorFeedback: return "Resonator Feedback";
 
 		default: return "Invalid Parameter Name";
 		}
@@ -85,7 +84,7 @@ namespace param
 
 		case PID::Power: return "Bypass the plugin with this parameter.";
 
-		case PID::CrushGain: return "Default Parameter Tooltip Txt";
+		case PID::ResonatorFeedback: return "Dials in the resonator's feedback.";
 
 		default: return "Invalid Tooltip.";
 		}
@@ -841,8 +840,7 @@ namespace param
 		params.push_back(makeParam(PID::Power, state, 1.f, makeRange::toggle(), Unit::Power));
 
 		// LOW LEVEL PARAMS:
-		params.push_back(makeParam(PID::CrushGain, state, 32.f, makeRange::withCentre(1.f, 128.f, 32.f)));
-		params.push_back(makeParam(PID::AnotherDummyParam, state, .5f, makeRange::withCentre(0.f, 1.f, .7f)));
+		params.push_back(makeParam(PID::ResonatorFeedback, state, 0.f, makeRange::withCentre(-1.2f, 1.2f, 0.f)));
 
 		// LOW LEVEL PARAMS END
 

@@ -38,8 +38,7 @@ namespace param
 		Power,
 
 		// low level parameters
-		CrushGain,
-		AnotherDummyParam,
+		ResonatorFeedback,
 
 		NumParams
 	};

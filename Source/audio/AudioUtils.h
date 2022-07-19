@@ -55,15 +55,26 @@ namespace audio
     }
 
     template<typename Float>
-    inline Float noteInFreqHz(Float note, Float rootNote = 69.f, Float xen = 12.f, Float masterTune = 440.f) noexcept
+    inline Float noteInFreqHz(Float note, Float rootNote = static_cast<Float>(69), Float xen = static_cast<Float>(12), Float masterTune = static_cast<Float>(440)) noexcept
     {
-        return std::pow(2.f, (note - rootNote) / xen) * masterTune;
+        return std::exp2((note - rootNote) / xen) * masterTune;
     }
 
     template<typename Float>
-    inline Float noteInFreqHz(Float note, Float rootNote = 69.f, Float masterTune = 440.f) noexcept
+    inline Float noteInFreqHz(Float note, Float rootNote = static_cast<Float>(69), Float masterTune = static_cast<Float>(440)) noexcept
     {
-        return std::pow(2.f, (note - rootNote) * .08333333333f) * masterTune;
+        return std::exp2((note - rootNote) * static_cast<Float>(.08333333333)) * masterTune;
     }
 
+    template<typename Float>
+    inline Float freqHzInNote(Float freqHz, Float rootNote = static_cast<Float>(69), Float xen = static_cast<Float>(12), Float masterTune = static_cast<Float>(440)) noexcept
+    {
+		return std::log2(freqHz / masterTune) * xen + rootNote;
+    }
+
+	template<typename Float>
+    inline Float freqHzInNote(Float freqHz, Float xen = static_cast<Float>(12), Float rootNote = static_cast<Float>(69)) noexcept
+	{
+		return std::log2(freqHz * static_cast<Float>(.00227272727)) * xen + rootNote;
+	}
 }
