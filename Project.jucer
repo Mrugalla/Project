@@ -55,8 +55,6 @@
         <FILE id="Uad8Jv" name="State.h" compile="0" resource="0" file="Source/arch/State.h"/>
       </GROUP>
       <GROUP id="{DA435779-5001-4379-F809-3E7C21D55DC0}" name="gui">
-        <FILE id="EO4MFD" name="ModulatorsEditor.h" compile="0" resource="0"
-              file="Source/gui/ModulatorsEditor.h"/>
         <FILE id="l3bsRz" name="MIDIVoicesComp.h" compile="0" resource="0"
               file="Source/gui/MIDIVoicesComp.h"/>
         <FILE id="v9ACbb" name="LogoComp.h" compile="0" resource="0" file="Source/gui/LogoComp.h"/>

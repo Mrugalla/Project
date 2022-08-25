@@ -18,7 +18,7 @@ namespace smooth
 	template<typename Float>
 	void Block<Float>::operator()(Float* bufferOut, Float* bufferIn, int numSamples) noexcept
 	{
-		auto x = 0.f;
+		auto x = static_cast<Float>(0);
 		auto inc = 1.f / static_cast<Float>(numSamples);
 		
 		for (auto s = 0; s < numSamples; ++s, x += inc)

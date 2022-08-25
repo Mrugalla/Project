@@ -9,20 +9,21 @@ namespace gui
     {
         LowLevel(Utils& u) :
             Comp(u, "", CursorType::Default),
-            freq(u)
+            feedback(u)
         {
-            makeParameter(freq, PID::RingModFreq, "Freq");
-			
-            layout.init(
-                { 1, 3, 3, 3, 1 },
-                { 1, 3, 1 }
+            makeParameter(feedback, PID::ResonatorFeedback, "Feedback");
+
+            layout.init
+            (
+                { 3, 3, 3 },
+                { 3, 3, 3 }
             );
 
-            addAndMakeVisible(freq);
+            addAndMakeVisible(feedback);
         }
 
     protected:
-        Knob freq;
+        Knob feedback;
         
         void paint(Graphics&) override {}
 
@@ -30,7 +31,7 @@ namespace gui
         {
             layout.resized();
 
-            layout.place(freq, 2, 1, 1, 1, false);
+            layout.place(feedback, 1, 1, 1, 1, false);
         }
     };
 }

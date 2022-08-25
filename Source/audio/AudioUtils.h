@@ -26,5 +26,4 @@ namespace audio
     using Params = param::Params;
     using Param = param::Param;
     using State = sta::State;
-    using ModSys = param::ModSys;
 }

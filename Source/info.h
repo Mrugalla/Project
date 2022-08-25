@@ -25,9 +25,6 @@ HOW TO USE:
 
 TO DO:
 
-Param prepare
-	if oversampling enabled some need blockSizeUp
-
 Frequency StringToValue
 	enter note values like C2, D#1, Eb3
 	and more specific ones like C3-edo7-root42-tune432

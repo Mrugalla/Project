@@ -42,7 +42,7 @@ namespace param
 		case PID::Power: return "Power";
 
 			// LOW LEVEL PARAMS:
-		case PID::RingModFreq: return "Ring Mod Freq";
+		case PID::ResonatorFeedback: return "Resonator Feedback";
 
 		default: return "Invalid Parameter Name";
 		}
@@ -85,7 +85,7 @@ namespace param
 
 		case PID::Power: return "Bypass the plugin with this parameter.";
 
-		case PID::RingModFreq: return "RingModFreq";
+		case PID::ResonatorFeedback: return "Dials in the resonator's feedback.";
 
 		default: return "Invalid Tooltip.";
 		}
@@ -121,20 +121,19 @@ namespace param
 
 	Param::Param(const PID pID, const Range& _range, const float _valDenormDefault,
 		const ValToStrFunc& _valToStr, const StrToValFunc& _strToVal,
-		State& _state, const Unit _unit, bool _isBuffered, bool _isStereo, bool _needsDenorm) :
+		State& _state, const Unit _unit) :
 
 		AudioProcessorParameter(),
 		id(pID),
 		range(_range),
-		numChannelsMax(_isStereo ? 2 : 1),
-		blockSize(_isBuffered ? 1 : 0),
 
 		state(_state),
 		valDenormDefault(_valDenormDefault),
 
-		value(range.convertTo0to1(_valDenormDefault)),
-		valModNorm(),
-		valModDenorm(),
+		valNorm(range.convertTo0to1(_valDenormDefault)),
+		maxModDepth(0.f),
+		valMod(valNorm.load()),
+		modBias(.5f),
 
 		valToStr(_valToStr),
 		strToVal(_strToVal),
@@ -143,17 +142,8 @@ namespace param
 		locked(false),
 		inGesture(false),
 
-		needsDenorm(_needsDenorm)
+		modDepthLocked(false)
 	{
-	}
-
-	void Param::prepare(int _blockSize)
-	{
-		blockSize = _blockSize == 0 ? 1 : _blockSize;
-
-		valModNorm.setSize(numChannelsMax, blockSize, false, false, false);
-		if(needsDenorm)
-			valModDenorm.setSize(numChannelsMax, blockSize, false, false, false);
 	}
 
 	void Param::savePatch(juce::ApplicationProperties& appProps) const
@@ -162,10 +152,10 @@ namespace param
 
 		const auto v = range.convertFrom0to1(getValue());
 		state.set(idStr, "value", v, true);
-		//const auto mdd = getMaxModDepth();
-		//state.set(idStr, "maxmoddepth", mdd, true);
-		//const auto mb = getModBias();
-		//state.set(idStr, "modbias", mb, true);
+		const auto mdd = getMaxModDepth();
+		state.set(idStr, "maxmoddepth", mdd, true);
+		const auto mb = getModBias();
+		state.set(idStr, "modbias", mb, true);
 
 		auto user = appProps.getUserSettings();
 		if (user->isValidFile())
@@ -191,14 +181,14 @@ namespace param
 			var = state.get(idStr, "maxmoddepth");
 			if (var)
 			{
-				//const auto val = static_cast<float>(*var);
-				//setMaxModDepth(val);
+				const auto val = static_cast<float>(*var);
+				setMaxModDepth(val);
 			}
 			var = state.get(idStr, "modbias");
 			if (var)
 			{
-				//const auto val = static_cast<float>(*var);
-				//setModBias(val);
+				const auto val = static_cast<float>(*var);
+				setModBias(val);
 			}
 
 			auto user = appProps.getUserSettings();
@@ -213,7 +203,7 @@ namespace param
 	//called by host, normalized, thread-safe
 	float Param::getValue() const
 	{
-		return value.load();
+		return valNorm.load();
 	}
 	
 	float Param::getValueDenorm() const noexcept
@@ -227,17 +217,17 @@ namespace param
 		if (isLocked())
 			return;
 
-		//if (!modDepthLocked)
-			return value.store(normalized);
+		if (!modDepthLocked)
+			return valNorm.store(normalized);
 
-		//const auto p0 = valNorm.load();
-		//const auto p1 = normalized;
+		const auto p0 = valNorm.load();
+		const auto p1 = normalized;
 
-		//const auto d0 = getMaxModDepth();
-		//const auto d1 = d0 - p1 + p0;
+		const auto d0 = getMaxModDepth();
+		const auto d1 = d0 - p1 + p0;
 
-		//valNorm.store(p1);
-		//setMaxModDepth(d1);
+		valNorm.store(p1);
+		setMaxModDepth(d1);
 	}
 
 	// called by editor
@@ -267,95 +257,78 @@ namespace param
 		endChangeGesture();
 	}
 
-	float** Param::getValModNorm() noexcept
+	float Param::getMaxModDepth() const noexcept
 	{
-		return valModNorm.getArrayOfWritePointers();
+		return maxModDepth.load();
+	};
+
+	void Param::setMaxModDepth(float v) noexcept
+	{
+		if (isLocked())
+			return;
+
+		maxModDepth.store(juce::jlimit(-1.f, 1.f, v));
 	}
 
-	const float** Param::getValModNorm() const noexcept
+	float Param::calcValModOf(float macro) const noexcept
 	{
-		return valModNorm.getArrayOfReadPointers();
+		const auto norm = getValue();
+
+		const auto mmd = maxModDepth.load();
+		const auto pol = mmd > 0.f ? 1.f : -1.f;
+		const auto md = mmd * pol;
+		const auto mdSkew = biased(0.f, md, modBias.load(), macro);
+		const auto mod = mdSkew * pol;
+
+		return juce::jlimit(0.f, 1.f, norm + mod);
 	}
 
-	float** Param::getValModDenorm() noexcept
+	float Param::getValMod() const noexcept
 	{
-		return valModDenorm.getArrayOfWritePointers();
+		return valMod.load();
 	}
 
-	const float** Param::getValModDenorm() const noexcept
+	float Param::getValModDenorm() const noexcept
 	{
-		return valModDenorm.getArrayOfReadPointers();
+		return range.convertFrom0to1(valMod.load());
 	}
-	
+
+	void Param::setModBias(float b) noexcept
+	{
+		if (isLocked())
+			return;
+
+		b = juce::jlimit(BiasEps, 1.f - BiasEps, b);
+		modBias.store(b);
+	}
+
+	float Param::getModBias() const noexcept
+	{
+		return modBias.load();
+	}
+
+	void Param::setModDepthLocked(bool e) noexcept
+	{
+		modDepthLocked = e;
+	}
+
 	void Param::setDefaultValue(float norm) noexcept
 	{
 		valDenormDefault = range.convertFrom0to1(norm);
 	}
 
-	// called by modSys to initialize parameter updates
-	void Param::processBlockInit(int numChannels, int numSamples) noexcept
+	// called by processor to update modulation value(s)
+	void Param::modulate(float macro) noexcept
 	{
-		auto valNorm = getValue();
-
-		numChannels = std::min(numChannels, numChannelsMax);
-		numSamples = std::min(numSamples, blockSize);
-		
-		auto vmn = valModNorm.getArrayOfWritePointers();
-		
-		for (auto ch = 0; ch < numChannels; ++ch)
-			SIMD::fill(vmn[ch], valNorm, numSamples);
-	}
-	
-	// called by modSys to add modulation input to parameter buffer
-	void Param::modulate(float** modBuffer, int numChannels, int numSamples) noexcept
-	{
-		auto vmn = valModNorm.getArrayOfWritePointers();
-		
-		for (auto ch = 0; ch < numChannels; ++ch)
-		{
-			auto vm = vmn[ch];
-			const auto mb = modBuffer[ch];
-
-			SIMD::add(vm, mb, numSamples);
-		}
+		valMod.store(calcValModOf(macro));
 	}
 
-	void Param::processBlockEnd(int numChannels, int numSamples) noexcept
-	{
-		if (!needsDenorm)
-			return;
-		
-		numChannels = std::min(numChannels, numChannelsMax);
-		numSamples = std::min(numSamples, blockSize);
+	float Param::getDefaultValue() const { return range.convertTo0to1(valDenormDefault); }
 
-		const auto vmn = getValModNorm();
-		auto vmd = valModDenorm.getArrayOfWritePointers();
-
-		for (auto ch = 0; ch < numChannels; ++ch)
-			for (auto s = 0; s < numSamples; ++s)
-			{
-				const auto smplNorm = vmn[ch][s];
-				const auto smplDenorm = range.convertFrom0to1(smplNorm);
-				vmd[ch][s] = smplDenorm;
-			}
-				
-	}
-
-	float Param::getDefaultValue() const
-	{
-		return range.convertTo0to1(valDenormDefault);
-	}
-
-	String Param::getName(int) const
-	{
-		return toString(id);
-	}
+	String Param::getName(int) const { return toString(id); }
 
 	// units of param (hz, % etc.)
-	String Param::getLabel() const
-	{
-		return toString(unit);
-	}
+	String Param::getLabel() const { return toString(unit); }
 
 	// string of norm val
 	String Param::getText(float norm, int) const
@@ -392,15 +365,24 @@ namespace param
 		locked.store(e);
 	}
 
-	void Param::switchLock() noexcept
-	{
-		setLocked(!isLocked());
-	}
+	void Param::switchLock() noexcept { setLocked(!isLocked()); }
 
 	String Param::getIDString(PID pID)
 	{
 		return "params/" + toID(toString(pID));
 	}
+
+	float Param::biased(float start, float end, float bias/*[0,1]*/, float x) const noexcept
+	{
+		const auto r = end - start;
+		if (r == 0.f)
+			return 0.f;
+		const auto a2 = 2.f * bias;
+		const auto aM = 1.f - bias;
+		const auto aR = r * bias;
+		return start + aR * x / (aM - x + a2 * x);
+	}
+
 }
 
 namespace param::strToVal
@@ -592,8 +574,7 @@ namespace param::strToVal
 			const auto text = txt.trimCharactersAtEnd("MSLR").toLowerCase();
 #if PPDHasStereoConfig
 			const auto sc = prms[PID::StereoConfig];
-			auto isMidSide = sc->getValModNorm()[0][0];
-			if (isMidSide < .5f)
+			if (sc->getValMod() < .5f)
 #endif
 			{
 				if (txt == "l" || txt == "left")
@@ -772,7 +753,7 @@ namespace param::valToStr
 
 #if PPDHasStereoConfig
 			const auto sc = prms[PID::StereoConfig];
-			const auto vm = sc->getValModNorm()[0][0];
+			const auto vm = sc->getValMod();
 			const auto isMidSide = vm > .5f;
 
 			if (!isMidSide)
@@ -832,7 +813,7 @@ namespace param
 {
 	Param* makeParam(PID id, State& state,
 		float valDenormDefault, const Range& range,
-		Unit unit, bool isBuffered, bool isStereo, bool needsDenorm)
+		Unit unit)
 	{
 		ValToStrFunc valToStrFunc;
 		StrToValFunc strToValFunc;
@@ -901,8 +882,7 @@ namespace param
 			break;
 		}
 
-		return new Param(id, range, valDenormDefault, valToStrFunc, strToValFunc, state, unit,
-			isBuffered, isStereo, needsDenorm);
+		return new Param(id, range, valDenormDefault, valToStrFunc, strToValFunc, state, unit);
 	}
 
 	Param* makeParamPan(PID id, State& state, Params& params)
@@ -910,8 +890,7 @@ namespace param
 		ValToStrFunc valToStrFunc = valToStr::pan(params);
 		StrToValFunc strToValFunc = strToVal::pan(params);
 
-		return new Param(id, { -1.f, 1.f }, 0.f, valToStrFunc, strToValFunc, state,
-			Unit::Pan, true, false, true);
+		return new Param(id, { -1.f, 1.f }, 0.f, valToStrFunc, strToValFunc, state, Unit::Pan);
 	}
 
 	// PARAMS
@@ -921,12 +900,12 @@ namespace param
 		state(_state),
 		modDepthLocked(false)
 	{
-		params.push_back(makeParam(PID::Macro, state, 0.f, { 0.f, 1.f }, Unit::Percent, true, true, false));
+		params.push_back(makeParam(PID::Macro, state, 0.f));
 #if PPDHasGainIn
-		params.push_back(makeParam(PID::GainIn, state, 0.f, makeRange::withCentre(PPD_GainIn_Min, PPD_GainIn_Max, 0.f), Unit::Decibel, true, true, true));
+		params.push_back(makeParam(PID::GainIn, state, 0.f, makeRange::withCentre(PPD_GainIn_Min, PPD_GainIn_Max, 0.f), Unit::Decibel));
 #endif
-		params.push_back(makeParam(PID::Mix, state, 1.f, Range(), Unit::Percent, true, true, false));
-		params.push_back(makeParam(PID::Gain, state, 0.f, makeRange::withCentre(PPD_GainOut_Min, PPD_GainOut_Max, 0.f), Unit::Decibel, true, true, true));
+		params.push_back(makeParam(PID::Mix, state));
+		params.push_back(makeParam(PID::Gain, state, 0.f, makeRange::withCentre(PPD_GainOut_Min, PPD_GainOut_Max, 0.f), Unit::Decibel));
 #if PPDHasPolarity
 		params.push_back(makeParam(PID::Polarity, state, 0.f, makeRange::toggle(), Unit::Polarity));
 #endif
@@ -942,18 +921,12 @@ namespace param
 		params.push_back(makeParam(PID::Power, state, 1.f, makeRange::toggle(), Unit::Power));
 
 		// LOW LEVEL PARAMS:
-		params.push_back(makeParam(PID::RingModFreq, state, 420.f, makeRange::withCentre(0.f, 20000.f, 420.f), Unit::Hz, true, true, true));
-		
-		
-		// LOW LEVEL PARAMS END:
+		params.push_back(makeParam(PID::ResonatorFeedback, state, 0.f, makeRange::withCentre(-1.2f, 1.2f, 0.f)));
+
+		// LOW LEVEL PARAMS END
+
 		for (auto param : params)
 			audioProcessor.addParameter(param);
-	}
-
-	void Params::prepare(int blockSize)
-	{
-		for (auto& param : params)
-			param->prepare(blockSize);
 	}
 
 	void Params::loadPatch(juce::ApplicationProperties& appProps)
@@ -1011,8 +984,8 @@ namespace param
 	void Params::setModDepthLocked(bool e) noexcept
 	{
 		modDepthLocked.store(e);
-		//for (auto& p : params)
-		//	p->setModDepthLocked(e);
+		for (auto& p : params)
+			p->setModDepthLocked(e);
 	}
 
 	void Params::switchModDepthLocked() noexcept
@@ -1020,272 +993,17 @@ namespace param
 		setModDepthLocked(!isModDepthLocked());
 	}
 
-	// modulation and stuff
+	// MACRO PROCESSOR
 
-	void Params::processBlockInit(int numChannels, int numSamples) noexcept
-	{
-		for (auto& param : params)
-			param->processBlockInit(numChannels, numSamples);
-	}
-
-	void Params::processBlockEnd(int numChannels, int numSamples) noexcept
-	{
-		for (auto& param : params)
-			param->processBlockEnd(numChannels, numSamples);
-	}
-}
-
-// modulation system:
-
-namespace param
-{
-	String toString(ModType t)
-	{
-		switch (t)
-		{
-		case ModType::Macro: return "Macro";
-		case ModType::LFO1: return "LFO1";
-		case ModType::LFO2: return "LFO2";
-		case ModType::EnvFol: return "EnvFol";
-		case ModType::EnvGen1: return "EnvGen1";
-		case ModType::EnvGen2: return "EnvGen2";
-		case ModType::Randomizer1: return "Randomizer1";
-		case ModType::Randomizer2: return "Randomizer2";
-		default: return "";
-		}
-	}
-	
-	ModType fromString(const juce::String& s)
-	{
-		if (s == "Macro") return ModType::Macro;
-		if (s == "LFO1") return ModType::LFO1;
-		if (s == "LFO2") return ModType::LFO2;
-		if (s == "EnvFol") return ModType::EnvFol;
-		if (s == "EnvGen1") return ModType::EnvGen1;
-		if (s == "EnvGen2") return ModType::EnvGen2;
-		if (s == "Randomizer1") return ModType::Randomizer1;
-		if (s == "Randomizer2") return ModType::Randomizer2;
-		return ModType::NumMods;
-	}
-
-	// MOD
-
-	Mod::Mod(ModType _type, std::vector<Param*>&& _params) :
-		type(_type),
-		params(_params),
-		buffer()
-	{}
-
-	bool Mod::operator==(ModType other) const noexcept
-	{
-		return other == type;
-	}
-
-	bool Mod::hasParam(Param* param) const noexcept
-	{
-		for (auto p = 0; p < params.size(); ++p)
-			if (params[p]->id == param->id)
-				return true;
-		return false;
-	}
-
-	bool Mod::hasParam(Param& param) const noexcept
-	{
-		for (auto p = 0; p < params.size(); ++p)
-			if (params[p]->id == param.id)
-				return true;
-		return false;
-	}
-
-	void Mod::prepare(float sampleRate, int blockSize)
-	{
-		buffer.setSize(2, blockSize, false, false, false);
-		for (auto& smooth : smooths)
-			smooth.makeFromDecayInMs(10.f, sampleRate);
-	}
-
-	void Mod::processBlock(int numChannels, int numSamples) noexcept
-	{
-		auto modBuffer = buffer.getArrayOfWritePointers();
-
-		switch (type)
-		{
-		case ModType::Macro: return processBlockMacro(modBuffer, numChannels, numSamples);
-		}
-	}
-
-	const float** Mod::data() const noexcept
-	{
-		return buffer.getArrayOfReadPointers();
-	}
-
-	void Mod::processBlockMacro(float** modBuffer, int numChannels, int numSamples) noexcept
-	{
-		const auto& macroParam = *params[0];
-		const auto macroP = macroParam.getValModNorm();
-		for (auto ch = 0; ch < numChannels; ++ch)
-		{
-			const auto macro = macroP[ch];
-			auto& smooth = smooths[ch];
-			auto modBuf = modBuffer[ch];
-
-			for (auto s = 0; s < numSamples; ++s)
-			{
-				const auto mcr = macro[s];
-				modBuf[s] = smooth(mcr);
-			}
-		}
-	}
-
-	// DEST
-
-	Dest::Dest(Params& _params, const Mods& _mods) :
-		params(_params),
-		mods(_mods),
-		remapCurve(),
-		modDepth(0.f),
-		bidirectional(0.f),
-		pIdx(0),
-		mIdx(0),
-		active(false)
-	{
-		auto x = 0.f;
-		auto inc = 1.f / static_cast<float>(remapCurve.size());
-
-		for (auto i = 0; i < RemapCurveSize; ++i, x += inc)
-			remapCurve[i] = x;
-
-		for (auto i = 0; i < 4; ++i)
-			remapCurve[RemapCurveSize + i] = remapCurve[i];
-	}
-
-	void Dest::prepare(int blockSize)
-	{
-		destBuffer.setSize(2, blockSize);
-	}
-
-	void Dest::operator()(int numChannels, int numSamples) noexcept
-	{
-		if (!active)
-			return;
-
-		auto& param = *params[pIdx];
-		auto& mod = mods[mIdx];
-
-		numChannels = std::min(numChannels, param.numChannelsMax);
-		numSamples = std::min(numSamples, param.blockSize);
-
-		const auto modBuffer = mod.data();
-		auto destBuf = destBuffer.getArrayOfWritePointers();
-
-		const auto m = modDepth;
-		const auto b = bidirectional;
-		const auto bm = modDepth * b;
-
-		for (auto ch = 0; ch < numChannels; ++ch)
-		{
-			const auto modBuf = modBuffer[ch];
-			auto dest = destBuf[ch];
-
-			for (auto s = 0; s < numSamples; ++s)
-			{
-				const auto modSmpl = modBuf[s];
-				const auto idx = static_cast<int>(modSmpl * RemapCurveSizeF);
-				const auto x = remapCurve[idx];
-
-				const auto z = x * (m + bm) - b;
-
-				dest[s] = z;
-			}
-		}
-
-		param.modulate(destBuf, numChannels, numSamples);
-	}
-	
-	String toString(Dest& dest)
-	{
-		String s;
-		s << toString(dest.params[dest.pIdx]->id);
-		s << "; " << toString(dest.mods[dest.mIdx].type);
-		s << "; " << dest.modDepth << "; " << dest.bidirectional;
-		return s;
-	}
-
-	// DESTS
-	
-	Dests::Dests(Params& params, Mods& mods) :
-		Dests(params, mods, sequenceForDestArray(dests))
+	MacroProcessor::MacroProcessor(Params& _params) :
+		params(_params)
 	{
 	}
 
-	void Dests::prepare(int blockSize)
+	void MacroProcessor::operator()() noexcept
 	{
-		for (auto& dest : dests)
-			dest.prepare(blockSize);
-	}
-
-	void Dests::operator()(int numChannels, int numSamples) noexcept
-	{
-		for (auto& dest : dests)
-			dest(numChannels, numSamples);
-	}
-
-	String toString(Dests& dests)
-	{
-		String s;
-		for (auto& dest : dests.dests)
-			s << toString(dest) << "\n";
-		return s;
-	}
-
-	// MODSYS
-
-	ModSys::ModSys(State& _state, Params& _params) :
-		state(_state),
-		params(_params),
-		mods
-	{
-		Mod(ModType::Macro, { params[PID::Macro]}),
-		Mod(ModType::EnvFol),
-		Mod(ModType::EnvGen1),
-		Mod(ModType::EnvGen2),
-		Mod(ModType::LFO1),
-		Mod(ModType::LFO2),
-		Mod(ModType::Randomizer1),
-		Mod(ModType::Randomizer2)
-	},
-		modsIdx(),
-		dests(params, mods)
-	{
-		for (auto i = 0; i < NumMods; ++i)
-			modsIdx[i] = i;
-	}
-
-	void ModSys::prepare(float sampleRate, int blockSize)
-	{
-		params.prepare(blockSize);
-
-		for (auto& mod : mods)
-			mod.prepare(sampleRate, blockSize);
-
-		dests.prepare(blockSize);
-	}
-
-	void ModSys::operator()(int numChannels, int numSamples) noexcept
-	{
-		// process all parameter values
-		params.processBlockInit(numChannels, numSamples);
-
-		for (auto m = 0; m < mods.size(); ++m)
-		{
-			const auto idx = modsIdx[m];
-			auto& mod = mods[idx];
-
-			mod.processBlock(numChannels, numSamples);
-		}
-
-		dests(numChannels, numSamples);
-
-		params.processBlockEnd(numChannels, numSamples);
+		const auto modDepth = params[PID::Macro]->getValue();
+		for (auto i = 1; i < NumParams; ++i)
+			params[i]->modulate(modDepth);
 	}
 }
