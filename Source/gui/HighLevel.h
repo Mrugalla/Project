@@ -32,7 +32,6 @@ namespace gui
 #endif
 		Knob macro;
 		Button modDepthLocked;
-		Button swapParamWithModDepth;
 		Button saveModPatch, loadModPatch, removeCurModPatch;
 
 		ButtonParameterRandomizer parameterRandomizer;

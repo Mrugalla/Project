@@ -25,7 +25,8 @@ namespace audio
 		}
 	}
 
-	void DryWetMix::LatencyCompensation::operator()(float** dry, float** inputSamples, int numChannels, int numSamples) noexcept
+	void DryWetMix::LatencyCompensation::operator()(float** dry, float** inputSamples,
+		int numChannels, int numSamples) noexcept
 	{
 		if (latency != 0)
 		{
@@ -58,10 +59,15 @@ namespace audio
 	DryWetMix::DryWetMix() :
 		latencyCompensation(),
 
-		bufs(),
-
-		mixSmooth(1.f),
-		gainSmooth(1.f),
+#if PPDHasGainIn
+		gainInSmooth{1.f, 1.f},
+		gainInBuffer(),
+#if PPDHasUnityGain
+		unityGainBuffer(),
+#endif
+#endif
+		mixSmooth{1.f, 1.f}, gainOutSmooth{1.f, 1.f},
+		gainOutBuffer(),
 
 		dryBuf()
 	{}
@@ -70,67 +76,89 @@ namespace audio
 	{
 		latencyCompensation.prepare(blockSize, latency);
 
-		mixSmooth.makeFromDecayInMs(20.f, sampleRate);
-		gainSmooth.makeFromDecayInMs(20.f, sampleRate);
-
+		for(auto& smooth: mixSmooth)
+			smooth.makeFromDecayInMs(13.f, sampleRate);
+		for (auto& smooth : mixSmooth)
+			smooth.makeFromDecayInMs(13.f, sampleRate);
+		for (auto& smooth : gainOutSmooth)
+			smooth.makeFromDecayInMs(13.f, sampleRate);
+		gainOutBuffer.setSize(2, blockSize, false, false, false);
+#if PPDHasGainIn
+		for (auto& smooth : gainInSmooth)
+			smooth.makeFromDecayInMs(13.f, sampleRate);
+		gainInBuffer.setSize(2, blockSize, false, false, false);
+#if PPDHasUnityGain
+		unityGainBuffer.setSize(2, blockSize, false, false, false);
+#endif
+#endif
 		dryBuf.setSize(2, blockSize, false, true, false);
-
-		for (auto& buf : bufs)
-			buf.resize(blockSize);
 	}
 
-	void DryWetMix::saveDry(float** samples, int numChannels, int numSamples,
+	void DryWetMix::saveDry(float** samples, int numChannels, int numSamples
 #if PPDHasGainIn
-		float gainInP,
+		, float** gainInP
 #endif
-		float mixP, float gainP
 #if PPDHasPolarity
-		, float polarityP
+		, bool polarityP
 #endif
 #if PPDHasUnityGain && PPDHasGainIn
-		, float unityGainP
+		, bool unityGainP
 #endif
 	) noexcept
 	{
-		latencyCompensation(
+		latencyCompensation
+		(
 			dryBuf.getArrayOfWritePointers(),
 			samples,
 			numChannels,
 			numSamples
 		);
-
 #if PPDHasGainIn
-		auto gainInBuf = bufs[GainIn].data();
-		gainInSmooth(gainInBuf, juce::Decibels::decibelsToGain(gainInP), numSamples);
+		auto gainInSmoothBuf = gainInBuffer.getArrayOfWritePointers();
+#if PPDHasUnityGain
+		auto unityGainBufs = unityGainBuffer.getArrayOfWritePointers();
+#endif
 		for (auto ch = 0; ch < numChannels; ++ch)
+		{
+			auto smpls = samples[ch];
+			auto& smooth = gainInSmooth[ch];
+			auto gainInBuf = gainInP[ch];
+			
+			auto gisb = gainInSmoothBuf[ch];
+			smooth(gisb, gainInBuf, numSamples);
+
 			for (auto s = 0; s < numSamples; ++s)
-				samples[ch][s] *= gainInBuf[s];
+			{
+				const auto gainInDb = gisb[s];
+				const auto gainIn = Decibels::decibelsToGain(gainInDb);
+#if PPDHasUnityGain
+				gainInBuf[s] = -gainInDb;
 #endif
-#if PPDHasUnityGain && PPDHasGainIn
-		gainP -= gainInP * unityGainP;
+				smpls[s] *= gainIn;
+			}
+		}
+#if PPDHasUnityGain
+		
+		if (!unityGainP)
+			for(auto ch = 0; ch < numChannels; ++ch)
+				SIMD::clear(unityGainBufs[ch], numSamples);
+		else
+			for (auto ch = 0; ch < numChannels; ++ch)
+			{
+				auto unityGainBuf = unityGainBufs[ch];
+				const auto gainInBuf = gainInP[ch];
+				
+				SIMD::copy(unityGainBuf, gainInBuf, numSamples);
+			}
 #endif
-
-		auto mixBuf = bufs[MixW].data();
-		mixSmooth(mixBuf, mixP, numSamples);
-
-		gainP = Decibels::decibelsToGain(gainP);
+#endif
 #if PPDHasPolarity
-		gainP *= polarityP;
-#endif
-		gainSmooth(bufs[Gain].data(), gainP, numSamples);
-
-#if PPDEqualLoudnessMix
-		for (auto s = 0; s < numSamples; ++s)
-		{
-			bufs[MixD][s] = std::sqrt(1.f - mixBuf[s]);
-			bufs[MixW][s] = std::sqrt(mixBuf[s]);
-		}
-#else
-		for (auto s = 0; s < numSamples; ++s)
-		{
-			bufs[MixD][s] = 1.f - mixBuf[s];
-			bufs[MixW][s] = mixBuf[s];
-		}
+		if (polarityP)
+			for (auto ch = 0; ch < numChannels; ++ch)
+			{
+				auto smpls = samples[ch];
+				SIMD::multiply(smpls, -1.f, numSamples);
+			}
 #endif
 	}
 
@@ -149,32 +177,63 @@ namespace audio
 
 			auto smpls = samples[ch];
 
-			for (auto s = 0; s < numSamples; ++s)
-				smpls[s] = dry[s];
+			SIMD::copy(smpls, dry, numSamples);
 		}
 	}
 
-	void DryWetMix::processOutGain(float** samples, int numChannels, int numSamples) const noexcept
+	void DryWetMix::processGainOut(float** samples, int numChannels, int numSamples,
+		float** gainOutP) noexcept
 	{
+#if PPDHasUnityGain
+		auto unityGainBufs = unityGainBuffer.getArrayOfReadPointers();
+#endif
+		auto gainOutSmoothBuf = gainOutBuffer.getArrayOfWritePointers();
 		for (auto ch = 0; ch < numChannels; ++ch)
 		{
-			const auto gainBuf = bufs[Gain].data();
-			SIMD::multiply(samples[ch], gainBuf, numSamples);
+			auto smpls = samples[ch];
+			auto& smooth = gainOutSmooth[ch];
+			auto gainOutBuf = gainOutP[ch];
+#if PPDHasUnityGain
+			const auto unityGainBuf = unityGainBufs[ch];
+#endif
+			auto gosb = gainOutSmoothBuf[ch];
+			smooth(gosb, gainOutBuf, numSamples);
+			
+			for (auto s = 0; s < numSamples; ++s)
+			{
+				auto gainOutDb = gosb[s];
+#if PPDHasUnityGain
+				const auto unityGain = unityGainBuf[s];
+				gainOutDb += unityGain;
+#endif
+				const auto gainOut = Decibels::decibelsToGain(gainOutDb);
+				
+				smpls[s] *= gainOut;
+			}
 		}
 	}
-
-	void DryWetMix::processMix(float** samples, int numChannels, int numSamples) const noexcept
+	
+	void DryWetMix::processMix(float** samples, int numChannels, int numSamples,
+		float** mixP) noexcept
 	{
 		for (auto ch = 0; ch < numChannels; ++ch)
 		{
 			const auto dry = dryBuf.getReadPointer(ch);
-			const auto mixD = bufs[MixD].data();
-			const auto mixW = bufs[MixW].data();
+			
+			auto& smooth = mixSmooth[ch];
+			auto mix = mixP[ch];
 
+			smooth(mix, numSamples);
+			
 			auto smpls = samples[ch];
 
 			for (auto s = 0; s < numSamples; ++s)
-				smpls[s] = dry[s] * mixD[s] + smpls[s] * mixW[s];
+			{
+				auto d = dry[s];
+				auto w = smpls[s];
+				
+				smpls[s] = d + mix[s] * (w - d);
+			}
 		}
 	}
 }
