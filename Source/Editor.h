@@ -3,6 +3,7 @@
 #include "gui/Shader.h"
 #include "gui/ContextMenu.h"
 #include "gui/HighLevel.h"
+#include "gui/ModulatorsEditor.h"
 #include "gui/Tooltip.h"
 
 namespace gui
@@ -39,6 +40,7 @@ protected:
 
         LowLevel lowLevel;
         HighLevel highLevel;
+        ModulatorsComp modsComp;
 
         ContextMenuKnobs contextMenuKnobs;
         ContextMenuButtons contextMenuButtons;

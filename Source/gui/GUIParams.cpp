@@ -73,16 +73,16 @@ namespace gui
             auto dragOffset = dragYNew - dragY;
             if (mouse.mods.isShiftDown())
                 dragOffset *= SensitiveDrag;
-            float newValue;
+            //float newValue;
             switch (state)
             {
             case State::MaxModDepth:
-                newValue = parametr.param.getMaxModDepth() - dragOffset;
-                parametr.param.setMaxModDepth(newValue);
+                //newValue = parametr.param.getMaxModDepth() - dragOffset;
+                //parametr.param.setMaxModDepth(newValue);
                 break;
             case State::Bias:
-                newValue = parametr.param.getModBias() - dragOffset;
-                parametr.param.setModBias(newValue);
+                //newValue = parametr.param.getModBias() - dragOffset;
+                //parametr.param.setModBias(newValue);
                 break;
             }
 
@@ -98,11 +98,10 @@ namespace gui
                 switch (state)
                 {
                 case State::MaxModDepth:
-
-                    parametr.param.setMaxModDepth(0.f);
+                    //parametr.param.setMaxModDepth(0.f);
                     break;
                 case State::Bias:
-                    parametr.param.setModBias(.5f);
+                    //parametr.param.setModBias(.5f);
                     break;
                 }
             }
@@ -129,9 +128,12 @@ namespace gui
         param(*u.getParam(_pID)),
         modDial(u, *this),
         valNorm(param.getValue()),
-        maxModDepth(param.getMaxModDepth()),
-        valMod(param.getValMod()),
-        modBias(param.getModBias()),
+        //maxModDepth(param.getMaxModDepth()),
+        //valMod(param.getValMod()),
+        //modBias(param.getModBias()),
+        maxModDepth(0.f),
+        valMod(0.f),
+        modBias(0.f),
         locked(param.isLocked()),
         modulatable(_modulatable)
     {

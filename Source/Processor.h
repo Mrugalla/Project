@@ -11,13 +11,12 @@
 #include "audio/Oversampling.h"
 #include "audio/Meter.h"
 
-#include "audio/Resonator.h"
+#include "audio/Oscillator.h"
 
 #include "audio/AudioUtils.h"
 
 namespace audio
 {
-    using MacroProcessor = param::MacroProcessor;
     using Timer = juce::Timer;
 
     struct ProcessorBackEnd :
@@ -60,7 +59,8 @@ namespace audio
 
         State state;
         Params params;
-        MacroProcessor macroProcessor;
+        ModSys modSys;
+		
         MIDIManager midiManager;
 
         DryWetMix dryWetMix;
@@ -107,6 +107,7 @@ namespace audio
 
         juce::AudioProcessorEditor* createEditor() override;
 
-        Resonator resonator;
+        //Resonator resonator;
+        RingModSimple<float> ringMod;
     };
 }
