@@ -10,6 +10,7 @@ namespace gui
 #endif
 		macro(u),
 		modDepthLocked(u, "(Un-)Lock this patch's modulation patch."),
+		swapParamWithModDepth(u, "Swap parameter patch with modulation patch."),
 		saveModPatch(u, "Save the current Modulation Patch to disk."),
 		loadModPatch(u, "Load some Modulation Patch from disk."),
 		removeCurModPatch(u, "Remove all current modulations from this patch."),
@@ -74,23 +75,52 @@ namespace gui
 			makeSymbolButton(modDepthLocked, ButtonSymbol::ModDepthLock, 1);
 		}
 
+		addAndMakeVisible(swapParamWithModDepth);
+		{
+			auto& params = utils.getParams();
+
+			swapParamWithModDepth.onClick.push_back([&prms = params](Button&)
+				{
+					for (auto i = static_cast<int>(prms.numParams() - 1); i > 0; --i)
+					{
+						auto& param = *prms[i];
+
+						const auto p = param.getValue();
+						const auto d = param.getMaxModDepth();
+						const auto b = param.getModBias();
+
+						const auto m = p + d;
+
+						param.setValueWithGesture(m);
+						param.setMaxModDepth(-d);
+						param.setModBias(1.f - b);
+					}
+
+					auto& macro = *prms[PID::Macro];
+					macro.setValueWithGesture(1.f - macro.getValue());
+
+				});
+
+			makeSymbolButton(swapParamWithModDepth, ButtonSymbol::SwapParamModDepth);
+		}
+
 		addAndMakeVisible(saveModPatch);
 		{
 			saveModPatch.onClick.push_back([](Button& btn)
 			{
 				auto& utils = btn.getUtils();
-				//const auto& params = utils.getParams();
+				const auto& params = utils.getParams();
 
 				sta::State modPatch;
 
 				for (auto i = 1; i < param::NumParams; ++i)
 				{
-					//const auto& prm = *params[i];
-					//const String key(param::Param::getIDString(prm.id));
-					//String id("value");
-					//const auto val = prm.range.convertFrom0to1(prm.calcValModOf(1.f));
+					const auto& prm = *params[i];
+					const String key(param::Param::getIDString(prm.id));
+					String id("value");
+					const auto val = prm.range.convertFrom0to1(prm.calcValModOf(1.f));
 
-					//modPatch.set(key, id, val, false);
+					modPatch.set(key, id, val, false);
 				}
 
 				auto& props = utils.getProps();
@@ -163,16 +193,14 @@ namespace gui
 				const auto fileTypes = File::TypesOfFileToFind::findFiles;
 				const String extension(".patch");
 				const auto wildCard = "*_-_*" + extension;
-				const RangedDirectoryIterator files
-				(
+				const RangedDirectoryIterator files(
 					file,
 					true,
 					wildCard,
 					fileTypes
 				);
 
-				fileChooser = std::make_unique<FileChooser>
-				(
+				fileChooser = std::make_unique<FileChooser>(
 					"Load ModPatch",
 					file,
 					wildCard
@@ -189,7 +217,7 @@ namespace gui
 						return;
 
 					sta::State modPatch(result.loadFileAsString());
-					//auto& params = u.getParams();
+					auto& params = u.getParams();
 
 					for (auto i = 1; i < param::NumParams; ++i)
 					{
@@ -199,13 +227,13 @@ namespace gui
 						const auto mmdPtr = modPatch.get(idStr, "value");
 						if (mmdPtr != nullptr)
 						{
-							//auto& prm = *params[i];
+							auto& prm = *params[i];
 
-							//const auto val = prm.getValue();
-							//const auto mmd = prm.range.convertTo0to1(static_cast<float>(*mmdPtr));
-
-							//prm.setMaxModDepth(mmd - val);
-							//prm.setModBias(.5f);
+							const auto val = prm.getValue();
+							const auto mmd = prm.range.convertTo0to1(static_cast<float>(*mmdPtr));
+							
+							prm.setMaxModDepth(mmd - val);
+							prm.setModBias(.5f);
 						}
 					}
 
@@ -215,18 +243,19 @@ namespace gui
 
 			makeSymbolButton(loadModPatch, ButtonSymbol::Load);
 		}
+
 		addAndMakeVisible(removeCurModPatch);
 		{
-			removeCurModPatch.onClick.push_back([](Button&)
+			removeCurModPatch.onClick.push_back([](Button& btn)
 			{
-				//auto& utils = btn.getUtils();
-				//auto& params = utils.getParams();
+				auto& utils = btn.getUtils();
+				auto& params = utils.getParams();
 
 				for (auto i = 0; i < param::NumParams; ++i)
 				{
-					//auto& param = *params[i];
-					//param.setModBias(.5f);
-					//param.setMaxModDepth(0.f);
+					auto& param = *params[i];
+					param.setModBias(.5f);
+					param.setMaxModDepth(0.f);
 				}
 			});
 
@@ -360,6 +389,7 @@ namespace gui
 		layout.place(removeCurModPatch, 1.f, 3.f + patchBrowserOffset + .6666f, 1.f, .3333f, true);
 
 		layout.place(modDepthLocked, 7.f, 3.f + patchBrowserOffset, 1.f, .5f, true);
+		layout.place(swapParamWithModDepth, 7.f, 3.5f + patchBrowserOffset, 1.f, .5f, true);
 
 #if PPDHasGainIn
 		layout.place(gainIn, 1.f, 5.f + patchBrowserOffset, 2.5f, 2.f, true);

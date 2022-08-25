@@ -7,14 +7,10 @@
 
 #include "../arch/State.h"
 #include "../arch/Range.h"
-#include "../arch/Smooth.h"
 
 namespace param
 {
 	using String = juce::String;
-	using AudioBuffer = juce::AudioBuffer<float>;
-	using Smooth = smooth::Lowpass<float>;
-	using SIMD = juce::FloatVectorOperations;
 
 	String toID(const String&);
 
@@ -42,7 +38,7 @@ namespace param
 		Power,
 
 		// low level parameters
-		RingModFreq,
+		ResonatorFeedback,
 
 		NumParams
 	};
@@ -78,7 +74,6 @@ namespace param
 		StereoConfig,
 		Voices,
 		Pan,
-		FilterType,
 		NumUnits
 	};
 
@@ -101,12 +96,8 @@ namespace param
 	public:
 		Param(const PID, const Range&, const float/*_valDenormDefault*/,
 			const ValToStrFunc&, const StrToValFunc&,
-			State&, const Unit = Unit::NumUnits,
-			bool = false, bool = false, bool = false);
+			State&, const Unit = Unit::NumUnits);
 
-		/*blockSize*/
-		void prepare(int);
-		
 		void savePatch(juce::ApplicationProperties&) const;
 
 		void loadPatch(juce::ApplicationProperties&);
@@ -128,22 +119,25 @@ namespace param
 
 		void endGesture();
 
-		float** getValModNorm() noexcept;
+		float getMaxModDepth() const noexcept;
 
-		const float** getValModNorm() const noexcept;
+		void setMaxModDepth(float) noexcept;
 
-		float** getValModDenorm() noexcept;
+		/*macro*/
+		float calcValModOf(float) const noexcept;
 
-		const float** getValModDenorm() const noexcept;
+		float getValMod() const noexcept;
+
+		float getValModDenorm() const noexcept;
+
+		void setModBias(float) noexcept;
+
+		float getModBias() const noexcept;
 
 		void setDefaultValue(float/*norm*/) noexcept;
 
 		// called by processor to update modulation value(s)
-		void processBlockInit(int, int) noexcept;
-		
-		void modulate(float**, int, int) noexcept;
-
-		void processBlockEnd(int, int) noexcept;
+		void modulate(float/*macro*/) noexcept;
 
 		float getDefaultValue() const override;
 
@@ -167,24 +161,25 @@ namespace param
 		void setLocked(bool) noexcept;
 		void switchLock() noexcept;
 
+		void setModDepthLocked(bool) noexcept;
+
+		float biased(float /*start*/, float /*end*/, float /*bias [0,1]*/, float /*x*/) const noexcept;
+
 		static String getIDString(PID);
 
 		const PID id;
 		const Range range;
-		const int numChannelsMax;
-		int blockSize;
 	protected:
 		State& state;
 		float valDenormDefault;
-		std::atomic<float> value;
-		AudioBuffer valModNorm, valModDenorm;
+		std::atomic<float> valNorm, maxModDepth, valMod, modBias;
 		ValToStrFunc valToStr;
 		StrToValFunc strToVal;
 		Unit unit;
 
 		std::atomic<bool> locked, inGesture;
 
-		const bool needsDenorm;
+		bool modDepthLocked;
 	};
 
 	struct Params
@@ -194,9 +189,6 @@ namespace param
 
 		Params(AudioProcessor&, State&);
 
-		/* blockSize */
-		void prepare(int);
-		
 		void loadPatch(juce::ApplicationProperties&);
 
 		void savePatch(juce::ApplicationProperties&) const;
@@ -211,10 +203,6 @@ namespace param
 		void setModDepthLocked(bool) noexcept;
 		void switchModDepthLocked() noexcept;
 
-		void processBlockInit(int, int) noexcept;
-
-		void processBlockEnd(int, int) noexcept;
-		
 		Param* operator[](int) noexcept;
 		const Param* operator[](int) const noexcept;
 		Param* operator[](PID) noexcept;
@@ -250,8 +238,7 @@ namespace param
 		StrToValFunc ms();
 		StrToValFunc db();
 		StrToValFunc voices();
-		StrToValFunc pan(Params&);
-		StrToValFunc filterType();
+		StrToValFunc pan(const Params&);
 	}
 
 	namespace valToStr
@@ -275,132 +262,21 @@ namespace param
 		ValToStrFunc db();
 		ValToStrFunc empty();
 		ValToStrFunc voices();
-		ValToStrFunc pan(Params&);
-		ValToStrFunc filterType();
+		ValToStrFunc pan(const Params&);
 	}
 
-	/* PID, State, valDenormDefault, Range, Unit, isBuffered, isStereo, needsDenorm */
 	Param* makeParam(PID, State&,
-		float = 1.f, const Range& = Range(0.f, 1.f),
-		Unit = Unit::Percent, bool = false, bool = false, bool = false);
+		float /*valDenormDefault*/ = 1.f, const Range& = Range(0.f, 1.f),
+		Unit = Unit::Percent);
 
-	Param* makeParamPan(PID, State&, Params&);
+	Param* makeParamPan(PID, State&, const Params&);
 
-	enum class ModType
+	struct MacroProcessor
 	{
-		Macro,
-		EnvFol,
-		EnvGen1,
-		EnvGen2,
-		LFO1,
-		LFO2,
-		Randomizer1,
-		Randomizer2,
-		NumMods
-	};
-	
-	static constexpr int NumMods = static_cast<int>(ModType::NumMods);
-	String toString(ModType);
-	
-	ModType fromString(const String&);
-	
-	struct Mod
-	{
-		Mod(ModType, std::vector<Param*> && = {});
-		
-		bool operator==(ModType) const noexcept;
-		
-		bool hasParam(Param*) const noexcept;
+		MacroProcessor(Params&);
 
-		bool hasParam(Param&) const noexcept;
+		void operator()() noexcept;
 
-		/* sampleRate, blockSize */
-		void prepare(float, int);
-		
-		/* numChannels, numSamples */
-		void processBlock(int, int) noexcept;
-
-		const float** data() const noexcept;
-		
-		const ModType type;
-	protected:
-		const std::vector<Param*> params;
-		std::array<Smooth, 2> smooths;
-		AudioBuffer buffer;
-
-		/* modBuffer, numChannels, numSamples */
-		void processBlockMacro(float**, int, int) noexcept;
-	};
-
-	using Mods = std::array<Mod, NumMods>;
-	
-	struct Dest
-	{
-		static constexpr int RemapCurveSize = 1 << 11;
-		static constexpr float RemapCurveSizeF = static_cast<float>(RemapCurveSize);
-		
-		Dest(Params&, const Mods&);
-
-		/* blockSize */
-		void prepare(int);
-
-		/* numChannels, numSamples */
-		void operator()(int, int) noexcept;
-		
 		Params& params;
-		const Mods& mods;
-		AudioBuffer destBuffer;
-		std::array<float, RemapCurveSize + 4> remapCurve;
-		float modDepth, bidirectional;
-		int pIdx, mIdx;
-		bool active;
 	};
-
-	String toString(Dest&);
-
-	static constexpr int NumDests = 8;
-	using DestArray = std::array<Dest, NumDests>;
-	
-	constexpr auto sequenceForDestArray(const std::array<Dest, NumDests>&)
-	{
-		return std::make_index_sequence<NumDests>();
-	}
-
-	struct Dests
-	{
-		Dests(Params&, Mods&);
-
-		void prepare(int);
-
-		void operator()(int, int) noexcept;
-
-		DestArray dests;
-		
-	private:
-		template <std::size_t... Ix>
-		Dests(Params& p, Mods& m, std::index_sequence<Ix...>)
-			: dests{ {(Ix, Dest{p, m})...} }
-		{}
-	};
-	
-	String toString(Dests&);
-	
-	struct ModSys
-	{
-		ModSys(State&, Params&);
-
-		/* sampleRate, blockSize */
-		void prepare(float, int);
-		
-		/* numChannels, numSamples */
-		void operator()(int, int) noexcept;
-		
-	protected:
-		State& state;
-		Params& params;
-		Mods mods;
-		std::array<int, NumMods> modsIdx;
-		Dests dests;
-	};
-		
 }

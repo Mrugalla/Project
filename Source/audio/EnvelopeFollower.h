@@ -10,7 +10,7 @@ namespace audio
 	{
 		enum class State { Rise, Fall, NumStates };
 
-		using Smoothie = smooth::Lowpass<float>;
+		using Smoothie = smooth::Smooth<float>;
 
 		EnvFol() :
 			smoothie(0.f),

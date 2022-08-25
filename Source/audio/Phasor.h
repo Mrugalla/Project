@@ -19,24 +19,13 @@ namespace audio
 	{
 		using Phase = PhaseInfo<Float>;
 
-		void setFrequencyHz(Float hz) noexcept
-		{
-			inc = hz * fsInv;
-		}
-
 		Phasor(Float _phase = static_cast<Float>(0), Float _inc = static_cast<Float>(0)) :
 			phase(_phase, false),
-			inc(_inc),
-			fsInv(static_cast<Float>(1))
+			inc(_inc)
 		{
 
 		}
 
-		void prepare(Float _fsInv) noexcept
-		{
-			fsInv = _fsInv;
-		}
-		
 		Phase operator()() noexcept
 		{
 			phase.phase += inc;
@@ -51,6 +40,6 @@ namespace audio
 		}
 
 		Phase phase;
-		Float inc, fsInv;
+		float inc;
 	};
 }

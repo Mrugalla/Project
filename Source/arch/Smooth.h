@@ -2,28 +2,8 @@
 
 namespace smooth
 {
-	// a block-based parameter smoother.
 	template<typename Float>
-	struct Block
-	{
-		/* startVal */
-		Block(float = 0.f);
-
-		/* bufferOut, bufferIn, numSamples */
-		void operator()(Float*, Float*, int) noexcept;
-
-		/* buffer, val, numSamples */
-		void operator()(Float*, Float, int) noexcept;
-
-		/* buffer, numSamples */
-		void operator()(Float*, int) noexcept;
-
-	protected:
-		Float curVal;
-	};
-	
-	template<typename Float>
-	struct Lowpass
+	struct Smooth
 	{
 		static constexpr Float Pi = static_cast<Float>(3.14159265359);
 		static constexpr Float Tau = Pi * static_cast<Float>(2);
@@ -34,9 +14,9 @@ namespace smooth
 		void makeFromDecayInHz(Float, Float/*Fs*/) noexcept;
 		void makeFromDecayInMs(Float, Float/*Fs*/) noexcept;
 
-		void copyCutoffFrom(const Lowpass<Float>&) noexcept;
+		void copyCutoffFrom(const Smooth<Float>&) noexcept;
 
-		Lowpass(const Float /*_startVal*/ = static_cast<Float>(0));
+		Smooth(const Float /*_startVal*/ = static_cast<Float>(0));
 
 		void reset();
 
@@ -52,25 +32,4 @@ namespace smooth
 		void setX(Float) noexcept;
 	};
 
-	template<typename Float>
-	struct Smooth
-	{
-		/*smoothLenMs, Fs*/
-		void makeFromDecayInMs(Float, Float);
-
-		Smooth(float /*startVal*/ = 0.f);
-
-		/* bufferOut, bufferIn, numSamples */
-		void operator()(Float*, Float*, int) noexcept;
-
-		/* buffer, val, numSamples */
-		void operator()(Float*, Float, int) noexcept;
-
-		/* buffer, numSamples */
-		void operator()(Float*, int) noexcept;
-
-	protected:
-		Block<Float> block;
-		Lowpass<Float> lowpass;
-	};
 }

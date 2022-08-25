@@ -1,6 +1,5 @@
 #include "Processor.h"
 #include "Editor.h"
-#include "audio/Bitcrusher.h"
 
 namespace audio
 {
@@ -29,7 +28,7 @@ namespace audio
         sus(*this),
         state(),
         params(*this, state),
-        modSys(state, params),
+        macroProcessor(params),
         midiManager(params, state),
 #if PPDHasHQ
         oversampler(),
@@ -154,7 +153,7 @@ namespace audio
     void ProcessorBackEnd::timerCallback()
     {
 #if PPDHasHQ
-        const auto ovsrEnabled = params[PID::HQ]->getValModNorm()[0][0] > .5f;
+        const auto ovsrEnabled = params[PID::HQ]->getValMod() > .5f;
         if (oversampler.isEnabled() != ovsrEnabled)
             forcePrepareToPlay();
 #endif
@@ -162,6 +161,8 @@ namespace audio
 
     void ProcessorBackEnd::processBlockBypassed(AudioBuffer& buffer, juce::MidiBuffer&)
     {
+        macroProcessor();
+
         auto mainBus = getBus(true, 0);
         auto mainBuffer = mainBus->getBusBuffer(buffer);
 
@@ -175,8 +176,6 @@ namespace audio
         const auto constSamples = mainBuffer.getArrayOfReadPointers();
         const auto numChannels = mainBuffer.getNumChannels();
 
-        modSys(numChannels, numSamples);
-		
         dryWetMix.processBypass(samples, numChannels, numSamples);
 #if PPDHasGainIn
         meters.processIn(constSamples, numChannels, numSamples);
@@ -188,7 +187,7 @@ namespace audio
 
     Processor::Processor() :
         ProcessorBackEnd(),
-        ringMod()
+        resonator(midiVoices)
     {
     }
 
@@ -196,7 +195,7 @@ namespace audio
     {
         auto latency = 0;
 #if PPDHasHQ
-        oversampler.setEnabled(params[PID::HQ]->getValue() > .5f);
+        oversampler.setEnabled(params[PID::HQ]->getValMod() > .5f);
         oversampler.prepare(sampleRate, maxBlockSize);
         const auto sampleRateUp = oversampler.getFsUp();
         const auto sampleRateUpF = static_cast<float>(sampleRateUp);
@@ -204,23 +203,25 @@ namespace audio
         latency = oversampler.getLatency();
 #endif
         const auto sampleRateF = static_cast<float>(sampleRate);
-		
-        modSys.prepare(sampleRateF, maxBlockSize);
+
         midiVoices.prepare(blockSizeUp);
 
-		
-        ringMod.prepare(sampleRateUpF, blockSizeUp);
-
+        resonator.prepare(sampleRateUpF, blockSizeUp);
 
         dryWetMix.prepare(sampleRateF, maxBlockSize, latency);
+
         meters.prepare(sampleRateF, maxBlockSize);
+
         setLatencySamples(latency);
+
         sus.prepareToPlay();
     }
 
     void Processor::processBlock(AudioBuffer& buffer, juce::MidiBuffer& midi)
     {
         const ScopedNoDenormals noDenormals;
+
+        macroProcessor();
 
         auto mainBus = getBus(true, 0);
         auto mainBuffer = mainBus->getBusBuffer(buffer);
@@ -234,27 +235,27 @@ namespace audio
 
         midiManager(midi, numSamples);
 
+        if (params[PID::Power]->getValMod() < .5f)
+            return processBlockBypassed(buffer, midi);
+
         const auto samples = mainBuffer.getArrayOfWritePointers();
         const auto constSamples = mainBuffer.getArrayOfReadPointers();
         const auto numChannels = mainBuffer.getNumChannels();
 
-        modSys(numChannels, numSamples);
-		
-        if (params[PID::Power]->getValModNorm()[0][0] < .5f)
-            return processBlockBypassed(buffer, midi);
-		
         dryWetMix.saveDry(
             samples,
             numChannels,
-            numSamples
+            numSamples,
 #if PPDHasGainIn
-            , params[PID::GainIn]->getValModDenorm()
+            params[PID::GainIn]->getValueDenorm(),
 #endif
+            params[PID::Mix]->getValMod(),
+            params[PID::Gain]->getValModDenorm()
 #if PPDHasPolarity
-            , params[PID::Polarity]->getValModNorm()[0][0] > .5f
+            , (params[PID::Polarity]->getValMod() > .5f ? -1.f : 1.f)
 #endif
 #if PPDHasUnityGain && PPDHasGainIn
-            , params[PID::UnityGain]->getValModNorm()[0][0] > .5f
+            , params[PID::UnityGain]->getValMod()
 #endif
         );
 
@@ -263,7 +264,7 @@ namespace audio
 #endif
 
 #if PPDHasStereoConfig
-        midSideEnabled = numChannels == 2 && params[PID::StereoConfig]->getValModNorm()[0][0] > .5f;
+        midSideEnabled = numChannels == 2 && params[PID::StereoConfig]->getValMod() > .5f;
         if (midSideEnabled)
         {
             encodeMS(samples, numSamples, 0);
@@ -304,8 +305,7 @@ namespace audio
 
         }
 #else
-        processBlockCustom
-        (
+        processBlockCustom(
             resampledMainBuf.getArrayOfWritePointers(),
             resampledMainBuf.getNumChannels(),
             resampledMainBuf.getNumSamples()
@@ -326,13 +326,9 @@ namespace audio
         }
 #endif
         
-        dryWetMix.processGainOut(samples, numChannels, numSamples,
-            params[PID::Gain]->getValModDenorm()
-        );
+        dryWetMix.processOutGain(samples, numChannels, numSamples);
         meters.processOut(constSamples, numChannels, numSamples);
-        dryWetMix.processMix(samples, numChannels, numSamples,
-            params[PID::Mix]->getValModNorm()
-        );
+        dryWetMix.processMix(samples, numChannels, numSamples);
 
 #if JUCE_DEBUG
         for (auto ch = 0; ch < numChannels; ++ch)
@@ -356,10 +352,9 @@ namespace audio
 #endif
     ) noexcept
     {
-        //auto type = (IIR_4P::Type)std::rint(params[PID::FilterType]->getValModDenorm()[0][0]);
-        auto freq = params[PID::RingModFreq]->getValModDenorm();
-        
-        ringMod(samples, numChannels, numSamples, freq);
+        auto fb = params[PID::ResonatorFeedback]->getValModDenorm();
+
+        resonator(samples, numChannels, numSamples, fb);
     }
 
     void Processor::releaseResources() {}

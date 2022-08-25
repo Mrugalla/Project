@@ -274,21 +274,14 @@ namespace gui
             k.notify(EvtType::ParametrDragged, &k);
         };
 
-        enum {
-            Value,
-			/*
-            MaxModDepth, ValMod, ModBias,
-            */
-            Meter,
-            NumValues
-        };
+        enum { Value, MaxModDepth, ValMod, ModBias, Meter, NumValues };
         knob.values.reserve(NumValues);
         auto& values = knob.values;
 
         values.emplace_back(param->getValue());
-        //values.emplace_back(param->getMaxModDepth());
-        //values.emplace_back(param->getValMod());
-        //values.emplace_back(param->getModBias());
+        values.emplace_back(param->getMaxModDepth());
+        values.emplace_back(param->getValMod());
+        values.emplace_back(param->getModBias());
         values.emplace_back(0.f);
 
         if (meter != nullptr)
@@ -299,19 +292,19 @@ namespace gui
                 k.locked = lckd;
 
             const auto vn = param->getValue();
-            //const auto mmd = param->getMaxModDepth();
-            //const auto vm = param->getValMod();
-            //const auto mb = param->getModBias();
+            const auto mmd = param->getMaxModDepth();
+            const auto vm = param->getValMod();
+            const auto mb = param->getModBias();
             const auto metr = std::floor(meter->load() * 128.f) * .0078125f;
 
             auto& vals = k.values;
 
-            if (vals[Value] != vn/* || vals[MaxModDepth] != mmd || vals[ValMod] != vm || vals[ModBias] != mb*/ || vals[Meter] != metr)
+            if (vals[Value] != vn || vals[MaxModDepth] != mmd || vals[ValMod] != vm || vals[ModBias] != mb || vals[Meter] != metr)
             {
                 vals[Value] = vn;
-                //vals[MaxModDepth] = mmd;
-                //vals[ValMod] = vm;
-                //vals[ModBias] = mb;
+                vals[MaxModDepth] = mmd;
+                vals[ValMod] = vm;
+                vals[ModBias] = mb;
                 vals[Meter] = metr;
                 return true;
             }
@@ -326,18 +319,18 @@ namespace gui
                 k.setLocked(lckd);
 
             const auto vn = param->getValue();
-            //const auto mmd = param->getMaxModDepth();
-            //const auto vm = param->getValMod();
-            //const auto mb = param->getModBias();
+            const auto mmd = param->getMaxModDepth();
+            const auto vm = param->getValMod();
+            const auto mb = param->getModBias();
 
             auto& vals = k.values;
 
-            if (vals[Value] != vn/* || vals[MaxModDepth] != mmd || vals[ValMod] != vm || vals[ModBias] != mb*/)
+            if (vals[Value] != vn || vals[MaxModDepth] != mmd || vals[ValMod] != vm || vals[ModBias] != mb)
             {
                 vals[Value] = vn;
-                //vals[MaxModDepth] = mmd;
-                //vals[ValMod] = vm;
-                //vals[ModBias] = mb;
+                vals[MaxModDepth] = mmd;
+                vals[ValMod] = vm;
+                vals[ModBias] = mb;
                 return true;
             }
 
@@ -396,16 +389,16 @@ namespace gui
                     const auto speed = 1.f / utils.getDragSpeed();
                     dragOffset *= speed;
 
-                    //float newValue;
+                    float newValue;
                     switch (state)
                     {
                     case StateMaxModDepth:
-                        //newValue = param->getMaxModDepth() - dragOffset.y;
-                        //param->setMaxModDepth(newValue);
+                        newValue = param->getMaxModDepth() - dragOffset.y;
+                        param->setMaxModDepth(newValue);
                         break;
                     case StateModBias:
-                        //newValue = param->getModBias() - dragOffset.y;
-                        //param->setModBias(newValue);
+                        newValue = param->getModBias() - dragOffset.y;
+                        param->setModBias(newValue);
                         break;
                     }
                 };
@@ -416,8 +409,8 @@ namespace gui
                     {
                         if (mouse.mods.isCtrlDown())
                         {
-                            //param->setMaxModDepth(0.f);
-                            //param->setModBias(.5f);
+                            param->setMaxModDepth(0.f);
+                            param->setModBias(.5f);
                         }
                         else if (mouse.mods.isRightButtonDown())
                         {
@@ -445,8 +438,8 @@ namespace gui
 
                 dial.onDoubleClick = [param](Knob&)
                 {
-                    //param->setMaxModDepth(0.f);
-                    //param->setModBias(.5f);
+                    param->setMaxModDepth(0.f);
+                    param->setModBias(.5f);
                 };
 
                 knob.comps.push_back(std::move(modDial));
@@ -481,7 +474,7 @@ namespace gui
             {
                 const auto& vals = k.values;
                 const auto thicc = k.getUtils().thicc;
-                //const auto thicc2 = thicc * 2.f;
+                const auto thicc2 = thicc * 2.f;
                 const auto thicc3 = thicc * 3.f;
                 const auto thicc5 = thicc * 5.f;
                 Stroke strokeType(thicc, Stroke::JointStyle::curved, Stroke::EndCapStyle::butt);
@@ -549,10 +542,9 @@ namespace gui
 
                 const auto valNormAngle = vals[Value] * angleRange;
                 const auto valAngle = -angleWidth + valNormAngle;
-                //const auto radiusExt = radius + thicc;
+                const auto radiusExt = radius + thicc;
 
                 // draw modulation
-                /*
                 if (modulatable)
                 {
                     const auto valModAngle = vals[ValMod] * angleRange;
@@ -595,7 +587,6 @@ namespace gui
                         g.strokePath(modPath, strokeType);
                     }
                 }
-				*/
                 // draw tick
                 {
                     const auto tickLine = LineF::fromStartAndAngle(centre, radius, valAngle);
@@ -610,7 +601,7 @@ namespace gui
         {
             const auto& vals = k.values;
             const auto thicc = k.getUtils().thicc;
-            //const auto thicc2 = thicc * 2.f;
+            const auto thicc2 = thicc * 2.f;
             const auto thicc3 = thicc * 3.f;
             const auto thicc5 = thicc * 5.f;
             Stroke strokeType(thicc, Stroke::JointStyle::curved, Stroke::EndCapStyle::butt);
@@ -654,10 +645,9 @@ namespace gui
 
             const auto valNormAngle = vals[Value] * angleRange;
             const auto valAngle = -angleWidth + valNormAngle;
-            //const auto radiusExt = radius + thicc;
+            const auto radiusExt = radius + thicc;
 
             // draw modulation
-			/*
             if (modulatable)
             {
                 const auto valModAngle = vals[ValMod] * angleRange;
@@ -700,7 +690,6 @@ namespace gui
                     g.strokePath(modPath, strokeType);
                 }
             }
-			*/
             // draw tick
             {
                 const auto tickLine = LineF::fromStartAndAngle(centre, radius, valAngle);

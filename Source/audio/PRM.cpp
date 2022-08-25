@@ -24,4 +24,9 @@ namespace audio
 		smooth(buf.data(), numSamples);
 		return buf.data();
 	}
+
+	float PRM::operator()(float value) noexcept
+	{
+		return smooth(value);
+	}
 }

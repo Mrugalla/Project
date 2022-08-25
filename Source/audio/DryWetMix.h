@@ -23,47 +23,56 @@ namespace audio
 			int latency;
 		};
 
+		enum
+		{
+#if PPDHasGainIn
+			GainIn,
+#endif
+			MixD,
+			MixW,
+			Gain,
+			NumBufs
+		};
+
 	public:
 		DryWetMix();
 
-		/* sampleRate, blockSize, latency */
+		/*sampleRate, blockSize, latency*/
 		void prepare(float, int, int);
 
-		/* samples, numChannels, numSamples, gainInP, mixP, gainP, polarityP, unityGainP */
+		/*samples, numChannels, numSamples, gainInP, mixP, gainP, polarityP, unityGainP*/
 		void saveDry(
-			float**, int, int
+			float**, int, int,
 #if PPDHasGainIn
-			, float**
+			float,
 #endif
+			float, float
 #if PPDHasPolarity
-			, bool
+			, float
 #endif
 #if PPDHasUnityGain && PPDHasGainIn
-			, bool
+			, float
 #endif
 		) noexcept;
 
 		/*samples, numChannels, numSamples*/
 		void processBypass(float**, int, int) noexcept;
 
-		/*samples, numChannels, numSamples, gainOutP */
-		void processGainOut(float**, int, int, float**) noexcept;
-		
-		/*samples, numChannels, numSamples, mixP */
-		void processMix(float**, int, int, float**) noexcept;
+		/*samples, numChannels, numSamples*/
+		void processOutGain(float**, int, int) const noexcept;
+
+		/*samples, numChannels, numSamples*/
+		void processMix(float**, int, int) const noexcept;
 
 	protected:
 		LatencyCompensation latencyCompensation;
 
+		std::array<std::vector<float>, NumBufs> bufs;
+		
 #if PPDHasGainIn
-		std::array<Smooth, 2> gainInSmooth;
-		AudioBuffer gainInBuffer;
-#if PPDHasUnityGain
-		AudioBuffer unityGainBuffer;
+		Smooth gainInSmooth;
 #endif
-#endif
-		std::array<Smooth, 2> mixSmooth, gainOutSmooth;
-		AudioBuffer gainOutBuffer;
+		Smooth mixSmooth, gainSmooth;
 
 		AudioBuffer dryBuf;
 	};

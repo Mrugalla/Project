@@ -15,7 +15,6 @@ namespace gui
 
         lowLevel(utils),
         highLevel(utils, &lowLevel),
-        modsComp(utils),
 
         contextMenuKnobs(utils),
         contextMenuButtons(utils),
@@ -32,7 +31,7 @@ namespace gui
 
         layout.init(
             { 1, 3 },
-            { 2, 13, 5, 1 }
+            { 2, 13, 1 }
         );
 
         addAndMakeVisible(tooltip);
@@ -43,7 +42,6 @@ namespace gui
 
         addAndMakeVisible(lowLevel);
         addAndMakeVisible(highLevel);
-        addAndMakeVisible(modsComp);
 
         highLevel.init();
 
@@ -86,7 +84,6 @@ namespace gui
         layout.place(pluginTitle, 1, 0, 1, 1, false);
         layout.place(lowLevel, 1, 1, 1, 1, false);
         layout.place(highLevel, 0, 0, 1, 2, false);
-        layout.place(modsComp, 0, 2, 2, 1, false);
 
         tooltip.setBounds(layout.bottom().toNearestInt());
 

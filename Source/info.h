@@ -25,13 +25,6 @@ HOW TO USE:
 
 TO DO:
 
-Param prepare
-	if oversampling enabled some need blockSizeUp
-
-Frequency StringToValue
-	enter note values like C2, D#1, Eb3
-	and more specific ones like C3-edo7-root42-tune432
-
 GainIn GainOut Meters
 	crash -nan if too much gain
 
@@ -40,13 +33,13 @@ Colours
 	dark colours make it too dark
 
 highlevel
-	"remove dc offset" switch (steep highpass)
+	remove dc offset switch (steep highpass)
 		FIR or IIR? which freq? how steep?
 
 when saving a modpatch the preset browser needs to update its list too
 
 Pan Knob
-	when value near 0 draw "C" and not "0" or "-0"
+	when value near 0 definitely draw C and not 0
 
 Knob
 	double-clicks don't always work

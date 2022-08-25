@@ -44,7 +44,6 @@
         <FILE id="abkRAU" name="nel19.ttf" compile="0" resource="1" file="Source/fonts/nel19.ttf"/>
       </GROUP>
       <GROUP id="{D379AB76-3EAE-A37D-31CD-FC91511F3FC1}" name="arch">
-        <FILE id="XcXFuQ" name="Conversion.h" compile="0" resource="0" file="Source/arch/Conversion.h"/>
         <FILE id="OiS45d" name="FormularParser.h" compile="0" resource="0"
               file="Source/arch/FormularParser.h"/>
         <FILE id="f4V9L3" name="Interpolation.h" compile="0" resource="0" file="Source/arch/Interpolation.h"/>
@@ -55,8 +54,6 @@
         <FILE id="Uad8Jv" name="State.h" compile="0" resource="0" file="Source/arch/State.h"/>
       </GROUP>
       <GROUP id="{DA435779-5001-4379-F809-3E7C21D55DC0}" name="gui">
-        <FILE id="EO4MFD" name="ModulatorsEditor.h" compile="0" resource="0"
-              file="Source/gui/ModulatorsEditor.h"/>
         <FILE id="l3bsRz" name="MIDIVoicesComp.h" compile="0" resource="0"
               file="Source/gui/MIDIVoicesComp.h"/>
         <FILE id="v9ACbb" name="LogoComp.h" compile="0" resource="0" file="Source/gui/LogoComp.h"/>
@@ -112,7 +109,6 @@
         <FILE id="KPtX3O" name="DryWetMix.h" compile="0" resource="0" file="Source/audio/DryWetMix.h"/>
         <FILE id="dgpmul" name="EnvelopeFollower.h" compile="0" resource="0"
               file="Source/audio/EnvelopeFollower.h"/>
-        <FILE id="D15OfA" name="Filter.h" compile="0" resource="0" file="Source/audio/Filter.h"/>
         <FILE id="kQwYTy" name="Meter.cpp" compile="1" resource="0" file="Source/audio/Meter.cpp"/>
         <FILE id="TN2ewh" name="Meter.h" compile="0" resource="0" file="Source/audio/Meter.h"/>
         <FILE id="vVTypK" name="MIDILearn.cpp" compile="1" resource="0" file="Source/audio/MIDILearn.cpp"/>
