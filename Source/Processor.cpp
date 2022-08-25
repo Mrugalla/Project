@@ -235,13 +235,13 @@ namespace audio
 
         midiManager(midi, numSamples);
 
-        if (params[PID::Power]->getValMod() < .5f)
-            return processBlockBypassed(buffer, midi);
-
         const auto samples = mainBuffer.getArrayOfWritePointers();
         const auto constSamples = mainBuffer.getArrayOfReadPointers();
         const auto numChannels = mainBuffer.getNumChannels();
 
+        if (params[PID::Power]->getValMod() < .5f)
+            return processBlockBypassed(buffer, midi);
+		
         dryWetMix.saveDry(
             samples,
             numChannels,
@@ -305,7 +305,8 @@ namespace audio
 
         }
 #else
-        processBlockCustom(
+        processBlockCustom
+        (
             resampledMainBuf.getArrayOfWritePointers(),
             resampledMainBuf.getNumChannels(),
             resampledMainBuf.getNumSamples()

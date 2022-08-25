@@ -1,6 +1,5 @@
 #pragma once
-#include <vector>
-#include "../arch/Smooth.h"
+#include "AudioUtils.h"
 
 namespace audio
 {
@@ -18,10 +17,7 @@ namespace audio
 		/* numSamples */
 		float* operator()(int) noexcept;
 
-		/* value */
-		float operator()(float) noexcept;
-
-		smooth::Smooth<float> smooth;
+		Smooth smooth;
 		std::vector<float> buf;
 	};
 }
