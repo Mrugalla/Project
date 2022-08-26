@@ -7,14 +7,10 @@
 
 #include "../arch/State.h"
 #include "../arch/Range.h"
-#include "../arch/Smooth.h"
 
 namespace param
 {
 	using String = juce::String;
-	using AudioBuffer = juce::AudioBuffer<float>;
-	using Smooth = smooth::Lowpass<float>;
-	using SIMD = juce::FloatVectorOperations;
 
 	String toID(const String&);
 
@@ -78,7 +74,6 @@ namespace param
 		StereoConfig,
 		Voices,
 		Pan,
-		FilterType,
 		NumUnits
 	};
 
@@ -243,8 +238,7 @@ namespace param
 		StrToValFunc ms();
 		StrToValFunc db();
 		StrToValFunc voices();
-		StrToValFunc pan(Params&);
-		StrToValFunc filterType();
+		StrToValFunc pan(const Params&);
 	}
 
 	namespace valToStr
@@ -268,15 +262,14 @@ namespace param
 		ValToStrFunc db();
 		ValToStrFunc empty();
 		ValToStrFunc voices();
-		ValToStrFunc pan(Params&);
-		ValToStrFunc filterType();
+		ValToStrFunc pan(const Params&);
 	}
 
 	Param* makeParam(PID, State&,
 		float /*valDenormDefault*/ = 1.f, const Range& = Range(0.f, 1.f),
 		Unit = Unit::Percent);
 
-	Param* makeParamPan(PID, State&, Params&);
+	Param* makeParamPan(PID, State&, const Params&);
 
 	struct MacroProcessor
 	{

@@ -58,13 +58,10 @@ namespace audio
 	DryWetMix::DryWetMix() :
 		latencyCompensation(),
 
-		buffers(),
+		bufs(),
 
-#if PPDHasGainIn
-		gainInSmooth(0.f),
-#endif
 		mixSmooth(1.f),
-		gainOutSmooth(1.f),
+		gainSmooth(1.f),
 
 		dryBuf()
 	{}
@@ -72,22 +69,21 @@ namespace audio
 	void DryWetMix::prepare(float sampleRate, int blockSize, int latency)
 	{
 		latencyCompensation.prepare(blockSize, latency);
+
+		mixSmooth.makeFromDecayInMs(20.f, sampleRate);
+		gainSmooth.makeFromDecayInMs(20.f, sampleRate);
+
 		dryBuf.setSize(2, blockSize, false, true, false);
 
-		buffers.setSize(NumBufs, blockSize, false, true, false);
-
-#if PPDHasGainIn
-		gainInSmooth.makeFromDecayInMs(20.f, sampleRate);
-#endif
-		mixSmooth.makeFromDecayInMs(20.f, sampleRate);
-		gainOutSmooth.makeFromDecayInMs(20.f, sampleRate);
+		for (auto& buf : bufs)
+			buf.resize(blockSize);
 	}
 
 	void DryWetMix::saveDry(float** samples, int numChannels, int numSamples,
 #if PPDHasGainIn
 		float gainInP,
 #endif
-		float mixP, float gainOutP
+		float mixP, float gainP
 #if PPDHasPolarity
 		, float polarityP
 #endif
@@ -96,51 +92,51 @@ namespace audio
 #endif
 	) noexcept
 	{
-		latencyCompensation
-		(
+		latencyCompensation(
 			dryBuf.getArrayOfWritePointers(),
 			samples,
 			numChannels,
 			numSamples
 		);
 
-		auto bufs = buffers.getArrayOfWritePointers();
-
 #if PPDHasGainIn
-		{
-			auto gainInBuf = bufs[GainIn];
-			gainInSmooth(gainInBuf, decibelToGain(gainInP), numSamples);
-			for (auto ch = 0; ch < numChannels; ++ch)
-				SIMD::multiply(samples[ch], gainInBuf, numSamples);
-
-#if PPDHasUnityGain
-			if (unityGainP)
-				for (auto s = 0; s < numSamples; ++s)
-				{
-					auto d1 = gainToDecibel(gainInBuf[s]);
-					auto d2 = -d1;
-					auto g2 = decibelToGain(d2);
-					
-					gainInBuf[s] = g2;
-				}
+		auto gainInBuf = bufs[GainIn].data();
+		gainInSmooth(gainInBuf, juce::Decibels::decibelsToGain(gainInP), numSamples);
+		for (auto ch = 0; ch < numChannels; ++ch)
+			for (auto s = 0; s < numSamples; ++s)
+				samples[ch][s] *= gainInBuf[s];
 #endif
+#if PPDHasUnityGain && PPDHasGainIn
+		gainP -= gainInP * unityGainP;
+#endif
+
+		auto mixBuf = bufs[MixW].data();
+		mixSmooth(mixBuf, mixP, numSamples);
+
+		gainP = Decibels::decibelsToGain(gainP);
+#if PPDHasPolarity
+		gainP *= polarityP;
+#endif
+		gainSmooth(bufs[Gain].data(), gainP, numSamples);
+
+#if PPDEqualLoudnessMix
+		for (auto s = 0; s < numSamples; ++s)
+		{
+			bufs[MixD][s] = std::sqrt(1.f - mixBuf[s]);
+			bufs[MixW][s] = std::sqrt(mixBuf[s]);
+		}
+#else
+		for (auto s = 0; s < numSamples; ++s)
+		{
+			bufs[MixD][s] = 1.f - mixBuf[s];
+			bufs[MixW][s] = mixBuf[s];
 		}
 #endif
-		if (polarityP)
-			for (auto ch = 0; ch < numChannels; ++ch)
-				SIMD::multiply(samples[ch], -1.f, numSamples);
-
-		auto gainOutBuf = bufs[GainOut];
-		gainOutSmooth(gainOutBuf, decibelToGain(gainOutP), numSamples);
-
-		auto mixBuf = bufs[Mix];
-		mixSmooth(mixBuf, mixP, numSamples);
 	}
 
 	void DryWetMix::processBypass(float** samples, int numChannels, int numSamples) noexcept
 	{
-		latencyCompensation
-		(
+		latencyCompensation(
 			dryBuf.getArrayOfWritePointers(),
 			samples,
 			numChannels,
@@ -160,46 +156,25 @@ namespace audio
 
 	void DryWetMix::processOutGain(float** samples, int numChannels, int numSamples) const noexcept
 	{
-		const auto bufs = buffers.getArrayOfReadPointers();
-
-#if PPDHasUnityGain && PPDHasGainIn
-		auto gainInBuf = bufs[GainIn];
-#endif
-		const auto gainOutBuf = bufs[GainOut];
-		
 		for (auto ch = 0; ch < numChannels; ++ch)
 		{
-			auto smpls = samples[ch];
-			
-#if PPDHasUnityGain && PPDHasGainIn
-			SIMD::multiply(smpls, gainInBuf, numSamples);
-#endif
-			SIMD::multiply(smpls, gainOutBuf, numSamples);
+			const auto gainBuf = bufs[Gain].data();
+			SIMD::multiply(samples[ch], gainBuf, numSamples);
 		}
-			
 	}
 
 	void DryWetMix::processMix(float** samples, int numChannels, int numSamples) const noexcept
 	{
-		const auto dryBf = dryBuf.getArrayOfReadPointers();
-		
-		const auto bufs = buffers.getArrayOfReadPointers();
-		const auto mix = bufs[Mix];
-
 		for (auto ch = 0; ch < numChannels; ++ch)
 		{
-			const auto dry = dryBf[ch];
+			const auto dry = dryBuf.getReadPointer(ch);
+			const auto mixD = bufs[MixD].data();
+			const auto mixW = bufs[MixW].data();
+
 			auto smpls = samples[ch];
 
 			for (auto s = 0; s < numSamples; ++s)
-			{
-				const auto d = dry[s];
-				const auto m = mix[s];
-
-				const auto smpl = smpls[s];
-
-				smpls[s] = d + m * (smpl - d);
-			}
+				smpls[s] = dry[s] * mixD[s] + smpls[s] * mixW[s];
 		}
 	}
 }

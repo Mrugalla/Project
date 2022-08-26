@@ -1,6 +1,5 @@
 #include "Param.h"
 #include "../arch/FormularParser.h"
-#include "../arch/Conversion.h"
 
 namespace param
 {
@@ -112,7 +111,6 @@ namespace param
 		case Unit::StereoConfig: return "";
 		case Unit::Voices: return "v";
 		case Unit::Pan: return "%";
-		case Unit::FilterType: return "";
 		default: return "";
 		}
 	}
@@ -201,15 +199,8 @@ namespace param
 	}
 
 	//called by host, normalized, thread-safe
-	float Param::getValue() const
-	{
-		return valNorm.load();
-	}
-	
-	float Param::getValueDenorm() const noexcept
-	{
-		return range.convertFrom0to1(getValue());
-	}
+	float Param::getValue() const { return valNorm.load(); }
+	float Param::getValueDenorm() const noexcept { return range.convertFrom0to1(getValue()); }
 
 	// called by host, normalized, avoid locks, not used (directly) by editor
 	void Param::setValue(float normalized)
@@ -344,10 +335,7 @@ namespace param
 	}
 
 	// string to denorm val
-	float Param::getValForTextDenorm(const String& text) const
-	{
-		return strToVal(text);
-	}
+	float Param::getValForTextDenorm(const String& text) const { return strToVal(text); }
 
 	String Param::_toString()
 	{
@@ -355,15 +343,9 @@ namespace param
 		return getName(10) + ": " + String(v) + "; " + getText(v, 10);
 	}
 
-	bool Param::isLocked() const noexcept
-	{
-		return locked.load();
-	}
+	bool Param::isLocked() const noexcept { return locked.load(); }
 
-	void Param::setLocked(bool e) noexcept
-	{
-		locked.store(e);
-	}
+	void Param::setLocked(bool e) noexcept { locked.store(e); }
 
 	void Param::switchLock() noexcept { setLocked(!isLocked()); }
 
@@ -443,8 +425,7 @@ namespace param::strToVal
 	{
 		return[p = parse()](const String& txt)
 		{
-			const auto text = txt.trimCharactersAtEnd(toString(Unit::Hz)).toLowerCase();
-			
+			const auto text = txt.trimCharactersAtEnd(toString(Unit::Hz));
 			const auto val = p(text, 0.f);
 			return val;
 		};
@@ -564,7 +545,7 @@ namespace param::strToVal
 		};
 	}
 
-	StrToValFunc pan(Params& params)
+	StrToValFunc pan(const Params& params)
 	{
 		return[p = parse(), &prms = params](const String& txt)
 		{
@@ -595,37 +576,6 @@ namespace param::strToVal
 				
 			const auto val = p(text, 0.f);
 			return val * .01f;
-		};
-	}
-
-	StrToValFunc filterType()
-	{
-		return[p = parse()](const String& txt)
-		{
-			/*
-			Lowpass,
-			Highpass,
-			Bandpass,
-			Bell,
-			Notch,
-			Allpass
-			*/
-			if (txt == "lowpass" || txt == "lp")
-				return 0.f;
-			else if (txt == "highpass" || txt == "hp")
-				return 1.f;
-			else if (txt == "bandpass" || txt == "bp")
-				return 2.f;
-			else if (txt == "bell" || txt == "b")
-				return 3.f;
-			else if (txt == "notch" || txt == "n")
-				return 4.f;
-			else if (txt == "allpass" || txt == "ap")
-				return 5.f;
-			else
-				return p(txt, 0.f);
-
-			//const auto text = txt.trimCharactersAtEnd("MSLR").toLowerCase();
 		};
 	}
 
@@ -744,7 +694,7 @@ namespace param::valToStr
 		};
 	}
 
-	ValToStrFunc pan(Params& params)
+	ValToStrFunc pan(const Params& params)
 	{
 		return [&prms = params](float v)
 		{
@@ -777,33 +727,6 @@ namespace param::valToStr
 					return String(std::floor(v * 100.f)) + (v < 0.f ? " M" : " S");
 			}
 #endif
-		};
-	}
-
-	ValToStrFunc filterType()
-	{
-		return [](float v)
-		{
-			/*
-			Lowpass,
-			Highpass,
-			Bandpass,
-			Bell,
-			Notch,
-			Allpass
-			*/
-			if (v < .5f)
-				return String("LP");
-			else if (v < 1.5f)
-				return String("HP");
-			else if (v < 2.5f)
-				return String("BP");
-			else if (v < 3.5f)
-				return String("Bell");
-			else if (v < 4.5f)
-				return String("Notch");
-			else
-				return String("AP");
 		};
 	}
 
@@ -872,10 +795,6 @@ namespace param
 			valToStrFunc = valToStr::voices();
 			strToValFunc = strToVal::voices();
 			break;
-		case Unit::FilterType:
-			valToStrFunc = valToStr::filterType();
-			strToValFunc = strToVal::filterType();
-			break;
 		default:
 			valToStrFunc = valToStr::empty();
 			strToValFunc = strToVal::percent();
@@ -885,7 +804,7 @@ namespace param
 		return new Param(id, range, valDenormDefault, valToStrFunc, strToValFunc, state, unit);
 	}
 
-	Param* makeParamPan(PID id, State& state, Params& params)
+	Param* makeParamPan(PID id, State& state, const Params& params)
 	{
 		ValToStrFunc valToStrFunc = valToStr::pan(params);
 		StrToValFunc strToValFunc = strToVal::pan(params);
@@ -976,10 +895,7 @@ namespace param
 
 	const Params::Parameters& Params::data() const noexcept { return params; }
 
-	bool Params::isModDepthLocked() const noexcept
-	{
-		return modDepthLocked.load();
-	}
+	bool Params::isModDepthLocked() const noexcept { return modDepthLocked.load(); }
 
 	void Params::setModDepthLocked(bool e) noexcept
 	{

@@ -28,8 +28,9 @@ namespace audio
 #if PPDHasGainIn
 			GainIn,
 #endif
-			Mix,
-			GainOut,
+			MixD,
+			MixW,
+			Gain,
 			NumBufs
 		};
 
@@ -39,9 +40,8 @@ namespace audio
 		/*sampleRate, blockSize, latency*/
 		void prepare(float, int, int);
 
-		/*samples, numChannels, numSamples, gainInP, mixP, gainOutP, polarityP, unityGainP*/
-		void saveDry
-		(
+		/*samples, numChannels, numSamples, gainInP, mixP, gainP, polarityP, unityGainP*/
+		void saveDry(
 			float**, int, int,
 #if PPDHasGainIn
 			float,
@@ -67,12 +67,12 @@ namespace audio
 	protected:
 		LatencyCompensation latencyCompensation;
 
-		AudioBuffer buffers;
+		std::array<std::vector<float>, NumBufs> bufs;
 		
 #if PPDHasGainIn
 		Smooth gainInSmooth;
 #endif
-		Smooth mixSmooth, gainOutSmooth;
+		Smooth mixSmooth, gainSmooth;
 
 		AudioBuffer dryBuf;
 	};

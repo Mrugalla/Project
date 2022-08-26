@@ -222,10 +222,10 @@ namespace audio
         const ScopedNoDenormals noDenormals;
 
         macroProcessor();
-		
+
         auto mainBus = getBus(true, 0);
         auto mainBuffer = mainBus->getBusBuffer(buffer);
-
+        
         if (sus.suspendIfNeeded(mainBuffer))
             return;
 
@@ -235,15 +235,14 @@ namespace audio
 
         midiManager(midi, numSamples);
 
+        if (params[PID::Power]->getValMod() < .5f)
+            return processBlockBypassed(buffer, midi);
+
         const auto samples = mainBuffer.getArrayOfWritePointers();
         const auto constSamples = mainBuffer.getArrayOfReadPointers();
         const auto numChannels = mainBuffer.getNumChannels();
 
-        if (params[PID::Power]->getValMod() < .5f)
-            return processBlockBypassed(buffer, midi);
-
-        dryWetMix.saveDry
-        (
+        dryWetMix.saveDry(
             samples,
             numChannels,
             numSamples,
@@ -259,6 +258,7 @@ namespace audio
             , params[PID::UnityGain]->getValMod()
 #endif
         );
+
 #if PPDHasGainIn
         meters.processIn(constSamples, numChannels, numSamples);
 #endif
@@ -271,22 +271,23 @@ namespace audio
 #if PPDHasSidechain
             encodeMS(samples, numSamples, 1);
 #endif
-        }
+        } 
+
 #endif
 
 #if PPDHasHQ
-        auto resampledBuf = &oversampler.upsample(buffer);
+            auto resampledBuf = &oversampler.upsample(buffer);
 #else
-        auto resampledBuf = &buffer;
+            auto resampledBuf = &buffer;
 #endif
-        auto resampledMainBuf = mainBus->getBusBuffer(*resampledBuf);
-
+            auto resampledMainBuf = mainBus->getBusBuffer(*resampledBuf);
+            
 #if PPDHasSidechain
         if (wrapperType != wrapperType_Standalone)
         {
             auto scBus = getBus(true, 1);
             if (scBus != nullptr)
-                if (scBus->isEnabled())
+                if(scBus->isEnabled())
                 {
                     auto scBuffer = scBus->getBusBuffer(*resampledBuf);
 
@@ -311,21 +312,21 @@ namespace audio
             resampledMainBuf.getNumSamples()
         );
 #endif
-		
+            
 #if PPDHasHQ
         oversampler.downsample(mainBuffer);
 #endif
-		
+
 #if PPDHasStereoConfig
         if (midSideEnabled)
         {
-            decodeMS(samples, numSamples, 0);
+			decodeMS(samples, numSamples, 0);
 #if PPDHasSidechain
-            encodeMS(samples, numSamples, 1);
+			encodeMS(samples, numSamples, 1);
 #endif
         }
 #endif
-		
+        
         dryWetMix.processOutGain(samples, numChannels, numSamples);
         meters.processOut(constSamples, numChannels, numSamples);
         dryWetMix.processMix(samples, numChannels, numSamples);
