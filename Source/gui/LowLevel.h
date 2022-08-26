@@ -13,9 +13,10 @@ namespace gui
         {
             makeParameter(feedback, PID::ResonatorFeedback, "Feedback");
 
-            layout.init(
-                { 1, 3, 1 },
-                { 1, 3, 1 }
+            layout.init
+            (
+                { 3, 3, 3 },
+                { 3, 3, 3 }
             );
 
             addAndMakeVisible(feedback);

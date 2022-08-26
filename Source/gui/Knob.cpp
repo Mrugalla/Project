@@ -469,154 +469,8 @@ namespace gui
             };
         }
 
-		if(hasMeter)
-            knob.onPaint = [angleWidth, angleRange, modulatable](Knob& k, Graphics& g)
-            {
-                const auto& vals = k.values;
-                const auto thicc = k.getUtils().thicc;
-                const auto thicc2 = thicc * 2.f;
-                const auto thicc3 = thicc * 3.f;
-                const auto thicc5 = thicc * 5.f;
-                Stroke strokeType(thicc, Stroke::JointStyle::curved, Stroke::EndCapStyle::butt);
-                const auto radius = k.knobBounds.getWidth() * .5f;
-                const auto radiusInner = radius * .8f;
-                const auto radDif = (radius - radiusInner) * .8f;
-                const auto radiusBetween = radiusInner + radDif;
-            
-                PointF centre(
-                    radius + k.knobBounds.getX(),
-                    radius + k.knobBounds.getY()
-                );
-
-                const auto col = Colours::c(ColourID::Interact);
-
-				// METER
-                if (vals[Meter] != 0.f)
-                {
-                    g.setColour(Colours::c(ColourID::Txt));
-                    Path meterArc;
-
-                    const auto metr = vals[Meter] > 1.f ? 1.f : vals[Meter];
-
-                    const auto meterAngle = angleRange * metr - angleWidth;
-
-                    meterArc.addCentredArc(
-                        centre.x, centre.y,
-                        radiusBetween, radiusBetween,
-                        0.f,
-                        -angleWidth, meterAngle,
-                        true
-                    );
-
-                    strokeType.setStrokeThickness(radDif);
-                    g.strokePath(meterArc, strokeType);
-                    strokeType.setStrokeThickness(thicc);
-                }
-
-                //draw outlines
-                {
-                    g.setColour(col);
-                    Path arcOutline;
-
-                    arcOutline.addCentredArc(
-                        centre.x, centre.y,
-                        radius, radius,
-                        0.f,
-                        -angleWidth, angleWidth,
-                        true
-                    );
-                    g.strokePath(arcOutline, strokeType);
-                
-                    Path arcInline;
-                    arcInline.addCentredArc(
-                        centre.x, centre.y,
-                        radiusInner, radiusInner,
-                        0.f,
-                        -angleWidth, angleWidth,
-                        true
-                    );
-                    auto stroke2 = strokeType;
-                    stroke2.setStrokeThickness(radDif);
-                    g.strokePath(arcInline, stroke2);
-                }
-
-                const auto valNormAngle = vals[Value] * angleRange;
-                const auto valAngle = -angleWidth + valNormAngle;
-                const auto radiusExt = radius + thicc;
-
-                // draw modulation
-                if (modulatable)
-                {
-                    const auto valModAngle = vals[ValMod] * angleRange;
-                    const auto modAngle = -angleWidth + valModAngle;
-                    const auto modTick = LineF::fromStartAndAngle(centre, radiusExt, modAngle);
-
-                    g.setColour(Colours::c(ColourID::Bg));
-                    g.drawLine(modTick, thicc * 4.f);
-
-                    const auto maxModDepthAngle = juce::jlimit(-angleWidth, angleWidth, valNormAngle + vals[MaxModDepth] * angleRange - angleWidth);
-                    const auto biasAngle = angleRange * vals[ModBias] - angleWidth;
-
-                    g.setColour(Colours::c(ColourID::Bias));
-                    {
-                        Path biasPath;
-                        biasPath.addCentredArc(
-                            centre.x, centre.y,
-                            radiusInner, radiusInner,
-                            0.f,
-                            0.f, biasAngle,
-                            true
-                        );
-                        auto bStroke = strokeType;
-                        bStroke.setStrokeThickness(radDif);
-
-                        g.strokePath(biasPath, bStroke);
-                    }
-
-                    g.setColour(Colours::c(ColourID::Mod));
-                    g.drawLine(modTick.withShortenedStart(radiusInner), thicc2);
-                    {
-                        Path modPath;
-                        modPath.addCentredArc(
-                            centre.x, centre.y,
-                            radius, radius,
-                            0.f,
-                            maxModDepthAngle, valAngle,
-                            true
-                        );
-                        g.strokePath(modPath, strokeType);
-                    }
-                }
-                // draw tick
-                {
-                    const auto tickLine = LineF::fromStartAndAngle(centre, radius, valAngle);
-                    g.setColour(Colours::c(ColourID::Bg));
-                    g.drawLine(tickLine, thicc5);
-                    g.setColour(col);
-                    g.drawLine(tickLine.withShortenedStart(radiusInner - thicc), thicc3);
-                }
-            };
-        else
-        knob.onPaint = [angleWidth, angleRange, modulatable](Knob& k, Graphics& g)
-        {
-            const auto& vals = k.values;
-            const auto thicc = k.getUtils().thicc;
-            const auto thicc2 = thicc * 2.f;
-            const auto thicc3 = thicc * 3.f;
-            const auto thicc5 = thicc * 5.f;
-            Stroke strokeType(thicc, Stroke::JointStyle::curved, Stroke::EndCapStyle::butt);
-            const auto radius = k.knobBounds.getWidth() * .5f;
-            const auto radiusInner = radius * .8f;
-            const auto radDif = (radius - radiusInner) * .8f;
-
-            PointF centre(
-                radius + k.knobBounds.getX(),
-                radius + k.knobBounds.getY()
-            );
-
-            const auto col = Colours::c(ColourID::Interact);
-
-            //draw outlines
+        { // PAINT STUFF
+            const auto paintLines = [angleWidth](Graphics& g, Colour col, const PointF& centre, float radius, float radiusInner, float radDif, Stroke& strokeType)
             {
                 g.setColour(col);
                 Path arcOutline;
@@ -641,14 +495,11 @@ namespace gui
                 auto stroke2 = strokeType;
                 stroke2.setStrokeThickness(radDif);
                 g.strokePath(arcInline, stroke2);
-            }
+            };
 
-            const auto valNormAngle = vals[Value] * angleRange;
-            const auto valAngle = -angleWidth + valNormAngle;
-            const auto radiusExt = radius + thicc;
-
-            // draw modulation
-            if (modulatable)
+            const auto paintMod = [angleRange, angleWidth](Graphics& g, const PointF& centre, const float* vals,
+                float valNormAngle, float valAngle, float thicc, float thicc2, float radius, float radiusInner, float radiusExt,
+                float radDif, Stroke strokeType)
             {
                 const auto valModAngle = vals[ValMod] * angleRange;
                 const auto modAngle = -angleWidth + valModAngle;
@@ -689,16 +540,145 @@ namespace gui
                     );
                     g.strokePath(modPath, strokeType);
                 }
-            }
-            // draw tick
+            };
+
+            const auto paintTick = [](Graphics& g, Colour col, const PointF& centre,
+                float radius, float radiusInner, float valAngle,
+                float thicc, float thicc3, float thicc5)
             {
                 const auto tickLine = LineF::fromStartAndAngle(centre, radius, valAngle);
                 g.setColour(Colours::c(ColourID::Bg));
                 g.drawLine(tickLine, thicc5);
                 g.setColour(col);
                 g.drawLine(tickLine.withShortenedStart(radiusInner - thicc), thicc3);
-            }
-        };
+            };
+
+            if (hasMeter)
+                knob.onPaint = [paintLines, paintMod, paintTick, angleWidth, angleRange, modulatable](Knob& k, Graphics& g)
+            {
+                const auto& vals = k.values;
+                const auto thicc = k.getUtils().thicc;
+                const auto thicc2 = thicc * 2.f;
+                const auto thicc3 = thicc * 3.f;
+                const auto thicc5 = thicc * 5.f;
+                Stroke strokeType(thicc, Stroke::JointStyle::curved, Stroke::EndCapStyle::butt);
+                const auto radius = k.knobBounds.getWidth() * .5f;
+                const auto radiusInner = radius * .8f;
+                const auto radDif = (radius - radiusInner) * .8f;
+                const auto radiusBetween = radiusInner + radDif;
+
+                PointF centre
+                (
+                    radius + k.knobBounds.getX(),
+                    radius + k.knobBounds.getY()
+                );
+
+                const auto col = Colours::c(ColourID::Interact);
+
+                // METER
+                if (vals[Meter] != 0.f)
+                {
+                    g.setColour(Colours::c(ColourID::Txt));
+                    Path meterArc;
+
+                    const auto metr = vals[Meter] > 1.f ? 1.f : vals[Meter];
+
+                    const auto meterAngle = angleRange * metr - angleWidth;
+
+                    meterArc.addCentredArc(
+                        centre.x, centre.y,
+                        radiusBetween, radiusBetween,
+                        0.f,
+                        -angleWidth, meterAngle,
+                        true
+                    );
+
+                    strokeType.setStrokeThickness(radDif);
+                    g.strokePath(meterArc, strokeType);
+                    strokeType.setStrokeThickness(thicc);
+                }
+
+                paintLines(g, col, centre, radius, radiusInner, radDif, strokeType);
+
+                const auto valNormAngle = vals[Value] * angleRange;
+                const auto valAngle = -angleWidth + valNormAngle;
+                const auto radiusExt = radius + thicc;
+
+                // draw modulation
+                if (modulatable)
+                {
+                    paintMod
+                    (
+                        g,
+                        centre,
+                        vals.data(), valNormAngle, valAngle,
+                        thicc, thicc2,
+                        radius, radiusInner, radiusExt, radDif,
+                        strokeType
+                    );
+                }
+				
+                paintTick
+                (
+                    g,
+                    col,
+                    centre,
+                    radius, radiusInner, valAngle,
+                    thicc, thicc3, thicc5
+                );
+            };
+            else
+                knob.onPaint = [paintLines, paintMod, paintTick, angleWidth, angleRange, modulatable](Knob& k, Graphics& g)
+            {
+                const auto& vals = k.values;
+                const auto thicc = k.getUtils().thicc;
+                const auto thicc2 = thicc * 2.f;
+                const auto thicc3 = thicc * 3.f;
+                const auto thicc5 = thicc * 5.f;
+                Stroke strokeType(thicc, Stroke::JointStyle::curved, Stroke::EndCapStyle::butt);
+                const auto radius = k.knobBounds.getWidth() * .5f;
+                const auto radiusInner = radius * .8f;
+                const auto radDif = (radius - radiusInner) * .8f;
+
+                PointF centre
+                (
+                    radius + k.knobBounds.getX(),
+                    radius + k.knobBounds.getY()
+                );
+
+                const auto col = Colours::c(ColourID::Interact);
+
+                paintLines(g, col, centre, radius, radiusInner, radDif, strokeType);
+
+                const auto valNormAngle = vals[Value] * angleRange;
+                const auto valAngle = -angleWidth + valNormAngle;
+                const auto radiusExt = radius + thicc;
+
+                // draw modulation
+                if (modulatable)
+                {
+                    paintMod
+                    (
+                        g,
+                        centre,
+                        vals.data(), valNormAngle, valAngle,
+                        thicc, thicc2,
+                        radius, radiusInner, radiusExt, radDif,
+                        strokeType
+                    );
+                }
+				
+                paintTick
+                (
+                    g,
+                    col,
+                    centre,
+                    radius, radiusInner, valAngle,
+                    thicc, thicc3, thicc5
+                );
+            };
+        }
+        
 
         knob.init(
             { 40, 40, 40 },
