@@ -6,12 +6,16 @@
               pluginCharacteristicsValue="pluginWantsMidiIn" pluginDesc="XYXYXY"
               pluginManufacturer="Mrugalla" pluginManufacturerCode="Mrug" pluginCode="ID01"
               pluginVSTNumMidiInputs="1" pluginVST3Category="Fx" cppLanguageStandard="latest"
-              pluginName="Project" defines="PPDEditorWidth=774&#10;PPDEditorHeight=448&#10;&#10;PPDHasEditor=true&#10;PPDHasPatchBrowser=true&#10;&#10;PPDHasSidechain=false&#10;&#10;PPDHasGainIn=true&#10;PPDHasHQ=true&#10;PPDHasUnityGain=true&#10;PPDHasStereoConfig=true&#10;PPDHasPolarity=true&#10;&#10;PPDFPSKnobs=60&#10;PPDFPSMeters=30&#10;PPDFPSTextEditor=3&#10;&#10;PPDMetersUseRMS=true&#10;&#10;PPD_GainIn_Min=-12&#10;PPD_GainIn_Max=12&#10;PPD_GainOut_Min=-24&#10;PPD_GainOut_Max=24&#10;PPD_UnityGainDefault=true&#10;&#10;PPD_DebugFormularParser=false&#10;&#10;PPD_MIDINumVoices=16&#10;&#10;PPDPitchShifterSizeMs=1000&#10;PPDPitchShifterNumVoices=7">
+              pluginName="Project" defines="PPDEditorWidth=774&#10;PPDEditorHeight=448&#10;&#10;PPDHasEditor=true&#10;PPDHasPatchBrowser=true&#10;&#10;PPDHasSidechain=false&#10;&#10;PPDHasGainIn=true&#10;PPDHasHQ=true&#10;PPDHasUnityGain=true&#10;PPDHasStereoConfig=true&#10;PPDHasPolarity=true&#10;&#10;PPDEqualLoudnessMix=false&#10;&#10;PPDFPSKnobs=60&#10;PPDFPSMeters=30&#10;PPDFPSTextEditor=3&#10;&#10;PPDMetersUseRMS=true&#10;&#10;PPD_GainIn_Min=-12&#10;PPD_GainIn_Max=12&#10;PPD_GainOut_Min=-24&#10;PPD_GainOut_Max=24&#10;PPD_UnityGainDefault=true&#10;&#10;PPD_DebugFormularParser=false&#10;&#10;PPD_MIDINumVoices=16&#10;&#10;PPDPitchShifterSizeMs=1000&#10;PPDPitchShifterNumVoices=7">
   <MAINGROUP id="c82PPq" name="Project">
     <GROUP id="{329F0704-CF49-5A90-357A-72806BBA6C7A}" name="Source">
       <GROUP id="{C3E83797-8352-773C-9028-12ECA83F553B}" name="svg">
         <FILE id="MuEbIb" name="logo.svg" compile="0" resource="1" file="Source/svg/logo.svg"/>
+        <FILE id="PbvCGP" name="logo2.svg" compile="0" resource="1" file="Source/svg/logo2.svg"/>
       </GROUP>
+      <FILE id="r1AwBl" name="Editor.cpp" compile="1" resource="0" file="Source/Editor.cpp"/>
+      <FILE id="efuGkR" name="cursor.png" compile="0" resource="1" file="Source/cursor.png"/>
+      <FILE id="qZlLSW" name="cursorCross.png" compile="0" resource="1" file="Source/cursorCross.png"/>
       <GROUP id="{E92DF140-D139-51F3-C217-2B6F912F6360}" name="param">
         <FILE id="XXExev" name="Param.cpp" compile="1" resource="0" file="Source/param/Param.cpp"/>
         <FILE id="FnwwTy" name="Param.h" compile="0" resource="0" file="Source/param/Param.h"/>
@@ -40,7 +44,7 @@
         <FILE id="abkRAU" name="nel19.ttf" compile="0" resource="1" file="Source/fonts/nel19.ttf"/>
       </GROUP>
       <GROUP id="{D379AB76-3EAE-A37D-31CD-FC91511F3FC1}" name="arch">
-        <FILE id="XcXFuQ" name="Conversion.h" compile="0" resource="0" file="Source/arch/Conversion.h"/>
+        <FILE id="Rwen3L" name="Conversion.h" compile="0" resource="0" file="Source/arch/Conversion.h"/>
         <FILE id="OiS45d" name="FormularParser.h" compile="0" resource="0"
               file="Source/arch/FormularParser.h"/>
         <FILE id="f4V9L3" name="Interpolation.h" compile="0" resource="0" file="Source/arch/Interpolation.h"/>
@@ -51,9 +55,9 @@
         <FILE id="Uad8Jv" name="State.h" compile="0" resource="0" file="Source/arch/State.h"/>
       </GROUP>
       <GROUP id="{DA435779-5001-4379-F809-3E7C21D55DC0}" name="gui">
-        <FILE id="kM16Te" name="MIDICCMonitor.cpp" compile="1" resource="0"
+        <FILE id="N5YMZm" name="MIDICCMonitor.cpp" compile="1" resource="0"
               file="Source/gui/MIDICCMonitor.cpp"/>
-        <FILE id="S8eVkX" name="MIDIVoicesComp.cpp" compile="1" resource="0"
+        <FILE id="i5CfXV" name="MIDIVoicesComp.cpp" compile="1" resource="0"
               file="Source/gui/MIDIVoicesComp.cpp"/>
         <FILE id="l3bsRz" name="MIDIVoicesComp.h" compile="0" resource="0"
               file="Source/gui/MIDIVoicesComp.h"/>
@@ -110,7 +114,6 @@
         <FILE id="KPtX3O" name="DryWetMix.h" compile="0" resource="0" file="Source/audio/DryWetMix.h"/>
         <FILE id="dgpmul" name="EnvelopeFollower.h" compile="0" resource="0"
               file="Source/audio/EnvelopeFollower.h"/>
-        <FILE id="D15OfA" name="Filter.h" compile="0" resource="0" file="Source/audio/Filter.h"/>
         <FILE id="kQwYTy" name="Meter.cpp" compile="1" resource="0" file="Source/audio/Meter.cpp"/>
         <FILE id="TN2ewh" name="Meter.h" compile="0" resource="0" file="Source/audio/Meter.h"/>
         <FILE id="vVTypK" name="MIDILearn.cpp" compile="1" resource="0" file="Source/audio/MIDILearn.cpp"/>
@@ -138,12 +141,9 @@
         <FILE id="joPwDQ" name="WHead.cpp" compile="1" resource="0" file="Source/audio/WHead.cpp"/>
         <FILE id="aRvoAX" name="WHead.h" compile="0" resource="0" file="Source/audio/WHead.h"/>
       </GROUP>
-      <FILE id="r1AwBl" name="Editor.cpp" compile="1" resource="0" file="Source/Editor.cpp"/>
       <FILE id="NTRJ33" name="Editor.h" compile="0" resource="0" file="Source/Editor.h"/>
       <FILE id="LyunGe" name="Processor.cpp" compile="1" resource="0" file="Source/Processor.cpp"/>
       <FILE id="OqTIYY" name="Processor.h" compile="0" resource="0" file="Source/Processor.h"/>
-      <FILE id="efuGkR" name="cursor.png" compile="0" resource="1" file="Source/cursor.png"/>
-      <FILE id="qZlLSW" name="cursorCross.png" compile="0" resource="1" file="Source/cursorCross.png"/>
     </GROUP>
     <FILE id="oha5Fi" name="outtakes.txt" compile="0" resource="1" file="Source/outtakes.txt"/>
     <FILE id="bEUJ6d" name="info.h" compile="0" resource="0" file="Source/info.h"/>

@@ -6,11 +6,6 @@
 
 namespace audio
 {
-    static constexpr float Tau = 6.28318530718f;
-    static constexpr float Pi = 3.14159265359f;
-    static constexpr float PiHalf = Pi * .5f;
-    static constexpr float PiHalfInv = 1.f / PiHalf;
-
     using AudioBuffer = juce::AudioBuffer<float>;
     using SIMD = juce::FloatVectorOperations;
     using MIDIBuffer = juce::MidiBuffer;
