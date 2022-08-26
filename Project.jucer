@@ -44,6 +44,7 @@
         <FILE id="abkRAU" name="nel19.ttf" compile="0" resource="1" file="Source/fonts/nel19.ttf"/>
       </GROUP>
       <GROUP id="{D379AB76-3EAE-A37D-31CD-FC91511F3FC1}" name="arch">
+        <FILE id="Rwen3L" name="Conversion.h" compile="0" resource="0" file="Source/arch/Conversion.h"/>
         <FILE id="OiS45d" name="FormularParser.h" compile="0" resource="0"
               file="Source/arch/FormularParser.h"/>
         <FILE id="f4V9L3" name="Interpolation.h" compile="0" resource="0" file="Source/arch/Interpolation.h"/>
