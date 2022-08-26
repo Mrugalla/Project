@@ -848,6 +848,16 @@ namespace audio
 
 
 
+float Param::biased(float start, float end, float bias/*[0,1]*/, float x) const noexcept
+	{
+		const auto r = end - start;
+		if (r == 0.f)
+			return 0.f;
+		const auto a2 = 2.f * bias;
+		const auto aM = 1.f - bias;
+		const auto aR = r * bias;
+		return start + aR * x / (aM - x + a2 * x);
+	}
 
 
 

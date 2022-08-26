@@ -305,7 +305,8 @@ namespace audio
 
         }
 #else
-        processBlockCustom(
+        processBlockCustom
+        (
             resampledMainBuf.getArrayOfWritePointers(),
             resampledMainBuf.getNumChannels(),
             resampledMainBuf.getNumSamples()
