@@ -53,4 +53,16 @@ namespace audio
     {
         return std::log2(freqHz * static_cast<Float>(.00227272727)) * xen + rootNote;
     }
+
+	template<typename Float>
+    inline Float gainToDecibel(Float gain) noexcept
+    {
+		return std::log10(gain) * static_cast<Float>(20);
+    }
+
+	template<typename Float>
+	inline Float decibelToGain(Float db) noexcept
+	{
+		return std::pow(static_cast<Float>(10), db * static_cast<Float>(.05));
+	}
 }

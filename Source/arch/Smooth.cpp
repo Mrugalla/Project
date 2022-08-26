@@ -173,7 +173,6 @@ namespace smooth
 	{
 		block(bufferOut, bufferIn, numSamples);
 		lowpass(bufferOut, numSamples);
-		
 	}
 	
 	template<typename Float>
