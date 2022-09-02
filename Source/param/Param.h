@@ -39,6 +39,7 @@ namespace param
 
 		// low level parameters
 		ResonatorFeedback,
+		ResonatorDamp,
 
 		NumParams
 	};

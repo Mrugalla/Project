@@ -425,9 +425,17 @@ namespace param::strToVal
 	{
 		return[p = parse()](const String& txt)
 		{
-			const auto text = txt.trimCharactersAtEnd(toString(Unit::Hz));
+			auto text = txt.trimCharactersAtEnd(toString(Unit::Hz));
+			auto multiplier = 1.f;
+			if (text.getLastCharacter() == 'k')
+			{
+				multiplier = 1000.f;
+				text = text.dropLastCharacters(1);
+			}
 			const auto val = p(text, 0.f);
-			return val;
+			const auto val2 = val * multiplier;
+			
+			return val2;
 		};
 	}
 
@@ -609,9 +617,9 @@ namespace param::valToStr
 		return [](float v)
 		{
 			if (v >= 10000.f)
-				return String(v).substring(0, 5) + " " + toString(Unit::Hz);
+				return String(v * .001).substring(0, 4) + " k" + toString(Unit::Hz);
 			else if (v >= 1000.f)
-				return String(v).substring(0, 4) + " " + toString(Unit::Hz);
+				return String(v * .001).substring(0, 3) + " k" + toString(Unit::Hz);
 			else
 				return String(v).substring(0, 5) + " " + toString(Unit::Hz);
 		};
@@ -840,7 +848,8 @@ namespace param
 		params.push_back(makeParam(PID::Power, state, 1.f, makeRange::toggle(), Unit::Power));
 
 		// LOW LEVEL PARAMS:
-		params.push_back(makeParam(PID::ResonatorFeedback, state, 0.f, makeRange::withCentre(-1.2f, 1.2f, 0.f)));
+		params.push_back(makeParam(PID::ResonatorFeedback, state, 0.f, makeRange::withCentre(-.999f, .999f, 0.f)));
+		params.push_back(makeParam(PID::ResonatorDamp, state, 22000.f, makeRange::withCentre(20.f, 22000.f, 1000.f), Unit::Hz));
 
 		// LOW LEVEL PARAMS END
 

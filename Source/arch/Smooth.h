@@ -28,28 +28,42 @@ namespace smooth
 		static constexpr Float Pi = static_cast<Float>(3.14159265359);
 		static constexpr Float Tau = Pi * static_cast<Float>(2);
 
+		/* decay */
+		static Float getXFromFc(Float) noexcept;
+		/* decay, Fs */
+		static Float getXFromHz(Float, Float) noexcept;
+		
+		/* decay */
 		void makeFromDecayInSamples(Float) noexcept;
-		void makeFromDecayInSecs(Float, Float/*Fs*/) noexcept;
+		/* decay, Fs */
+		void makeFromDecayInSecs(Float, Float) noexcept;
+		/* decay */
 		void makeFromDecayInFc(Float) noexcept;
-		void makeFromDecayInHz(Float, Float/*Fs*/) noexcept;
-		void makeFromDecayInMs(Float, Float/*Fs*/) noexcept;
+		/* decay, Fs */
+		void makeFromDecayInHz(Float, Float) noexcept;
+		/* decay, Fs */
+		void makeFromDecayInMs(Float, Float) noexcept;
 
 		void copyCutoffFrom(const Lowpass<Float>&) noexcept;
 
-		Lowpass(const Float /*_startVal*/ = static_cast<Float>(0));
+		/* startVal */
+		Lowpass(const Float = static_cast<Float>(0));
 
 		void reset();
 
-		void operator()(Float*, Float/*val*/, int/*numSamples*/) noexcept;
+		/* buffer, val, numSamples */
+		void operator()(Float*, Float, int) noexcept;
+		/* buffer, numSamples */
 		void operator()(Float*, int/*numSamples*/) noexcept;
+		/* val */
 		Float operator()(Float) noexcept;
+
+		void setX(Float) noexcept;
 
 	protected:
 		Float a0, b1, y1, eps, startVal;
 
 		Float processSample(Float) noexcept;
-
-		void setX(Float) noexcept;
 	};
 
 	template<typename Float>

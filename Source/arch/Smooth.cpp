@@ -60,6 +60,20 @@ namespace smooth
 	// Lowpass
 	
 	template<typename Float>
+	Float Lowpass<Float>::getXFromFc(Float fc) noexcept
+	{
+		return std::exp(-Tau * fc);
+	}
+
+	template<typename Float>
+	Float Lowpass<Float>::getXFromHz(Float d, Float Fs) noexcept
+	{
+		return getXFromFc(d / Fs);
+	}
+
+	//
+	
+	template<typename Float>
 	void Lowpass<Float>::makeFromDecayInSamples(Float d) noexcept
 	{
 		setX(std::exp(static_cast<Float>(-1) / d));
@@ -74,13 +88,13 @@ namespace smooth
 	template<typename Float>
 	void Lowpass<Float>::makeFromDecayInFc(Float fc) noexcept
 	{
-		setX(std::exp(-Tau * fc));
+		getXFromFc(fc);
 	}
 
 	template<typename Float>
 	void Lowpass<Float>::makeFromDecayInHz(Float d, Float Fs) noexcept
 	{
-		makeFromDecayInFc(d / Fs);
+		getXFromHz(d, Fs);
 	}
 
 	template<typename Float>

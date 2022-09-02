@@ -248,14 +248,14 @@ namespace audio
             numSamples,
 #if PPDHasGainIn
             params[PID::GainIn]->getValueDenorm(),
+#if PPDHasUnityGain
+            params[PID::UnityGain]->getValMod(),
+#endif
 #endif
             params[PID::Mix]->getValMod(),
             params[PID::Gain]->getValModDenorm()
 #if PPDHasPolarity
             , (params[PID::Polarity]->getValMod() > .5f ? -1.f : 1.f)
-#endif
-#if PPDHasUnityGain && PPDHasGainIn
-            , params[PID::UnityGain]->getValMod()
 #endif
         );
 
@@ -354,8 +354,9 @@ namespace audio
     ) noexcept
     {
         auto fb = params[PID::ResonatorFeedback]->getValModDenorm();
+        auto damp = params[PID::ResonatorDamp]->getValModDenorm();
 
-        resonator(samples, numChannels, numSamples, fb);
+        resonator(samples, numChannels, numSamples, fb, damp);
     }
 
     void Processor::releaseResources() {}

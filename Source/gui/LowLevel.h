@@ -9,21 +9,24 @@ namespace gui
     {
         LowLevel(Utils& u) :
             Comp(u, "", CursorType::Default),
-            feedback(u)
+            feedback(u),
+            damp(u)
         {
             makeParameter(feedback, PID::ResonatorFeedback, "Feedback");
+            makeParameter(damp, PID::ResonatorDamp, "Damp");
 
             layout.init
             (
-                { 3, 3, 3 },
+                { 3, 3, 3, 3 },
                 { 3, 3, 3 }
             );
 
             addAndMakeVisible(feedback);
+			addAndMakeVisible(damp);
         }
 
     protected:
-        Knob feedback;
+        Knob feedback, damp;
         
         void paint(Graphics&) override {}
 
@@ -32,6 +35,7 @@ namespace gui
             layout.resized();
 
             layout.place(feedback, 1, 1, 1, 1, false);
+			layout.place(damp, 2, 1, 1, 1, false);
         }
     };
 }
