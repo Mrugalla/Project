@@ -41,6 +41,7 @@ namespace gui
 #endif
 		Knob gainOut;
 		Knob mix;
+		Knob xen;
 #if PPDHasUnityGain && PPDHasGainIn
 		Button unityGain;
 #endif

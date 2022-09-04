@@ -18,6 +18,8 @@ namespace gui
 
         Knob(Utils&, const String & /*name*/ = "", const String & /*tooltip*/ = "", CursorType = CursorType::Interact);
 
+        ~Knob();
+
         void init(std::vector<int>&&, std::vector<int>&&);
 
         void timerCallback() override;

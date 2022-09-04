@@ -5,6 +5,7 @@
 #include "../arch/Interpolation.h"
 #include "PRM.h"
 #include "MIDIManager.h"
+#include "XenManager.h"
 
 namespace audio
 {
@@ -34,10 +35,11 @@ namespace audio
 
 			//samples, numChannels, numSamples, wHead, feedbackBuffer[-1,1], readHead
 			void operator()(float** samples, int numChannels, int numSamples,
-				const int* wHead, const float* fbBuf, const float* dampBuf, const float** readHead) noexcept
+				const int* wHead, const float* fbBuf, const float* dampBuf,
+				const float** readHead) noexcept
 			{
 				auto ringBuf = ringBuffer.getArrayOfWritePointers();
-
+				
 				for (auto ch = 0; ch < numChannels; ++ch)
 				{
 					auto smpls = samples[ch];
@@ -53,9 +55,9 @@ namespace audio
 						const auto r = rHead[s];
 						const auto fb = fbBuf[s];
 
-						const auto sOut = lp(interpolate::cubicHermiteSpline(ring, r, size));
+						auto sOut = lp(interpolate::cubicHermiteSpline(ring, r, size));
 						const auto sIn = smpls[s] + sOut * fb;
-
+						
 						ring[w] = sIn;
 						smpls[s] = sOut;
 					}
@@ -68,71 +70,69 @@ namespace audio
 			int size;
 		};
 
-		static constexpr int LowestNoteNumber = 21;
+		static constexpr float LowestFrequencyHz = 20.f;
 		static constexpr int Octave = 12;
 
 	public:
-		Resonator(MIDIVoices& _midiVoices) :
+		Resonator(MIDIVoices& _midiVoices, const XenManager& _xenManager) :
 			midiVoices(_midiVoices),
-			
+			xenManager(_xenManager),
+
 			writeHead(),
 			readHeadBuffer(),
 			delay(),
-			
+
 			feedbackP(0.f),
-			dampP(420.f),
+			dampP(1.f),
+			retuneP(0.f),
 			
-			Fs(0.f), sizeF(0.f), curDelay(0.f),
-			size(0), curNote(48)
+			Fs(0.f), sizeF(0.f), curDelay(0.f), curNote(48.f),
+			size(0)
 		{}
 
 		void prepare(float sampleRate, int blockSize)
 		{
 			Fs = sampleRate;
 
-			const auto lowestNote = static_cast<float>(LowestNoteNumber);
-			const auto lowestFreqHz = noteInFreqHz(lowestNote, 69.f, 12.f, 440.f);
-
-			sizeF = std::ceil(freqHzInSamples(lowestFreqHz, Fs));
+			sizeF = std::ceil(freqHzInSamples(LowestFrequencyHz, Fs));
 			size = static_cast<int>(sizeF);
 
 			writeHead.prepare(blockSize, size);
 			readHeadBuffer.setSize(2, blockSize, false, false, false);
 			delay.prepare(Fs, size);
 
-			const auto freqHz = noteInFreqHz(static_cast<float>(curNote), 69.f, 12.f, 440.f);
+			const auto freqHz = xenManager.noteToFreqHzWithWrap(curNote, LowestFrequencyHz);
 			curDelay = freqHzInSamples(freqHz, Fs);
 
 			feedbackP.prepare(sampleRate, blockSize, 10.f);
 			dampP.prepare(sampleRate, blockSize, 10.f);
+			retuneP.prepare(sampleRate, blockSize, 10.f);
 		}
 
 		void operator()(float** samples, int numChannels, int numSamples,
-			float _feedback /*]-1,1[*/, float _damp /*]0, 22050[hz*/) noexcept
+			float _feedback /*]-1,1[*/, float _damp /*]0, 22050[hz*/, float _retune/*[-n,n]semi*/) noexcept
 		{
 			writeHead(numSamples);
 			const auto wHead = writeHead.data();
+
+			const auto retuneBuf = retuneP(_retune, numSamples);
 
 			{ // calculate readhead indexes from note buffer
 				auto rHeadBuf = readHeadBuffer.getArrayOfWritePointers();
 
 				auto& noteBuffer = midiVoices.voices[0].buffer;
-
+				
 				for (auto s = 0; s < numSamples; ++s)
 				{
-					auto nNote = noteBuffer[0];
-					while (nNote.noteNumber < LowestNoteNumber)
-						nNote.noteNumber += Octave;
-
-					if (curNote != nNote.noteNumber)
+					auto nNote = static_cast<float>(noteBuffer[0].noteNumber);
+					
+					nNote = juce::jlimit(1.f, 128.f, nNote + retuneBuf[s]);
+					
+					if (curNote != nNote)
 					{
-						curNote = nNote.noteNumber;
-						if (curNote != 0)
-						{
-							const auto curNoteF = static_cast<float>(curNote);
-							const auto freqHz = noteInFreqHz(curNoteF, 69.f, 12.f, 440.f);
-							curDelay = freqHzInSamples(freqHz, Fs);
-						}
+						curNote = nNote;
+						const auto freqHz = xenManager.noteToFreqHzWithWrap(curNote, LowestFrequencyHz);
+						curDelay = freqHzInSamples(freqHz, Fs);
 					}
 
 					const auto w = static_cast<float>(wHead[s]);
@@ -159,14 +159,15 @@ namespace audio
 
 	protected:
 		MIDIVoices& midiVoices;
+		const XenManager& xenManager;
 		
 		WHead writeHead;
 		AudioBuffer readHeadBuffer;
 		DelayFeedback delay;
 
-		PRM feedbackP, dampP;
+		PRM feedbackP, dampP, retuneP;
 		
-		float Fs, sizeF, curDelay;
-		int size, curNote;
+		float Fs, sizeF, curDelay, curNote;
+		int size;
 	};
 }

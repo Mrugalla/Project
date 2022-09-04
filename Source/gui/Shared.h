@@ -106,7 +106,8 @@ namespace gui
     // GET FONT
     inline Font getFont(const char* ttf, size_t size)
     {
-        return juce::Font(juce::Typeface::createSystemTypefaceFor(ttf, size));
+        auto typeface = juce::Typeface::createSystemTypefaceFor(ttf, size);
+        return Font(typeface);
     }
     
     // GET FONT NEL

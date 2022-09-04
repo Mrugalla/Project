@@ -35,11 +35,15 @@ namespace param
 #if PPDHasStereoConfig
 		StereoConfig,
 #endif
+		Xen,
 		Power,
 
 		// low level parameters
 		ResonatorFeedback,
 		ResonatorDamp,
+		ResonatorOct,
+		ResonatorSemi,
+		ResonatorFine,
 
 		NumParams
 	};
@@ -75,6 +79,7 @@ namespace param
 		StereoConfig,
 		Voices,
 		Pan,
+		Xen,
 		NumUnits
 	};
 

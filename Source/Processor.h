@@ -3,6 +3,7 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_events/juce_events.h>
 
+#include "audio/XenManager.h"
 #include "audio/MIDIManager.h"
 #include "audio/MIDILearn.h"
 #include "audio/ProcessSuspend.h"
@@ -61,6 +62,7 @@ namespace audio
         State state;
         Params params;
         MacroProcessor macroProcessor;
+		XenManager xenManager;
         MIDIManager midiManager;
 
         DryWetMix dryWetMix;

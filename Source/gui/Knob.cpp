@@ -36,6 +36,11 @@ namespace gui
         addAndMakeVisible(label);
     }
 
+    Knob::~Knob()
+    {
+		
+    }
+
     void Knob::init(std::vector<int>&& distX, std::vector<int>&& distY)
     {
         layout.init(

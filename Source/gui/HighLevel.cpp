@@ -21,6 +21,7 @@ namespace gui
 #endif
 		gainOut(u),
 		mix(u),
+		xen(u),
 #if PPDHasUnityGain && PPDHasGainIn
 		unityGain(u, param::toTooltip(PID::UnityGain)),
 #endif
@@ -46,14 +47,16 @@ namespace gui
 		fileChooser(nullptr)
 	{
 #if PPDHasPatchBrowser
-		layout.init(
+		layout.init
+		(
 			{ 1, 8, 1, 8, 1, 8, 1, 8, 1, 1 },
-			{ 1, 8, 1, 5, 1, 21, 1, 21, 1, 21, 1, 8, 8, 2 }
+			{ 1, 8, 1, 5, 1, 21, 1, 21, 1, 21, 1, 21, 1, 8, 8, 2 }
 		);
 #else
-		layout.init(
+		layout.init
+		(
 			{ 1, 8, 1, 8, 1, 8, 1, 8, 1, 1 },
-			{ 1, 8, 1, 21, 1, 21, 1, 21, 1, 8, 8, 2 }
+			{ 1, 8, 1, 21, 1, 21, 1, 21, 1, 21, 1, 8, 8, 2 }
 		);
 #endif
 
@@ -278,6 +281,8 @@ namespace gui
 		addAndMakeVisible(gainOut);
 		makeParameter(mix, PID::Mix, "Mix");
 		addAndMakeVisible(mix);
+		makeParameter(xen, PID::Xen, "Xen");
+		addAndMakeVisible(xen);
 #if PPDHasUnityGain && PPDHasGainIn
 		makeParameterSwitchButton(unityGain, PID::UnityGain, ButtonSymbol::UnityGain);
 		addAndMakeVisible(unityGain);
@@ -402,18 +407,19 @@ namespace gui
 #endif
 
 		layout.place(mix, 3.f, 7.f + patchBrowserOffset, 3.f, 1.f, true);
+		layout.place(xen, 3.f, 9.f + patchBrowserOffset, 3.f, 1.f, true);
 
-		layout.place(power, 1.f, 9.f + patchBrowserOffset, 1.f, 1.f, true);
+		layout.place(power, 1.f, 11.f + patchBrowserOffset, 1.f, 1.f, true);
 #if PPDHasPolarity
-		layout.place(polarity, 3.f, 9.f + patchBrowserOffset, 1.f, 1.f, true);
+		layout.place(polarity, 3.f, 11.f + patchBrowserOffset, 1.f, 1.f, true);
 #endif
 #if PPDHasStereoConfig
-		layout.place(stereoConfig, 5.f, 9.f + patchBrowserOffset, 1.f, 1.f, true);
+		layout.place(stereoConfig, 5.f, 11.f + patchBrowserOffset, 1.f, 1.f, true);
 #endif
-		layout.place(hq, 7.f, 9.f + patchBrowserOffset, 1.f, 1.f, true);
+		layout.place(hq, 7.f, 11.f + patchBrowserOffset, 1.f, 1.f, true);
 
-		layout.place(ccMonitor, 1.f, 10.f + patchBrowserOffset, 7.f, 1.f, false);
-		layout.place(midiVoices, 1.f, 11.f + patchBrowserOffset, 7.f, 1.f, false);
+		layout.place(ccMonitor, 1.f, 12.f + patchBrowserOffset, 7.f, 1.f, false);
+		layout.place(midiVoices, 1.f, 13.f + patchBrowserOffset, 7.f, 1.f, false);
 
 #if PPDHasPatchBrowser
 		patchBrowser.setBounds(lowLevel->getBounds());

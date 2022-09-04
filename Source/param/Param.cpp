@@ -37,11 +37,15 @@ namespace param
 #if PPDHasStereoConfig
 		case PID::StereoConfig: return "Stereo Config";
 #endif
-
+		case PID::Xen: return "Xen";
 		case PID::Power: return "Power";
 
 			// LOW LEVEL PARAMS:
 		case PID::ResonatorFeedback: return "Resonator Feedback";
+		case PID::ResonatorDamp: return "Resonator Damp";
+		case PID::ResonatorOct: return "Resonator Oct";
+		case PID::ResonatorSemi: return "Resonator Semi";
+		case PID::ResonatorFine: return "Resonator Fine";
 
 		default: return "Invalid Parameter Name";
 		}
@@ -81,10 +85,14 @@ namespace param
 #if PPDHasStereoConfig
 		case PID::StereoConfig: return "Define the stereo-configuration. L/R or M/S.";
 #endif
-
+		case PID::Xen: return "Define the xenharmonic scale.";
 		case PID::Power: return "Bypass the plugin with this parameter.";
 
 		case PID::ResonatorFeedback: return "Dials in the resonator's feedback.";
+		case PID::ResonatorDamp: return "Dials in the resonator's damp.";
+		case PID::ResonatorOct: return "Retune the resonator in octaves.";
+		case PID::ResonatorSemi: return "Retune the resonator in semitones.";
+		case PID::ResonatorFine: return "Retune the resonator in finetones.";
 
 		default: return "Invalid Tooltip.";
 		}
@@ -111,6 +119,7 @@ namespace param
 		case Unit::StereoConfig: return "";
 		case Unit::Voices: return "v";
 		case Unit::Pan: return "%";
+		case Unit::Xen: return "notes/oct";
 		default: return "";
 		}
 	}
@@ -314,12 +323,21 @@ namespace param
 		valMod.store(calcValModOf(macro));
 	}
 
-	float Param::getDefaultValue() const { return range.convertTo0to1(valDenormDefault); }
+	float Param::getDefaultValue() const
+	{
+		return range.convertTo0to1(valDenormDefault);
+	}
 
-	String Param::getName(int) const { return toString(id); }
+	String Param::getName(int) const
+	{
+		return toString(id);
+	}
 
 	// units of param (hz, % etc.)
-	String Param::getLabel() const { return toString(unit); }
+	String Param::getLabel() const
+	{
+		return toString(unit);
+	}
 
 	// string of norm val
 	String Param::getText(float norm, int) const
@@ -335,7 +353,10 @@ namespace param
 	}
 
 	// string to denorm val
-	float Param::getValForTextDenorm(const String& text) const { return strToVal(text); }
+	float Param::getValForTextDenorm(const String& text) const
+	{
+		return strToVal(text);
+	}
 
 	String Param::_toString()
 	{
@@ -343,11 +364,20 @@ namespace param
 		return getName(10) + ": " + String(v) + "; " + getText(v, 10);
 	}
 
-	bool Param::isLocked() const noexcept { return locked.load(); }
+	bool Param::isLocked() const noexcept
+	{
+		return locked.load();
+	}
 
-	void Param::setLocked(bool e) noexcept { locked.store(e); }
+	void Param::setLocked(bool e) noexcept
+	{
+		locked.store(e);
+	}
 
-	void Param::switchLock() noexcept { setLocked(!isLocked()); }
+	void Param::switchLock() noexcept
+	{
+		setLocked(!isLocked());
+	}
 
 	String Param::getIDString(PID pID)
 	{
@@ -455,7 +485,7 @@ namespace param::strToVal
 		{
 			const auto text = txt.trimCharactersAtEnd(toString(Unit::Octaves));
 			const auto val = p(text, 0.f);
-			return std::floor(val);
+			return std::rint(val);
 		};
 	}
 
@@ -475,7 +505,7 @@ namespace param::strToVal
 		{
 			const auto text = txt.trimCharactersAtEnd(toString(Unit::Semi));
 			const auto val = p(text, 0.f);
-			return std::floor(val);
+			return std::rint(val);
 		};
 	}
 
@@ -587,6 +617,15 @@ namespace param::strToVal
 		};
 	}
 
+	StrToValFunc xen()
+	{
+		return[p = parse()](const String& txt)
+		{
+			const auto text = txt.trimCharactersAtEnd(toString(Unit::Xen));
+			const auto val = p(text, 0.f);
+			return val;
+		};
+	}
 
 }
 
@@ -609,7 +648,7 @@ namespace param::valToStr
 
 	ValToStrFunc percent()
 	{
-		return [](float v) { return String(std::floor(v * 100.f)) + " " + toString(Unit::Percent); };
+		return [](float v) { return String(std::rint(v * 100.f)) + " " + toString(Unit::Percent); };
 	}
 
 	ValToStrFunc hz()
@@ -627,39 +666,39 @@ namespace param::valToStr
 
 	ValToStrFunc phase()
 	{
-		return [](float v) { return String(std::floor(v * 180.f)) + " " + toString(Unit::Degree); };
+		return [](float v) { return String(std::rint(v * 180.f)) + " " + toString(Unit::Degree); };
 	}
 
 	ValToStrFunc phase360()
 	{
-		return [](float v) { return String(std::floor(v * 360.f)) + " " + toString(Unit::Degree); };
+		return [](float v) { return String(std::rint(v * 360.f)) + " " + toString(Unit::Degree); };
 	}
 
 	ValToStrFunc oct()
 	{
-		return [](float v) { return String(std::floor(v)) + " " + toString(Unit::Octaves); };
+		return [](float v) { return String(std::rint(v)) + " " + toString(Unit::Octaves); };
 	}
 
 	ValToStrFunc oct2()
 	{
-		return [](float v) { return String(std::floor(v / 12.f)) + " " + toString(Unit::Octaves); };
+		return [](float v) { return String(std::rint(v / 12.f)) + " " + toString(Unit::Octaves); };
 	}
 
 	ValToStrFunc semi()
 	{
-		return [](float v) { return String(std::floor(v)) + " " + toString(Unit::Semi); };
+		return [](float v) { return String(std::rint(v)) + " " + toString(Unit::Semi); };
 	}
 
 	ValToStrFunc fine()
 	{
-		return [](float v) { return String(std::floor(v * 100.f)) + " " + toString(Unit::Fine); };
+		return [](float v) { return String(std::rint(v * 100.f)) + " " + toString(Unit::Fine); };
 	}
 
 	ValToStrFunc ratio()
 	{
 		return [](float v)
 		{
-			const auto y = static_cast<int>(std::floor(v * 100.f));
+			const auto y = static_cast<int>(std::rint(v * 100.f));
 			return String(100 - y) + " : " + String(y);
 		};
 	}
@@ -698,7 +737,7 @@ namespace param::valToStr
 	{
 		return [](float v)
 		{
-			return String(static_cast<int>(v)) + toString(Unit::Voices);
+			return String(std::rint(v)) + toString(Unit::Voices);
 		};
 	}
 
@@ -735,6 +774,14 @@ namespace param::valToStr
 					return String(std::floor(v * 100.f)) + (v < 0.f ? " M" : " S");
 			}
 #endif
+		};
+	}
+
+	ValToStrFunc xen()
+	{
+		return [](float v)
+		{
+			return String(v) + toString(Unit::Xen);
 		};
 	}
 
@@ -791,6 +838,10 @@ namespace param
 			valToStrFunc = valToStr::lrms();
 			strToValFunc = strToVal::lrms();
 			break;
+		case Unit::Octaves:
+			valToStrFunc = valToStr::oct();
+			strToValFunc = strToVal::oct();
+			break;
 		case Unit::Semi:
 			valToStrFunc = valToStr::semi();
 			strToValFunc = strToVal::semi();
@@ -802,6 +853,10 @@ namespace param
 		case Unit::Voices:
 			valToStrFunc = valToStr::voices();
 			strToValFunc = strToVal::voices();
+			break;
+		case Unit::Xen:
+			valToStrFunc = valToStr::xen();
+			strToValFunc = strToVal::xen();
 			break;
 		default:
 			valToStrFunc = valToStr::empty();
@@ -845,11 +900,15 @@ namespace param
 #if PPDHasStereoConfig
 		params.push_back(makeParam(PID::StereoConfig, state, 1.f, makeRange::toggle(), Unit::StereoConfig));
 #endif
+		params.push_back(makeParam(PID::Xen, state, 12.f, makeRange::withCentre(1.f, PPD_MaxXen, 12.f), Unit::Xen));
 		params.push_back(makeParam(PID::Power, state, 1.f, makeRange::toggle(), Unit::Power));
 
 		// LOW LEVEL PARAMS:
 		params.push_back(makeParam(PID::ResonatorFeedback, state, 0.f, makeRange::withCentre(-.999f, .999f, 0.f)));
-		params.push_back(makeParam(PID::ResonatorDamp, state, 22000.f, makeRange::withCentre(20.f, 22000.f, 1000.f), Unit::Hz));
+		params.push_back(makeParam(PID::ResonatorDamp, state, 4200.f, makeRange::withCentre(20.f, 22000.f, 4200.f), Unit::Hz));
+		params.push_back(makeParam(PID::ResonatorOct, state, 0.f, makeRange::withCentre(-3.f, 3.f, 0.f), Unit::Octaves));
+		params.push_back(makeParam(PID::ResonatorSemi, state, 0.f, makeRange::withCentre(-12.f, 12.f, 0.f), Unit::Semi));
+		params.push_back(makeParam(PID::ResonatorFine, state, 0.f, makeRange::withCentre(-1.f, 1.f, 0.f), Unit::Fine));
 
 		// LOW LEVEL PARAMS END
 

@@ -29,6 +29,7 @@ namespace audio
         state(),
         params(*this, state),
         macroProcessor(params),
+        xenManager(),
         midiManager(params, state),
 #if PPDHasHQ
         oversampler(),
@@ -187,7 +188,7 @@ namespace audio
 
     Processor::Processor() :
         ProcessorBackEnd(),
-        resonator(midiVoices)
+        resonator(midiVoices, xenManager)
     {
     }
 
@@ -233,6 +234,12 @@ namespace audio
         if (numSamples == 0)
             return;
 
+        xenManager
+        (
+            params[PID::Xen]->getValModDenorm(),
+			440.f // masterTune
+        );
+		
         midiManager(midi, numSamples);
 
         if (params[PID::Power]->getValMod() < .5f)
@@ -355,8 +362,13 @@ namespace audio
     {
         auto fb = params[PID::ResonatorFeedback]->getValModDenorm();
         auto damp = params[PID::ResonatorDamp]->getValModDenorm();
-
-        resonator(samples, numChannels, numSamples, fb, damp);
+        
+        auto oct = params[PID::ResonatorOct]->getValModDenorm();
+        auto semi = params[PID::ResonatorSemi]->getValModDenorm();
+		auto fine = params[PID::ResonatorFine]->getValModDenorm();
+        auto retuneVal = getRetuneValue(oct, semi, fine);
+        
+        resonator(samples, numChannels, numSamples, fb, damp, retuneVal);
     }
 
     void Processor::releaseResources() {}

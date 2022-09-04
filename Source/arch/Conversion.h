@@ -62,7 +62,7 @@ namespace audio
 	template<typename Float>
     inline Float gainToDecibel(Float gain) noexcept
     {
-		return std::log10(gain) * static_cast<Float>(20);
+        return std::log10(gain) * static_cast<Float>(20);
     }
 
 	template<typename Float>
@@ -70,4 +70,72 @@ namespace audio
 	{
 		return std::pow(static_cast<Float>(10), db * static_cast<Float>(.05));
 	}
+
+    /* oct [-n, n], semi [-12, 12], fine [-1, 1]*/
+    template<typename Float>
+    inline Float getRetuneValue(Float oct, Float semi, Float fine) noexcept
+    {
+        return static_cast<Float>(12) * std::rint(oct) + std::rint(semi) + fine;
+    }
+
+	/* x, a [0, 1[ */
+    template<typename Float>
+    inline Float softclip(Float x, Float a) noexcept
+    {
+        const auto l = std::max(std::min(x, a), -a);
+        const auto A = 1.f - a;
+        const auto X = (x - l) / A;
+
+        return l + A * std::tanh(X);
+    }
+
+    template<typename Float>
+    inline Float softclip2(Float x_db, Float thresholddB, Float kneedB, Float ratio) noexcept
+    {
+        // soft knee VCA
+        const auto one = static_cast<Float>(1);
+        const auto two = static_cast<Float>(2);
+        const auto kneeDiv2 = kneedB / two;
+
+        Float gain_sc;
+        if (x_db > (thresholddB + kneeDiv2))
+        {
+            const auto A = x_db - thresholddB;
+            gain_sc = thresholddB + (A / ratio);
+        }
+        else if (x_db > (thresholddB - kneeDiv2))
+        {
+            const auto A = x_db - thresholddB;
+            const auto B = A + kneeDiv2;
+            const auto C = B * B;
+            gain_sc = x_db + ((one / ratio - one) * C / (two * kneedB));
+        }
+        else
+            gain_sc = x_db;
+
+        return decibelToGain(gain_sc - x_db);
+    }
+	
+	/* db[...,0]db, threshold[...,0]db, ratio [-1, 1], knee [0, 64]*/
+	template<typename Float>
+    inline Float softclip3(Float xDb, Float threshold, Float ratio, Float knee) noexcept
+    {
+        const auto half = static_cast<Float>(.5);
+        const auto kneeHalf = knee * half;
+        const auto thresh2 = threshold - kneeHalf;
+        if (xDb < thresh2)
+            return xDb;
+        
+        if (xDb < threshold + kneeHalf)
+        {
+            const auto one = static_cast<Float>(1);
+            const auto two = static_cast<Float>(2);
+            const auto c = xDb - threshold + kneeHalf;
+			
+            return thresh2 + c * (one - (((one - ratio) * c) / (two * knee)));
+        }
+		
+        return threshold + ratio * (xDb - threshold);
+
+    }
 }
