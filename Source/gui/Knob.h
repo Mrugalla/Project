@@ -60,7 +60,11 @@ namespace gui
         CursorType activeCursor;
     };
 
-    void makeParameter(Knob&, PID, const String&/*name*/, bool /*modulatable*/ = true, const std::atomic<float>* /*meter*/ = nullptr);
+	/* knob, pID, name, modulatable, meter */
+    void makeParameter(Knob&, PID, const String&, bool = true, const std::atomic<float>* = nullptr);
+
+    /* knob, pID, name, onPaint modulatable, meter */
+    void makeParameter(Knob&, PID, const String&, const Knob::OnPaint&, bool = true, const std::atomic<float>* = nullptr);
 
 	struct ContextMenuKnobs :
 		public ContextMenu
