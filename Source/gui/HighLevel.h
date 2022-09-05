@@ -11,13 +11,15 @@
 #include "MIDICCMonitor.h"
 #include "MIDIVoicesComp.h"
 #include "LowLevel.h"
+#include "TuningEditor.h"
 
 namespace gui
 {
 	struct HighLevel :
 		public Comp
 	{
-		HighLevel(Utils&, LowLevel*);
+		/* utils, lowlevel, tuningEditor */
+		HighLevel(Utils&, LowLevel*, CompWidgetable*);
 
 		void init();
 
@@ -30,6 +32,7 @@ namespace gui
 		PatchBrowser patchBrowser;
 		ButtonPatchBrowser patchBrowserButton;
 #endif
+		TuningEditorButton tuningEditorButton;
 		Knob macro;
 		Button modDepthLocked;
 		Button swapParamWithModDepth;
@@ -41,7 +44,6 @@ namespace gui
 #endif
 		Knob gainOut;
 		Knob mix;
-		Knob xen;
 #if PPDHasUnityGain && PPDHasGainIn
 		Button unityGain;
 #endif

@@ -33,10 +33,15 @@ namespace audio
 		{
 			auto freq = noteToFreqHz(note);
 			while (freq < lowestFreq)
-				freq *= 2.f;
-			while (freq >= 22000.f)
-				freq *= .5f;
+				freq *= static_cast<Float>(2);
+			while (freq >= highestFreq)
+				freq *= static_cast<Float>(.5);
 			return freq;
+		}
+
+		float getXen() const noexcept
+		{
+			return xen;
 		}
 
 	protected:

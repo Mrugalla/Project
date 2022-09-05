@@ -36,8 +36,8 @@ namespace gui
 
 		void enableParameter(PID, int /*val*/);
 
-		/* tooltip */
-		Button(Utils&, String&& /*tooltip*/ = "");
+		/* utils, tooltip */
+		Button(Utils&, String&& = "");
 
 		Label& getLabel() noexcept;
 
@@ -90,10 +90,14 @@ namespace gui
 		Save,
 		Load,
 		Remove,
+		TuningFork,
 		NumSymbols
 	};
 
-	void makeSymbolButton(Button&, ButtonSymbol, int /*targetToggleState*/ = 1);
+	void paintAbort(Graphics&, BoundsF);
+
+	/* button, symbol, targetToggleState */
+	void makeSymbolButton(Button&, ButtonSymbol, int = 1);
 
 	void makeToggleButton(Button&, const String&);
 

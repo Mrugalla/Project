@@ -833,5 +833,6 @@ namespace gui
 
         TextEditor::paint(g);
     }
+	
 }
 

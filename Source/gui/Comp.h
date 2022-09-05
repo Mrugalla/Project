@@ -61,7 +61,8 @@ namespace gui
 
 		void defineBounds(const BoundsF&, const BoundsF&);
 
-		void initWidget(float /*lengthInSecs*/, bool /*_widgetEnv*/ = false);
+		/* lengthInSecs, widgetEnvelope */
+		void initWidget(float , bool = false);
 
 		void updateBounds();
 

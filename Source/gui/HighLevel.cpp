@@ -2,12 +2,13 @@
 
 namespace gui
 {
-	HighLevel::HighLevel(Utils& u, LowLevel* _lowLevel) :
+	HighLevel::HighLevel(Utils& u, LowLevel* _lowLevel, CompWidgetable* tuningEditor) :
 		Comp(u, "", CursorType::Default),
 #if PPDHasPatchBrowser
 		patchBrowser(u),
 		patchBrowserButton(u, patchBrowser),
 #endif
+		tuningEditorButton(u, tuningEditor),
 		macro(u),
 		modDepthLocked(u, "(Un-)Lock this patch's modulation patch."),
 		swapParamWithModDepth(u, "Swap parameter patch with modulation patch."),
@@ -21,7 +22,6 @@ namespace gui
 #endif
 		gainOut(u),
 		mix(u),
-		xen(u),
 #if PPDHasUnityGain && PPDHasGainIn
 		unityGain(u, param::toTooltip(PID::UnityGain)),
 #endif
@@ -50,13 +50,13 @@ namespace gui
 		layout.init
 		(
 			{ 1, 8, 1, 8, 1, 8, 1, 8, 1, 1 },
-			{ 1, 8, 1, 5, 1, 21, 1, 21, 1, 21, 1, 21, 1, 8, 8, 2 }
+			{ 1, 8, 1, 5, 1, 21, 1, 21, 1, 21, 1, 8, 8, 2 }
 		);
 #else
 		layout.init
 		(
 			{ 1, 8, 1, 8, 1, 8, 1, 8, 1, 1 },
-			{ 1, 8, 1, 21, 1, 21, 1, 21, 1, 21, 1, 8, 8, 2 }
+			{ 1, 8, 1, 21, 1, 21, 1, 21, 1, 8, 8, 2 }
 		);
 #endif
 
@@ -270,23 +270,23 @@ namespace gui
 #if PPDHasPatchBrowser
 		addAndMakeVisible(patchBrowserButton);
 #endif
+		addAndMakeVisible(tuningEditorButton);
+
 		addAndMakeVisible(macro);
 		addAndMakeVisible(parameterRandomizer);
 		parameterRandomizer.add(utils.getAllParams());
 #if PPDHasGainIn
 		makeParameter(gainIn, PID::GainIn, "In", true, &utils.getMeter(0));
 		addAndMakeVisible(gainIn);
+#if PPDHasUnityGain
+		makeParameterSwitchButton(unityGain, PID::UnityGain, ButtonSymbol::UnityGain);
+		addAndMakeVisible(unityGain);
+#endif
 #endif
 		makeParameter(gainOut, PID::Gain, "Out", true, &utils.getMeter(PPDHasGainIn ? 1 : 0));
 		addAndMakeVisible(gainOut);
 		makeParameter(mix, PID::Mix, "Mix");
 		addAndMakeVisible(mix);
-		makeParameter(xen, PID::Xen, "Xen");
-		addAndMakeVisible(xen);
-#if PPDHasUnityGain && PPDHasGainIn
-		makeParameterSwitchButton(unityGain, PID::UnityGain, ButtonSymbol::UnityGain);
-		addAndMakeVisible(unityGain);
-#endif
 #if PPDHasHQ
 		makeParameterSwitchButton(hq, PID::HQ, "HQ");
 		hq.getLabel().mode = Label::Mode::TextToLabelBounds;
@@ -379,14 +379,15 @@ namespace gui
 	{
 		layout.resized();
 
+		layout.place(tuningEditorButton, 3.f, 1.f, 1.f, 1.f, true);
+		layout.place(menuButton, 5.f, 1.f, 1.f, 1.f, true);
+		layout.place(parameterRandomizer, 7.f, 1.f, 1.f, 1.f, true);
+
 #if PPDHasPatchBrowser
 		layout.place(patchBrowserButton, 1.f, 3.f, 7.f, 1.f, false);
 #endif
 		const auto patchBrowserOffset = PPDHasPatchBrowser ? 2.f : 0.f;
-
-		layout.place(menuButton, 5.f, 1.f, 1.f, 1.f, true);
-		layout.place(parameterRandomizer, 7.f, 1.f, 1.f, 1.f, true);
-
+		
 		layout.place(macro, 3.f, 3.f + patchBrowserOffset + .2f, 3.f, .8f, false);
 
 		layout.place(saveModPatch, 1.f, 3.f + patchBrowserOffset, 1.f, .3333f, true);
@@ -407,19 +408,18 @@ namespace gui
 #endif
 
 		layout.place(mix, 3.f, 7.f + patchBrowserOffset, 3.f, 1.f, true);
-		layout.place(xen, 3.f, 9.f + patchBrowserOffset, 3.f, 1.f, true);
 
-		layout.place(power, 1.f, 11.f + patchBrowserOffset, 1.f, 1.f, true);
+		layout.place(power, 1.f, 9.f + patchBrowserOffset, 1.f, 1.f, true);
 #if PPDHasPolarity
-		layout.place(polarity, 3.f, 11.f + patchBrowserOffset, 1.f, 1.f, true);
+		layout.place(polarity, 3.f, 9.f + patchBrowserOffset, 1.f, 1.f, true);
 #endif
 #if PPDHasStereoConfig
-		layout.place(stereoConfig, 5.f, 11.f + patchBrowserOffset, 1.f, 1.f, true);
+		layout.place(stereoConfig, 5.f, 9.f + patchBrowserOffset, 1.f, 1.f, true);
 #endif
-		layout.place(hq, 7.f, 11.f + patchBrowserOffset, 1.f, 1.f, true);
+		layout.place(hq, 7.f, 9.f + patchBrowserOffset, 1.f, 1.f, true);
 
-		layout.place(ccMonitor, 1.f, 12.f + patchBrowserOffset, 7.f, 1.f, false);
-		layout.place(midiVoices, 1.f, 13.f + patchBrowserOffset, 7.f, 1.f, false);
+		layout.place(ccMonitor, 1.f, 10.f + patchBrowserOffset, 7.f, 1.f, false);
+		layout.place(midiVoices, 1.f, 11.f + patchBrowserOffset, 7.f, 1.f, false);
 
 #if PPDHasPatchBrowser
 		patchBrowser.setBounds(lowLevel->getBounds());

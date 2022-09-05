@@ -4,6 +4,7 @@
 #include "gui/ContextMenu.h"
 #include "gui/HighLevel.h"
 #include "gui/Tooltip.h"
+#include "gui/TuningEditor.h"
 
 namespace gui
 {
@@ -38,6 +39,7 @@ protected:
         Label pluginTitle;
 
         LowLevel lowLevel;
+        TuningEditor tuningEditor;
         HighLevel highLevel;
 
         ContextMenuKnobs contextMenuKnobs;

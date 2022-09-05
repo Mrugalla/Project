@@ -720,12 +720,12 @@ namespace param::valToStr
 
 	ValToStrFunc ms()
 	{
-		return [](float v) { return String(std::floor(v * 10.f) * .1f) + " " + toString(Unit::Ms); };
+		return [](float v) { return String(std::rint(v * 10.f) * .1f) + " " + toString(Unit::Ms); };
 	}
 
 	ValToStrFunc db()
 	{
-		return [](float v) { return String(std::floor(v * 100.f) * .01f) + " " + toString(Unit::Decibel); };
+		return [](float v) { return String(std::rint(v * 100.f) * .01f) + " " + toString(Unit::Decibel); };
 	}
 
 	ValToStrFunc empty()
@@ -761,7 +761,7 @@ namespace param::valToStr
 				else if (v == 1.f)
 					return String("Right");
 				else
-					return String(std::floor(v * 100.f)) + (v < 0.f ? " L" : " R");
+					return String(std::rint(v * 100.f)) + (v < 0.f ? " L" : " R");
 			}
 #if PPDHasStereoConfig
 			else
@@ -771,7 +771,7 @@ namespace param::valToStr
 				else if (v == 1.f)
 					return String("Side");
 				else
-					return String(std::floor(v * 100.f)) + (v < 0.f ? " M" : " S");
+					return String(std::rint(v * 100.f)) + (v < 0.f ? " M" : " S");
 			}
 #endif
 		};
@@ -781,7 +781,7 @@ namespace param::valToStr
 	{
 		return [](float v)
 		{
-			return String(v) + toString(Unit::Xen);
+			return String(std::rint(v)) + " " + toString(Unit::Xen);
 		};
 	}
 

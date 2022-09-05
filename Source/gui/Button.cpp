@@ -267,6 +267,12 @@ namespace gui
 				}
 			});
 	}
+	
+	void paintAbort(Graphics& g, BoundsF bounds)
+	{
+		g.setFont(getFontNEL());
+		g.drawFittedText("X", bounds.toNearestInt(), Just::centred, 1, 0.f);
+	}
 
 	void makeSymbolButton(Button& b, ButtonSymbol symbol, int targetToggleState)
 	{
@@ -310,7 +316,7 @@ namespace gui
 						g.fillRoundedRectangle(bounds, thicc);
 				}
 
-				bool abortable = symbol == ButtonSymbol::Settings;
+				bool abortable = symbol == ButtonSymbol::Settings || symbol == ButtonSymbol::TuningFork;
 				if (abortable && button.toggleState == 1 || symbol == ButtonSymbol::Abort)
 					col = Colours::c(ColourID::Abort);
 				else
@@ -429,11 +435,7 @@ namespace gui
 				{
 					if (button.toggleState == 1)
 					{
-						const auto thicc3 = thicc * 3.f;
-						bounds = maxQuadIn(bounds).reduced(thicc3);
-
-						g.setFont(getFontNEL());
-						g.drawFittedText("X", bounds.toNearestInt(), Just::centred, 1, 0.f);
+						paintAbort(g, maxQuadIn(bounds).reduced(thicc * 3.f));
 					}
 					else
 					{
@@ -501,11 +503,7 @@ namespace gui
 				}
 				else if (symbol == ButtonSymbol::Abort)
 				{
-					const auto thicc3 = thicc * 3.f;
-					bounds = maxQuadIn(bounds).reduced(thicc3);
-
-					g.setFont(getFontNEL());
-					g.drawFittedText("X", bounds.toNearestInt(), Just::centred, 1, 0.f);
+					paintAbort(g, maxQuadIn(bounds).reduced(thicc * 3.f));
 				}
 				else if (symbol == ButtonSymbol::Random)
 				{
@@ -712,6 +710,33 @@ namespace gui
 
 					Stroke stroke(thicc, Stroke::JointStyle::beveled, Stroke::EndCapStyle::butt);
 					g.strokePath(path, stroke);
+				}
+				else if (symbol == ButtonSymbol::TuningFork)
+				{
+					const auto thicc3 = thicc * 3.f;
+					bounds = maxQuadIn(bounds).reduced(thicc3);
+					
+					if (button.toggleState == 1)
+					{
+						paintAbort(g, bounds);
+						return;
+					}
+
+					const auto x = bounds.getX();
+					const auto y = bounds.getY();
+					const auto width = bounds.getWidth();
+					const auto rad = width * .5f;
+
+					PointF centre(x + rad, y + rad);
+					auto x1 = centre.x - .1f * width;
+					auto x2 = centre.x + .1f * width;
+					auto y1 = y + width * .6f;
+					auto y2 = y + width;
+					g.drawLine(x1, y, x1, y1, thicc);
+					g.drawLine(x2, y, x2, y1, thicc);
+					g.drawLine(x1, y1, x2, y1, thicc);
+					g.drawLine(centre.x, y1, centre.x, y2, thicc);
+					g.fillEllipse(x1, y2, x2 - x1, width * .1f);
 				}
 			});
 	}

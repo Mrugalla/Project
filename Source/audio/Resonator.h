@@ -10,7 +10,6 @@
 namespace audio
 {
 	
-
 	class Resonator
 	{
 		struct DelayFeedback
@@ -71,7 +70,6 @@ namespace audio
 		};
 
 		static constexpr float LowestFrequencyHz = 20.f;
-		static constexpr int Octave = 12;
 
 	public:
 		Resonator(MIDIVoices& _midiVoices, const XenManager& _xenManager) :

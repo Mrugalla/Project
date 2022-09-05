@@ -14,7 +14,8 @@ namespace gui
         pluginTitle(utils, JucePlugin_Name),
 
         lowLevel(utils),
-        highLevel(utils, &lowLevel),
+        tuningEditor(utils),
+        highLevel(utils, &lowLevel, &tuningEditor),
 
         contextMenuKnobs(utils),
         contextMenuButtons(utils),
@@ -29,11 +30,12 @@ namespace gui
 
         setMouseCursor(makeCursor(CursorType::Default));
 
-        layout.init(
+        layout.init
+        (
             { 1, 3 },
             { 2, 13, 1 }
         );
-
+		
         addAndMakeVisible(tooltip);
 
         pluginTitle.font = getFontDosisExtraLight();
@@ -42,6 +44,8 @@ namespace gui
 
         addAndMakeVisible(lowLevel);
         addAndMakeVisible(highLevel);
+
+        addAndMakeVisible(tuningEditor);
 
         highLevel.init();
 
@@ -84,6 +88,19 @@ namespace gui
         layout.place(pluginTitle, 1, 0, 1, 1, false);
         layout.place(lowLevel, 1, 1, 1, 1, false);
         layout.place(highLevel, 0, 0, 1, 2, false);
+        
+        {
+            const auto bnds = lowLevel.getBounds().toFloat();
+
+            tuningEditor.defineBounds
+            (
+                bnds.withX(static_cast<float>(getRight())),
+				bnds
+            );
+
+            tuningEditor.updateBounds();
+        }
+		
 
         tooltip.setBounds(layout.bottom().toNearestInt());
 

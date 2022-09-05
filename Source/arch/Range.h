@@ -11,7 +11,7 @@ namespace makeRange
 		const auto a = bias * .5f + .5f;
 		const auto a2 = 2.f * a;
 		const auto aM = 1.f - a;
-		
+
 		const auto r = end - start;
 		const auto aR = r * a;
 		if (bias != 0.f)
@@ -73,9 +73,9 @@ namespace makeRange
 				{
 					return (denormalized - min) * rangeInv;
 				},
-				[steps, stepsInv = 1.f / steps](float min, float max, float val)
+				[steps, stepsInv = 1.f / steps](float min, float max, float x)
 				{
-					return juce::jlimit(min, max, std::rint(val * stepsInv) * steps);
+					return juce::jlimit(min, max, std::rint(x * stepsInv) * steps);
 				}
 		};
 	}
@@ -89,33 +89,5 @@ namespace makeRange
 
 		return makeRange::biased(start, end, 2.f * v - 1.f);
 	}
-
-	// probably deprecated
-	/*
-	inline Range withCentre(float start, float end, float centre, float tolerance = .0001f) noexcept
-	{
-		auto b = 0.f;
-		auto bInc = 1.f;
-		auto range = biased(start, end, b);
-		auto nVal = range.convertFrom0to1(.5f);
-		auto dist = nVal - centre;
-		auto dif = std::abs(dist);
-		if (dif < tolerance)
-			return range;
-		do
-		{
-			bInc *= .5f;
-			b += dist > 0.f ? -bInc : bInc;
-			
-			range = biased(start, end, b);
-			nVal = range.convertFrom0to1(.5f);
-			dist = nVal - centre;
-			dif = std::abs(dist);
-
-		} while (dif > tolerance);
-
-		return range;
-	}
-	*/
 
 }
