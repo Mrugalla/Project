@@ -6,6 +6,8 @@ namespace audio
     static constexpr float Pi = 3.14159265359f;
     static constexpr float PiHalf = Pi * .5f;
     static constexpr float PiHalfInv = 1.f / PiHalf;
+    using Char = juce::juce_wchar;
+    using String = juce::String;
 	
     template<typename Float>
     inline Float secsInSamples(Float secs, Float Fs) noexcept
@@ -138,4 +140,44 @@ namespace audio
         return threshold + ratio * (xDb - threshold);
 
     }
+	
+    inline bool isDigit(Char chr) noexcept
+    {
+		return chr >= '0' && chr <= '9';
+    }
+
+	inline bool isLetter(Char chr) noexcept
+	{
+		return (chr >= 'a' && chr <= 'z') || (chr >= 'A' && chr <= 'Z');
+	}
+
+	inline bool isLetterOrDigit(Char chr) noexcept
+	{
+		return isLetter(chr) || isDigit(chr);
+	}
+
+	inline int getDigit(Char chr) noexcept
+	{
+		return chr - '0';
+	}
+	
+	inline String pitchclassToString(int pitchclass) noexcept
+	{
+		switch (pitchclass)
+		{
+		case 0: return "C";
+		case 1: return "C#";
+		case 2: return "D";
+		case 3: return "D#";
+		case 4: return "E";
+		case 5: return "F";
+		case 6: return "F#";
+		case 7: return "G";
+		case 8: return "G#";
+		case 9: return "A";
+		case 10: return "A#";
+		case 11: return "B";
+		default: return "C";
+		}
+	}
 }

@@ -1,5 +1,6 @@
 #include "Param.h"
 #include "../arch/FormularParser.h"
+#include "../arch/Conversion.h"
 
 namespace param
 {
@@ -38,6 +39,8 @@ namespace param
 		case PID::StereoConfig: return "Stereo Config";
 #endif
 		case PID::Xen: return "Xen";
+		case PID::MasterTune: return "Master Tune";
+
 		case PID::Power: return "Power";
 
 			// LOW LEVEL PARAMS:
@@ -86,6 +89,9 @@ namespace param
 		case PID::StereoConfig: return "Define the stereo-configuration. L/R or M/S.";
 #endif
 		case PID::Xen: return "Define the xenharmonic scale.";
+		case PID::MasterTune: return "Retune the entire plugin to a different chamber pitch.";
+		case PID::BaseNote: return "Define the base note of the scale.";
+			
 		case PID::Power: return "Bypass the plugin with this parameter.";
 
 		case PID::ResonatorFeedback: return "Dials in the resonator's feedback.";
@@ -120,6 +126,7 @@ namespace param
 		case Unit::Voices: return "v";
 		case Unit::Pan: return "%";
 		case Unit::Xen: return "notes/oct";
+		case Unit::Note: return "";
 		default: return "";
 		}
 	}
@@ -182,7 +189,8 @@ namespace param
 			if (var)
 			{
 				const auto val = static_cast<float>(*var);
-				const auto valD = range.convertTo0to1(range.snapToLegalValue(val));
+				const auto legalVal = range.snapToLegalValue(val);
+				const auto valD = range.convertTo0to1(legalVal);
 				setValueNotifyingHost(valD);
 			}
 			var = state.get(idStr, "maxmoddepth");
@@ -627,6 +635,92 @@ namespace param::strToVal
 		};
 	}
 
+	StrToValFunc note()
+	{
+		return[p = parse()](const String& txt)
+		{
+			const auto text = txt.toLowerCase();
+			auto val = p(text, -1.f);
+			if (val >= 0.f && val < 128.f)
+				return val;
+
+			enum pitchclass { C, Db, D, Eb, E, F, Gb, G, Ab, A, Bb, B, Num };
+			enum class State { Pitchclass, FlatOrSharp, Sign, Octave, numStates };
+
+			auto state = State::Pitchclass;
+			float signMult = 1.f;
+			
+			for (auto i = 0; i < text.length(); ++i)
+			{
+				auto chr = text[i];
+
+				if (state == State::Pitchclass)
+				{
+					if (chr == 'c')
+						val = C;
+					else if (chr == 'd')
+						val = D;
+					else if (chr == 'e')
+						val = E;
+					else if (chr == 'f')
+						val = F;
+					else if (chr == 'g')
+						val = G;
+					else if (chr == 'a')
+						val = A;
+					else if (chr == 'b')
+						val = B;
+					else
+						return 69.f;
+					
+					state = State::FlatOrSharp;
+				}
+				else if (state == State::FlatOrSharp)
+				{
+					if (chr == '#')
+						++val;
+					else if (chr == 'b')
+						--val;
+					else
+						--i;
+					
+					state = State::Sign;
+				}
+				else if (state == State::Sign)
+				{
+					if (chr == '-')
+						signMult = -1.f;
+					else if (chr == '+')
+						signMult = 1.f;
+					else
+						--i;
+
+					state = State::Octave;
+				}
+				else if (state == State::Octave)
+				{
+					auto digit = audio::getDigit(chr);
+					if (digit < 0 || digit > 9)
+						return 69.f;
+					else
+					{
+						val += digit * 12.f * signMult;
+						val += 12.f;
+						while (val < 0.f)
+							val += 12.f;
+						while (val >= 128.f)
+							val -= 12.f;
+
+						return val;
+					}
+				}
+				else
+					return 69.f;
+			}
+			
+			return juce::jlimit(0.f, 127.f, val + 12.f);
+		};
+	}
 }
 
 namespace param::valToStr
@@ -785,6 +879,22 @@ namespace param::valToStr
 		};
 	}
 
+	ValToStrFunc note()
+	{
+		return [](float v)
+		{
+			if (v >= 0.f && v < 128.f)
+			{
+				enum pitchclass { C, Db, D, Eb, E, F, Gb, G, Ab, A, Bb, B, Num };
+
+				const auto note = static_cast<int>(std::rint(v));
+				const auto octave = note / 12 - 1;
+				const auto noteName = note % 12;
+				return audio::pitchclassToString(noteName) + String(octave);
+			}
+			return String("?");
+		};
+	}
 }
 
 namespace param
@@ -858,6 +968,10 @@ namespace param
 			valToStrFunc = valToStr::xen();
 			strToValFunc = strToVal::xen();
 			break;
+		case Unit::Note:
+			valToStrFunc = valToStr::note();
+			strToValFunc = strToVal::note();
+			break;
 		default:
 			valToStrFunc = valToStr::empty();
 			strToValFunc = strToVal::percent();
@@ -901,6 +1015,9 @@ namespace param
 		params.push_back(makeParam(PID::StereoConfig, state, 1.f, makeRange::toggle(), Unit::StereoConfig));
 #endif
 		params.push_back(makeParam(PID::Xen, state, 12.f, makeRange::withCentre(1.f, PPD_MaxXen, 12.f), Unit::Xen));
+		params.push_back(makeParam(PID::MasterTune, state, 440.f, makeRange::withCentre(420.f, 460.f, 440.f), Unit::Hz));
+		params.push_back(makeParam(PID::BaseNote, state, 69.f, makeRange::withCentre(0.f, 127.f, 69.f), Unit::Note));
+
 		params.push_back(makeParam(PID::Power, state, 1.f, makeRange::toggle(), Unit::Power));
 
 		// LOW LEVEL PARAMS:

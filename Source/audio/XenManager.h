@@ -10,22 +10,24 @@ namespace audio
 		XenManager() :
 			xen(12.f),
 			masterTune(440.f),
+			baseNote(69.f),
 			temperaments()
 		{
 			for (auto& t : temperaments)
 				t = 0.f;
 		}
 		
-		void operator()(float _xen, float _masterTune) noexcept
+		void operator()(float _xen, float _masterTune, float _baseNote) noexcept
 		{
 			xen = _xen;
 			masterTune = _masterTune;
+			baseNote = _baseNote;
 		}
 
 		template<typename Float>
 		Float noteToFreqHz(Float note) const noexcept
 		{
-			return noteInFreqHz(note, static_cast<Float>(69), xen, masterTune);
+			return noteInFreqHz(note, baseNote, xen, masterTune);
 		}
 
 		template<typename Float>
@@ -45,7 +47,7 @@ namespace audio
 		}
 
 	protected:
-		float xen, masterTune;
+		float xen, masterTune, baseNote;
 		std::array<std::atomic<float>, PPD_MaxXen> temperaments;
 	};
 }

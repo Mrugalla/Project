@@ -36,6 +36,9 @@ namespace param
 		StereoConfig,
 #endif
 		Xen,
+		MasterTune,
+		BaseNote,
+		
 		Power,
 
 		// low level parameters
@@ -80,6 +83,7 @@ namespace param
 		Voices,
 		Pan,
 		Xen,
+		Note,
 		NumUnits
 	};
 
@@ -245,6 +249,7 @@ namespace param
 		StrToValFunc db();
 		StrToValFunc voices();
 		StrToValFunc pan(const Params&);
+		StrToValFunc note();
 	}
 
 	namespace valToStr
@@ -269,6 +274,7 @@ namespace param
 		ValToStrFunc empty();
 		ValToStrFunc voices();
 		ValToStrFunc pan(const Params&);
+		ValToStrFunc note();
 	}
 
 	Param* makeParam(PID, State&,

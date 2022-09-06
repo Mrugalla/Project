@@ -30,7 +30,8 @@ namespace makeRange
 					const auto denom = a2 * min + aR - a2 * x - min + x;
 					if (denom == 0.f)
 						return 0.f;
-					return aM * (x - min) / denom;
+					auto val = aM * (x - min) / denom;
+					return val > 1.f ? 1.f : val;
 				},
 				[](float min, float max, float x)
 				{

@@ -237,7 +237,8 @@ namespace audio
         xenManager
         (
             std::rint(params[PID::Xen]->getValModDenorm()),
-			440.f // masterTune
+            params[PID::MasterTune]->getValModDenorm(),
+            std::rint(params[PID::BaseNote]->getValModDenorm())
         );
 		
         midiManager(midi, numSamples);

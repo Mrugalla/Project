@@ -165,7 +165,7 @@ namespace gui
 
     void makeParameter(Knob& knob, PID pID, const String& name, const Knob::OnPaint& onPaint, bool modulatable, const std::atomic<float>* meter)
     {
-        const bool hasMeter = meter != nullptr;
+        //const bool hasMeter = meter != nullptr;
 
         knob.getInfo = [pID](int i)
         {

@@ -59,7 +59,6 @@ namespace gui
 				const auto width = bounds.getWidth();
 				const auto rad = width * .5f;
 				const auto radHalf = rad * .5f;
-				const auto radQuart = rad * .25f;
 				const auto boundsInner = bounds.reduced(radHalf);
 				PointF centre
 				(
@@ -181,7 +180,9 @@ namespace gui
 			title(u, "Tuning Editor"),
 			master(u, "Master"),
 			selection(u, "Selection"),
-			xen(u)
+			xen(u),
+			baseNote(u),
+			masterTune(u)
 		{
 			addAndMakeVisible(title);
 			title.textCID = ColourID::Txt;
@@ -200,6 +201,12 @@ namespace gui
 
 			addAndMakeVisible(xen);
 
+			addAndMakeVisible(baseNote);
+			makeParameter(baseNote, PID::BaseNote, "Base Note");
+
+			addAndMakeVisible(masterTune);
+			makeParameter(masterTune, PID::MasterTune, "Master Tune");
+
 			layout.init
 			(
 				{ 1, 13, 5, 5, 1 },
@@ -212,14 +219,8 @@ namespace gui
 			g.fillAll(Colours::c(ColourID::Bg).withAlpha(.98f));
 
 			g.setColour(Colours::c(ColourID::Hover));
-			layout.label(g, "base note", 2, 4, 1, 1, false);
-			layout.label(g, "master tune", 2, 5, 1, 1, false);
 			layout.label(g, "temperament", 2, 8, 1, 1, false);
-
-			layout.label(g, "69", 3, 4, 1, 1, false);
-			layout.label(g, "440 hz", 3, 5, 1, 1, false);
 			layout.label(g, "0.14", 3, 8, 1, 1, false);
-
 			layout.label(g, "keyboard component", 1, 10, 3, 1, false);
 		}
 
@@ -232,11 +233,16 @@ namespace gui
 			layout.place(selection, 2, 7, 2, 1, false);
 
 			layout.place(xen, 1, 3, 1, 6, true);
+
+			layout.place(baseNote, 2, 4, 1, 2, false);
+			layout.place(masterTune, 3, 4, 1, 2, false);
 		}
 
 	protected:
 		Label title, master, selection;
 		XenWheel xen;
+
+		Knob baseNote, masterTune;
 
 	};
 }
