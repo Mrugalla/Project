@@ -21,22 +21,43 @@ namespace audio
 			
 		}
 
-		/* frequency fc [0, .5[, bandwidth bw [0, .5[ */
-		void setFc(float fc, float bw) noexcept
+		/* frequency fc [0, .5[, q-factor q [0, .77[ */
+		void setFc(float fc, float q) noexcept
 		{
-			auto R = 1.f - 3.f * bw;
-			auto K = (1.f - 2.f * R * std::cos(Tau * fc) + R * R) / (2.f - 2.f * std::cos(Tau * fc));
+			const auto omega = Tau * fc;
+			const auto sinOmega = std::sin(omega);
+			const auto cosOmega = std::cos(omega);
+			const auto alpha = sinOmega / (2.f * q);
+			
+			a0 = alpha;
+			a1 = 0.f;
+			a2 = -alpha;
+			
+			b1 = -2.f * cosOmega;
+			b2 = 1.f - alpha;
 
-			a0 = 1.f - K;
-			a1 = 2.f * (K - R) * std::cos(Tau * fc);
-			a2 = R * R - K;
-			b1 = 2.f * R * std::cos(Tau * fc);
-			b2 = -R * R;
+			const auto b0 = 1.f + alpha;
+			const auto b0Inv = 1.f / b0;
+
+			a0 *= b0Inv;
+			a1 *= b0Inv;
+			a2 *= b0Inv;
+			b1 *= -b0Inv;
+			b2 *= -b0Inv;
 		}
 		
+		void copy(const FilterBandpass& other) noexcept
+		{
+			a0 = other.a0;
+			a1 = other.a1;
+			a2 = other.a2;
+			b1 = other.b1;
+			b2 = other.b2;
+		}
+
 		float processSample(float x0) noexcept
 		{
-			y1 =
+			auto y0 =
 				x0 * a0 +
 				x1 * a1 +
 				x2 * a2 +
@@ -46,8 +67,9 @@ namespace audio
 			x2 = x1;
 			x1 = x0;
 			y2 = y1;
+			y1 = y0;
 			
-			return y1;
+			return y0;
 		}
 
 		float a0, a1, a2, b1, b2;
