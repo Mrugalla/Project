@@ -40,6 +40,8 @@ namespace param
 #endif
 		case PID::Xen: return "Xen";
 		case PID::MasterTune: return "Master Tune";
+		case PID::BaseNote: return "Base Note";
+		case PID::PitchbendRange: return "Pitchbend Range";
 
 		case PID::Power: return "Power";
 
@@ -91,6 +93,7 @@ namespace param
 		case PID::Xen: return "Define the xenharmonic scale.";
 		case PID::MasterTune: return "Retune the entire plugin to a different chamber pitch.";
 		case PID::BaseNote: return "Define the base note of the scale.";
+		case PID::PitchbendRange: return "Define the pitchbend range in semitones.";
 			
 		case PID::Power: return "Bypass the plugin with this parameter.";
 
@@ -648,7 +651,7 @@ namespace param::strToVal
 			enum class State { Pitchclass, FlatOrSharp, Sign, Octave, numStates };
 
 			auto state = State::Pitchclass;
-			float signMult = 1.f;
+			auto signMult = 1.f;
 			
 			for (auto i = 0; i < text.length(); ++i)
 			{
@@ -1017,6 +1020,7 @@ namespace param
 		params.push_back(makeParam(PID::Xen, state, 12.f, makeRange::withCentre(1.f, PPD_MaxXen, 12.f), Unit::Xen));
 		params.push_back(makeParam(PID::MasterTune, state, 440.f, makeRange::withCentre(420.f, 460.f, 440.f), Unit::Hz));
 		params.push_back(makeParam(PID::BaseNote, state, 69.f, makeRange::withCentre(0.f, 127.f, 69.f), Unit::Note));
+		params.push_back(makeParam(PID::PitchbendRange, state, 2.f, makeRange::stepped(0.f, 48.f, 1.f), Unit::Semi));
 
 		params.push_back(makeParam(PID::Power, state, 1.f, makeRange::toggle(), Unit::Power));
 

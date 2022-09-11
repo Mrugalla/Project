@@ -240,6 +240,8 @@ namespace audio
             params[PID::MasterTune]->getValModDenorm(),
             std::rint(params[PID::BaseNote]->getValModDenorm())
         );
+
+        midiVoices.pitchbendRange = std::rint(params[PID::PitchbendRange]->getValModDenorm());
 		
         midiManager(midi, numSamples);
 
@@ -369,7 +371,20 @@ namespace audio
 		auto fine = params[PID::ResonatorFine]->getValModDenorm();
         auto retuneVal = getRetuneValue(oct, semi, fine);
         
-        resonator(samples, numChannels, numSamples, fb, damp, retuneVal);
+        //resonator(samples, numChannels, numSamples, fb, damp, retuneVal);
+
+        {
+            const auto note = 48.f;
+            const auto freq = noteInFreqHz(note);
+            const auto fc = freqHzInFc(freq, (float)oversampler.getFsUp());
+            filter.setFc(fc, .001f);
+        }
+        
+		for(auto s = 0; s < numSamples; ++s)
+            samples[0][s] = filter.processSample(samples[0][s]);
+        
+        for (auto ch = 1; ch < numChannels; ++ch)
+            SIMD::copy(samples[ch], samples[0], numSamples);
     }
 
     void Processor::releaseResources() {}

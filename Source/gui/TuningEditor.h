@@ -1,5 +1,6 @@
 #pragma once
 #include "Knob.h"
+#include "KeyboardComp.h"
 
 namespace gui
 {
@@ -182,7 +183,9 @@ namespace gui
 			selection(u, "Selection"),
 			xen(u),
 			baseNote(u),
-			masterTune(u)
+			masterTune(u),
+			pitchbend(u),
+			keys(u, "Scrub the keys to test your tuning settings.")
 		{
 			addAndMakeVisible(title);
 			title.textCID = ColourID::Txt;
@@ -207,9 +210,14 @@ namespace gui
 			addAndMakeVisible(masterTune);
 			makeParameter(masterTune, PID::MasterTune, "Master Tune");
 
+			addAndMakeVisible(pitchbend);
+			makeParameter(pitchbend, PID::PitchbendRange, "Pitchbend");
+
+			addAndMakeVisible(keys);
+
 			layout.init
 			(
-				{ 1, 13, 5, 5, 1 },
+				{ 1, 13, 5, 5, 5, 1 },
 				{ 1, 3, 1, 3, 5, 5, 1, 3, 5, 1, 3, 1 }
 			);
 		}
@@ -221,28 +229,31 @@ namespace gui
 			g.setColour(Colours::c(ColourID::Hover));
 			layout.label(g, "temperament", 2, 8, 1, 1, false);
 			layout.label(g, "0.14", 3, 8, 1, 1, false);
-			layout.label(g, "keyboard component", 1, 10, 3, 1, false);
 		}
 
 		void resized()
 		{
 			layout.resized();
 
-			layout.place(title, 1, 1, 3, 1, false);
+			layout.place(title, 1, 1, 4, 1, false);
 			layout.place(master, 2, 3, 2, 1, false);
-			layout.place(selection, 2, 7, 2, 1, false);
+			layout.place(selection, 2, 7, 3, 1, false);
 
 			layout.place(xen, 1, 3, 1, 6, true);
 
 			layout.place(baseNote, 2, 4, 1, 2, false);
 			layout.place(masterTune, 3, 4, 1, 2, false);
+			layout.place(pitchbend, 4, 4, 1, 2, false);
+
+			layout.place(keys, 1, 10, 4, 1, false);
 		}
 
 	protected:
 		Label title, master, selection;
 		XenWheel xen;
 
-		Knob baseNote, masterTune;
+		Knob baseNote, masterTune, pitchbend;
 
+		KeyboardComp keys;
 	};
 }

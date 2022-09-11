@@ -53,6 +53,7 @@
         <FILE id="Uad8Jv" name="State.h" compile="0" resource="0" file="Source/arch/State.h"/>
       </GROUP>
       <GROUP id="{DA435779-5001-4379-F809-3E7C21D55DC0}" name="gui">
+        <FILE id="umfIwJ" name="KeyboardComp.h" compile="0" resource="0" file="Source/gui/KeyboardComp.h"/>
         <FILE id="odrA6r" name="TuningEditor.h" compile="0" resource="0" file="Source/gui/TuningEditor.h"/>
         <FILE id="N5YMZm" name="MIDICCMonitor.cpp" compile="1" resource="0"
               file="Source/gui/MIDICCMonitor.cpp"/>
@@ -113,6 +114,7 @@
         <FILE id="KPtX3O" name="DryWetMix.h" compile="0" resource="0" file="Source/audio/DryWetMix.h"/>
         <FILE id="dgpmul" name="EnvelopeFollower.h" compile="0" resource="0"
               file="Source/audio/EnvelopeFollower.h"/>
+        <FILE id="P0YP67" name="Filter.h" compile="0" resource="0" file="Source/audio/Filter.h"/>
         <FILE id="kQwYTy" name="Meter.cpp" compile="1" resource="0" file="Source/audio/Meter.cpp"/>
         <FILE id="TN2ewh" name="Meter.h" compile="0" resource="0" file="Source/audio/Meter.h"/>
         <FILE id="vVTypK" name="MIDILearn.cpp" compile="1" resource="0" file="Source/audio/MIDILearn.cpp"/>

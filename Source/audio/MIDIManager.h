@@ -1,5 +1,6 @@
 #pragma once
 #include "MIDILearn.h"
+#include "XenManager.h"
 #include <functional>
 
 namespace audio
@@ -13,6 +14,7 @@ namespace audio
 			onCC(),
 			onNoteOn(),
 			onNoteOff(),
+			onPitchbend(),
 			onNoEvt()
 		{
 			onInit.push_back([&learn = midiLearn](int)
@@ -52,7 +54,7 @@ namespace audio
 		MIDILearn midiLearn;
 
 		std::vector<std::function<void(int/* numSamples */)>> onInit, onEnd;
-		std::vector<std::function<void(const MidiMessage&, int/*sample index*/)>> onCC, onNoteOn, onNoteOff;
+		std::vector<std::function<void(const MidiMessage&, int/*sample index*/)>> onCC, onNoteOn, onNoteOff, onPitchbend;
 		std::vector<std::function<void(int/*sample index*/)>> onNoEvt;
 	protected:
 
@@ -98,9 +100,8 @@ namespace audio
 						}
 						else if (msg.isPitchWheel())
 						{
-							//const auto pwv = msg.getPitchWheelValue();
-							//pitchbendValue = static_cast<float>(pwv) * PBGain - 1.f;
-							//currentValue = noteValue + pitchbendValue;
+							for (auto& func : onPitchbend)
+								func(msg, s);
 						}
 						else if (msg.isController())
 						{
@@ -184,16 +185,62 @@ namespace audio
 
 	using MIDIVoicesArray = std::array<MIDINoteBuffer, PPD_MIDINumVoices>;
 
+	struct MIDIPitchbendBuffer
+	{
+		MIDIPitchbendBuffer() :
+			buffer(),
+			curPitchbend(0),
+			sampleIdx(0)
+		{
+		}
+
+		void prepare(int blockSize)
+		{
+			buffer.resize(blockSize, curPitchbend);
+		}
+
+		void processInit() noexcept
+		{
+			sampleIdx = 0;
+		}
+		
+		void processPitchbend(float pitchbend, int ts) noexcept
+		{
+			for (auto s = sampleIdx; s < ts; ++s)
+				buffer[s] = curPitchbend;
+
+			sampleIdx = ts;
+
+			curPitchbend = pitchbend;
+			buffer[ts] = curPitchbend;
+		}
+
+		void process(int numSamples) noexcept
+		{
+			for (auto s = sampleIdx; s < numSamples; ++s)
+				buffer[s] = curPitchbend;
+
+			sampleIdx = numSamples;
+		}
+
+		std::vector<float> buffer;
+		float curPitchbend;
+		int sampleIdx;
+	};
+
 	struct MIDIVoices
 	{
 		MIDIVoices(MIDIManager& manager) :
 			voices(),
+			pitchbendBuffer(),
+			pitchbendRange(2.f),
 			voiceIndex(0)
 		{
 			manager.onInit.push_back([this](int)
 			{
 				for (auto& voice : voices)
 					voice.sampleIdx = 0;
+				pitchbendBuffer.processInit();
 			});
 			manager.onNoteOn.push_back([this](const MidiMessage& msg, int s)
 			{
@@ -242,10 +289,18 @@ namespace audio
 						return voice.processNoteOff(s);
 				}
 			});
+			manager.onPitchbend.push_back([this](const MidiMessage& msg, int s)
+			{
+				const auto pwv = static_cast<float>(msg.getPitchWheelValue());
+				const auto pbNorm = (pwv - 8192.f) * .0001220703125f;
+				const auto val = pbNorm * pitchbendRange;
+				pitchbendBuffer.processPitchbend(val, s);
+			});
 			manager.onEnd.push_back([this](int numSamples)
 			{
 				for (auto& voice : voices)
 					voice.process(numSamples);
+				pitchbendBuffer.process(numSamples);
 			});
 		}
 
@@ -253,9 +308,12 @@ namespace audio
 		{
 			for (auto& voice : voices)
 				voice.prepare(blockSize);
+			pitchbendBuffer.prepare(blockSize);
 		}
-		
+
 		MIDIVoicesArray voices;
+		MIDIPitchbendBuffer pitchbendBuffer;
+		float pitchbendRange;
 		int voiceIndex;
 	};
 }

@@ -11,6 +11,7 @@
 #include "audio/MidSide.h"
 #include "audio/Oversampling.h"
 #include "audio/Meter.h"
+#include "audio/Filter.h"
 
 #include "audio/Resonator.h"
 
@@ -109,6 +110,7 @@ namespace audio
 
         juce::AudioProcessorEditor* createEditor() override;
 
+        FilterBandpass filter;
         Resonator resonator;
     };
 }

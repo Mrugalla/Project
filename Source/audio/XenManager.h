@@ -1,5 +1,6 @@
 #pragma once
 #include "../arch/Conversion.h"
+#include "../arch/Interpolation.h"
 #include <array>
 #include <atomic>
 
@@ -16,6 +17,14 @@ namespace audio
 			for (auto& t : temperaments)
 				t = 0.f;
 		}
+
+		void setTemperament(float tmprVal, int noteVal) noexcept
+		{
+			temperaments[noteVal] = tmprVal;
+			const auto idx2 = noteVal + PPD_MaxXen;
+			if (idx2 >= temperaments.size())
+				temperaments[idx2] = tmprVal;
+		}
 		
 		void operator()(float _xen, float _masterTune, float _baseNote) noexcept
 		{
@@ -27,7 +36,9 @@ namespace audio
 		template<typename Float>
 		Float noteToFreqHz(Float note) const noexcept
 		{
-			return noteInFreqHz(note, baseNote, xen, masterTune);
+			const auto tmprmt = temperaments[static_cast<int>(std::rint(note))].load();
+
+			return noteInFreqHz(note + tmprmt, baseNote, xen, masterTune);
 		}
 
 		template<typename Float>
@@ -48,6 +59,6 @@ namespace audio
 
 	protected:
 		float xen, masterTune, baseNote;
-		std::array<std::atomic<float>, PPD_MaxXen> temperaments;
+		std::array<std::atomic<float>, PPD_MaxXen + 1> temperaments;
 	};
 }

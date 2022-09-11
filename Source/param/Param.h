@@ -38,6 +38,7 @@ namespace param
 		Xen,
 		MasterTune,
 		BaseNote,
+		PitchbendRange,
 		
 		Power,
 

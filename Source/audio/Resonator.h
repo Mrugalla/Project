@@ -123,8 +123,9 @@ namespace audio
 				for (auto s = 0; s < numSamples; ++s)
 				{
 					auto nNote = static_cast<float>(noteBuffer[0].noteNumber);
+					const auto pb = midiVoices.pitchbendBuffer.buffer[s];
 					
-					nNote = juce::jlimit(1.f, 128.f, nNote + retuneBuf[s]);
+					nNote = juce::jlimit(1.f, 127.f, nNote + retuneBuf[s] + pb);
 					
 					if (curNote != nNote)
 					{

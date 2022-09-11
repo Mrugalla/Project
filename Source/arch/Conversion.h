@@ -61,6 +61,12 @@ namespace audio
         return std::log2(freqHz * static_cast<Float>(.00227272727)) * xen + rootNote;
     }
 
+    template<typename Float>
+    inline Float freqHzInFc(Float freq, Float Fs) noexcept
+    {
+		return freq / Fs;
+    }
+
 	template<typename Float>
     inline Float gainToDecibel(Float gain) noexcept
     {
@@ -180,4 +186,29 @@ namespace audio
 		default: return "C";
 		}
 	}
+
+    inline bool isWhiteKey(int pitchclass) noexcept
+    {
+		switch (pitchclass)
+		{
+		case 0: return true;
+		case 1: return false;
+		case 2: return true;
+		case 3: return false;
+		case 4: return true;
+		case 5: return true;
+		case 6: return false;
+		case 7: return true;
+		case 8: return false;
+		case 9: return true;
+		case 10: return false;
+		case 11: return true;
+		default: return true;
+		}
+    }
+
+    inline bool isBlackKey(int pitchclass) noexcept
+    {
+		return !isWhiteKey(pitchclass);
+    }
 }
