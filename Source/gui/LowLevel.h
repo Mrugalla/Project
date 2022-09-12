@@ -9,12 +9,17 @@ namespace gui
     {
         LowLevel(Utils& u) :
             Comp(u, "", CursorType::Default),
+			bpCutoff(u),
+			bpQ(u),
             feedback(u),
             damp(u),
             oct(u),
             semi(u),
             fine(u)
         {
+            makeParameter(bpCutoff, PID::BandpassCutoff, "BP Cutoff");
+			makeParameter(bpQ, PID::BandpassQ, "BP Q");
+
             makeParameter(feedback, PID::ResonatorFeedback, "Feedback");
             makeParameter(damp, PID::ResonatorDamp, "Damp");
 			makeParameter(oct, PID::ResonatorOct, "Oct");
@@ -24,9 +29,11 @@ namespace gui
             layout.init
             (
                 { 3, 5, 5, 5, 5, 5, 3 },
-                { 3, 1, 5, 1, 3 }
+                { 3, 1, 5, 1, 5, 1, 3 }
             );
 
+            addAndMakeVisible(bpCutoff);
+			addAndMakeVisible(bpQ);
             addAndMakeVisible(feedback);
 			addAndMakeVisible(damp);
 			addAndMakeVisible(oct);
@@ -42,7 +49,11 @@ namespace gui
 
             g.setColour(Colours::c(ColourID::Txt));
 
-            const auto resonatorArea = layout(1, 1, 5, 3);
+            const auto bpArea = layout(1, 1, 5, 2);
+            g.drawFittedText("BP", bpArea.toNearestInt(), Just::centredTop, 1);
+            drawRectEdges(g, bpArea, thicc2, stroke);
+
+            const auto resonatorArea = layout(1, 3, 5, 2);
             g.drawFittedText("Resonator", resonatorArea.toNearestInt(), Just::centredTop, 1);
             drawRectEdges(g, resonatorArea, thicc2, stroke);
         }
@@ -51,14 +62,18 @@ namespace gui
         {
             layout.resized();
 
-            layout.place(feedback, 1, 2, 1, 1, false);
-            layout.place(damp, 2, 2, 1, 1, false);
-			layout.place(oct, 3, 2, 1, 1, false);
-			layout.place(semi, 4, 2, 1, 1, false);
-			layout.place(fine, 5, 2, 1, 1, false);
+            layout.place(bpCutoff, 1, 2, 1, 1, false);
+			layout.place(bpQ, 2, 2, 1, 1, false);
+
+            layout.place(feedback, 1, 4, 1, 1, false);
+            layout.place(damp, 2, 4, 1, 1, false);
+			layout.place(oct, 3, 4, 1, 1, false);
+			layout.place(semi, 4, 4, 1, 1, false);
+			layout.place(fine, 5, 4, 1, 1, false);
         }
 
     protected:
+        Knob bpCutoff, bpQ;
         Knob feedback, damp, oct, semi, fine;
     };
 }

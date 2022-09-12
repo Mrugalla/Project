@@ -43,6 +43,9 @@ namespace param
 		Power,
 
 		// low level parameters
+		BandpassCutoff,
+		BandpassQ,
+
 		ResonatorFeedback,
 		ResonatorDamp,
 		ResonatorOct,
@@ -85,6 +88,7 @@ namespace param
 		Pan,
 		Xen,
 		Note,
+		Q,
 		NumUnits
 	};
 
@@ -251,6 +255,7 @@ namespace param
 		StrToValFunc voices();
 		StrToValFunc pan(const Params&);
 		StrToValFunc note();
+		StrToValFunc q();
 	}
 
 	namespace valToStr
@@ -276,6 +281,7 @@ namespace param
 		ValToStrFunc voices();
 		ValToStrFunc pan(const Params&);
 		ValToStrFunc note();
+		ValToStrFunc q();
 	}
 
 	Param* makeParam(PID, State&,
@@ -292,4 +298,5 @@ namespace param
 
 		Params& params;
 	};
+	
 }

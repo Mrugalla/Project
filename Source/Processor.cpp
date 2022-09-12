@@ -371,13 +371,14 @@ namespace audio
 		auto fine = params[PID::ResonatorFine]->getValModDenorm();
         auto retuneVal = getRetuneValue(oct, semi, fine);
         
-        //resonator(samples, numChannels, numSamples, fb, damp, retuneVal);
+        resonator(samples, numChannels, numSamples, fb, damp, retuneVal);
 
         {
-            const auto note = 48.f;
+            const auto note = params[PID::BandpassCutoff]->getValModDenorm();
             const auto freq = noteInFreqHz(note);
             const auto fc = freqHzInFc(freq, (float)oversampler.getFsUp());
-            filter.setFc(fc, 160.f);
+			const auto q = params[PID::BandpassQ]->getValModDenorm();
+            filter.setFc(fc, q);
         }
         
         for (auto s = 0; s < numSamples; ++s)

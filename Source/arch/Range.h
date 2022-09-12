@@ -1,5 +1,6 @@
 #pragma once
 #include "juce_core/juce_core.h"
+#include "Conversion.h"
 
 namespace makeRange
 {
@@ -77,6 +78,29 @@ namespace makeRange
 				[steps, stepsInv = 1.f / steps](float min, float max, float x)
 				{
 					return juce::jlimit(min, max, std::rint(x * stepsInv) * steps);
+				}
+		};
+	}
+
+	inline Range lin(float start, float end) noexcept
+	{
+		const auto range = end - start;
+
+		return
+		{
+				start,
+				end,
+				[range](float min, float, float normalized)
+				{
+					return min + normalized * range;
+				},
+				[inv = 1.f / range](float min, float, float denormalized)
+				{
+					return (denormalized - min) * inv;
+				},
+				[](float min, float max, float x)
+				{
+					return juce::jlimit(min, max, x);
 				}
 		};
 	}

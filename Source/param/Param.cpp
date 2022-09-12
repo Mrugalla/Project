@@ -46,6 +46,9 @@ namespace param
 		case PID::Power: return "Power";
 
 			// LOW LEVEL PARAMS:
+		case PID::BandpassCutoff: return "Bandpass Cutoff";
+		case PID::BandpassQ: return "Bandpass Q";
+
 		case PID::ResonatorFeedback: return "Resonator Feedback";
 		case PID::ResonatorDamp: return "Resonator Damp";
 		case PID::ResonatorOct: return "Resonator Oct";
@@ -97,6 +100,10 @@ namespace param
 			
 		case PID::Power: return "Bypass the plugin with this parameter.";
 
+		// LOW LEVEL PARAMS:
+		case PID::BandpassCutoff: return "Define the cutoff frequency of the bandpass filter.";
+		case PID::BandpassQ: return "Define the Q-Factor of the bandpass filter.";
+
 		case PID::ResonatorFeedback: return "Dials in the resonator's feedback.";
 		case PID::ResonatorDamp: return "Dials in the resonator's damp.";
 		case PID::ResonatorOct: return "Retune the resonator in octaves.";
@@ -130,6 +137,7 @@ namespace param
 		case Unit::Pan: return "%";
 		case Unit::Xen: return "notes/oct";
 		case Unit::Note: return "";
+		case Unit::Q: return "q";
 		default: return "";
 		}
 	}
@@ -724,6 +732,16 @@ namespace param::strToVal
 			return juce::jlimit(0.f, 127.f, val + 12.f);
 		};
 	}
+
+	StrToValFunc q()
+	{
+		return[p = parse()](const String& txt)
+		{
+			const auto text = txt.trimCharactersAtEnd(toString(Unit::Q));
+			const auto val = p(text, 40.f);
+			return val;
+		};
+	}
 }
 
 namespace param::valToStr
@@ -898,6 +916,15 @@ namespace param::valToStr
 			return String("?");
 		};
 	}
+
+	ValToStrFunc q()
+	{
+		return [](float v)
+		{
+			v = std::rint(v * 100.f) * .01f;
+			return String(v) + " " + toString(Unit::Q);
+		};
+	}
 }
 
 namespace param
@@ -975,6 +1002,10 @@ namespace param
 			valToStrFunc = valToStr::note();
 			strToValFunc = strToVal::note();
 			break;
+		case Unit::Q:
+			valToStrFunc = valToStr::q();
+			strToValFunc = strToVal::q();
+			break;
 		default:
 			valToStrFunc = valToStr::empty();
 			strToValFunc = strToVal::percent();
@@ -1025,6 +1056,9 @@ namespace param
 		params.push_back(makeParam(PID::Power, state, 1.f, makeRange::toggle(), Unit::Power));
 
 		// LOW LEVEL PARAMS:
+		params.push_back(makeParam(PID::BandpassCutoff, state, 69.f, makeRange::lin(12.f, 135.f), Unit::Note));
+		params.push_back(makeParam(PID::BandpassQ, state, 40.f, makeRange::withCentre(1.f, 160.f, 40.f), Unit::Q));
+
 		params.push_back(makeParam(PID::ResonatorFeedback, state, 0.f, makeRange::withCentre(-.999f, .999f, 0.f)));
 		params.push_back(makeParam(PID::ResonatorDamp, state, 4200.f, makeRange::withCentre(20.f, 22000.f, 4200.f), Unit::Hz));
 		params.push_back(makeParam(PID::ResonatorOct, state, 0.f, makeRange::withCentre(-3.f, 3.f, 0.f), Unit::Octaves));
