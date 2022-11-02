@@ -64,6 +64,8 @@
               file="Source/audio/NullNoiseSynth.h"/>
         <FILE id="hAoQ9g" name="Oscillator.cpp" compile="1" resource="0" file="Source/audio/Oscillator.cpp"/>
         <FILE id="TV54He" name="Oscillator.h" compile="0" resource="0" file="Source/audio/Oscillator.h"/>
+        <FILE id="xa3rtl" name="OverdriveReNEO.cpp" compile="1" resource="0"
+              file="Source/audio/OverdriveReNEO.cpp"/>
         <FILE id="RgjYU0" name="OverdriveReNEO.h" compile="0" resource="0"
               file="Source/audio/OverdriveReNEO.h"/>
         <FILE id="Ew9Z1a" name="Oversampling.cpp" compile="1" resource="0"
