@@ -34,6 +34,7 @@
         <FILE id="SX6ccp" name="AudioUtils.h" compile="0" resource="0" file="Source/audio/AudioUtils.h"/>
         <FILE id="x6ew2y" name="AutoGain.cpp" compile="1" resource="0" file="Source/audio/AutoGain.cpp"/>
         <FILE id="EuIWYd" name="AutoGain.h" compile="0" resource="0" file="Source/audio/AutoGain.h"/>
+        <FILE id="UVHyPP" name="Bitcrusher.cpp" compile="1" resource="0" file="Source/audio/Bitcrusher.cpp"/>
         <FILE id="DT8T5u" name="Bitcrusher.h" compile="0" resource="0" file="Source/audio/Bitcrusher.h"/>
         <FILE id="gCh4Uk" name="DryWetMix.cpp" compile="1" resource="0" file="Source/audio/DryWetMix.cpp"/>
         <FILE id="KPtX3O" name="DryWetMix.h" compile="0" resource="0" file="Source/audio/DryWetMix.h"/>
@@ -47,6 +48,7 @@
               file="Source/audio/LatencyCompensation.cpp"/>
         <FILE id="J1RFO0" name="LatencyCompensation.h" compile="0" resource="0"
               file="Source/audio/LatencyCompensation.h"/>
+        <FILE id="mVKb3U" name="Manta.cpp" compile="1" resource="0" file="Source/audio/Manta.cpp"/>
         <FILE id="lkrz7T" name="Manta.h" compile="0" resource="0" file="Source/audio/Manta.h"/>
         <FILE id="kQwYTy" name="Meter.cpp" compile="1" resource="0" file="Source/audio/Meter.cpp"/>
         <FILE id="TN2ewh" name="Meter.h" compile="0" resource="0" file="Source/audio/Meter.h"/>
