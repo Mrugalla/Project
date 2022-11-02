@@ -54,6 +54,7 @@
         <FILE id="TN2ewh" name="Meter.h" compile="0" resource="0" file="Source/audio/Meter.h"/>
         <FILE id="vVTypK" name="MIDILearn.cpp" compile="1" resource="0" file="Source/audio/MIDILearn.cpp"/>
         <FILE id="WFKvT5" name="MIDILearn.h" compile="0" resource="0" file="Source/audio/MIDILearn.h"/>
+        <FILE id="L9Yqu9" name="MIDIManager.cpp" compile="1" resource="0" file="Source/audio/MIDIManager.cpp"/>
         <FILE id="ZTEKeB" name="MIDIManager.h" compile="0" resource="0" file="Source/audio/MIDIManager.h"/>
         <FILE id="zSBVab" name="MidSide.cpp" compile="1" resource="0" file="Source/audio/MidSide.cpp"/>
         <FILE id="K88rdo" name="MidSide.h" compile="0" resource="0" file="Source/audio/MidSide.h"/>
