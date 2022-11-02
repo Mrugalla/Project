@@ -1,5 +1,4 @@
 #pragma once
-#include "../arch/Conversion.h"
 #include "../arch/Smooth.h"
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "Phasor.h"
@@ -12,44 +11,23 @@ namespace audio
 	template<typename Float>
 	struct OscSine
 	{
-		OscSine() :
-			phasor()
-		{}
+		OscSine();
 		
-		void prepare(Float fsInv)
-		{
-			phasor.prepare(fsInv);
-		}
+		/* fsInv */
+		void prepare(Float);
 
-		void setFreqHz(Float hz)
-		{
-			phasor.setFrequencyHz(hz);
-		}
+		void setFreqHz(Float);
 		
-		void reset(Float phase = static_cast<Float>(0))
-		{
-			phasor.reset(phase);
-		}
+		void reset(Float = static_cast<Float>(0));
 
-		Float* operator()(Float* buffer, int numSamples) noexcept
-		{
-			for (auto s = 0; s < numSamples; ++s)
-				buffer[s] = synthesizeSample();
-			return buffer;
-		}
+		/* buffer, numSamples */
+		Float* operator()(Float*, int) noexcept;
 
-		Float operator()() noexcept
-		{
-			return synthesizeSample();
-		}
+		Float operator()() noexcept;
 
 		Phasor<Float> phasor;
 	protected:
-		Float synthesizeSample()
-		{
-			const auto phase = phasor().phase;
-			return std::cos(phase * Tau);
-		}
+		Float synthesizeSample();
 	};
 	
 	template<typename Float>
@@ -58,52 +36,17 @@ namespace audio
 		using Osc = OscSine<Float>;
 		using Smooth = smooth::Smooth<Float>;
 		
-		RingModSimple() :
-			osc(),
-			freqBuffer(),
-			freqSmooth{ 20.f, 20.f }
-		{}
+		RingModSimple();
 
-		void prepare(Float Fs, int blockSize)
-		{
-			const auto fsInv = static_cast<Float>(1) / Fs;
-
-			for(auto& osci: osc)
-				osci.prepare(fsInv);
-			freqBuffer.setSize(2, blockSize, false, false, false);
-			for (auto& f : freqSmooth)
-				f.makeFromDecayInMs(20.f, Fs);
-		}
+		/* Fs, blockSize */
+		void prepare(Float, int);
 		
-		void operator()(Float** samples, int numChannels, int numSamples,
-			float** _freq) noexcept
-		{
-			auto freqBufs = freqBuffer.getArrayOfWritePointers();
-			
-			for (auto ch = 0; ch < numChannels; ++ch)
-			{
-				auto freq = _freq[ch];
-				
-				auto smpls = samples[ch];
-				auto freqBuf = freqBufs[ch];
-				auto& osci = osc[ch];
-				
-				freqSmooth[ch](freqBuf, freq, numSamples);
-				
-				for (auto s = 0; s < numSamples; ++s)
-				{
-					const auto smpl = smpls[s];
-					osci.setFreqHz(freqBuf[s]);
-					const auto mod = osci();
-					
-					smpls[s] = smpl * mod;
-				}
-			}
-		}
+		/* samples, numChannels, numSamples, freq */
+		void operator()(Float**, int, int, Float**) noexcept;
 
 	protected:
 		std::array<Osc, 2> osc;
-		AudioBuffer freqBuffer;
+		juce::AudioBuffer<Float> freqBuffer;
 		std::array<Smooth, 2> freqSmooth;
 	};
 }

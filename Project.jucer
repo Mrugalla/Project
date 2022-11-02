@@ -58,8 +58,11 @@
         <FILE id="ZTEKeB" name="MIDIManager.h" compile="0" resource="0" file="Source/audio/MIDIManager.h"/>
         <FILE id="zSBVab" name="MidSide.cpp" compile="1" resource="0" file="Source/audio/MidSide.cpp"/>
         <FILE id="K88rdo" name="MidSide.h" compile="0" resource="0" file="Source/audio/MidSide.h"/>
+        <FILE id="qYRRwe" name="NullNoiseSynth.cpp" compile="1" resource="0"
+              file="Source/audio/NullNoiseSynth.cpp"/>
         <FILE id="RFsXKN" name="NullNoiseSynth.h" compile="0" resource="0"
               file="Source/audio/NullNoiseSynth.h"/>
+        <FILE id="hAoQ9g" name="Oscillator.cpp" compile="1" resource="0" file="Source/audio/Oscillator.cpp"/>
         <FILE id="TV54He" name="Oscillator.h" compile="0" resource="0" file="Source/audio/Oscillator.h"/>
         <FILE id="RgjYU0" name="OverdriveReNEO.h" compile="0" resource="0"
               file="Source/audio/OverdriveReNEO.h"/>
