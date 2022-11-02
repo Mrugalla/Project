@@ -154,10 +154,16 @@ namespace gui
 			patches(),
 			listBounds()
 		{
-			layout.init(
+			layout.init
+			(
 				{ 34, 1 },
 				{ 1 }
 			);
+			
+			if (numPatches() == 0)
+			{
+				save("Init", "Factory");
+			}
 		}
 
 		int getIdx(const Patch& nPatch) const noexcept
@@ -188,7 +194,7 @@ namespace gui
 			patches.push_back(std::make_unique<Patch>(utils, name, auth, utils.savePatch()));
 			auto& patch = *patches.back();
 
-			patch.onClick.push_back([&list = patches](Button& btn)
+			patch.onClick.push_back([&list = patches](Button& btn, const Mouse&)
 			{
 				for (auto& p : list)
 					p->toggleState = 0;
@@ -196,16 +202,19 @@ namespace gui
 				btn.toggleState = 1;
 			});
 
-			patch.onClick.push_back([&, &file = patch.file](Button& btn)
+			patch.onClick.push_back([&, &file = patch.file](Button& btn, const Mouse&)
 			{
-				auto& utils = btn.getUtils();
+				auto& utils = btn.utils;
 				const auto stream = file.createInputStream();
-				const auto vt = ValueTree::fromXml(stream->readEntireStreamAsString());
-				utils.loadPatch(vt);
-				notify(EvtType::PatchUpdated, nullptr);
+				if (stream != nullptr)
+				{
+					const auto vt = ValueTree::fromXml(stream->readEntireStreamAsString());
+					utils.loadPatch(vt);
+					notify(EvtType::PatchUpdated, nullptr);
+				}
 			});
 
-			patch.onMouseWheel.push_back([&](const Mouse& mouse, const MouseWheel& wheel)
+			patch.onMouseWheel.push_back([&](Button&, const Mouse& mouse, const MouseWheel& wheel)
 			{
 				mouseWheelMove(mouse, wheel);
 			});
@@ -229,7 +238,7 @@ namespace gui
 			patches.push_back(std::make_unique<Patch>(utils, file));
 			auto& patch = *patches.back();
 
-			patch.onClick.push_back([&list = patches](Button& btn)
+			patch.onClick.push_back([&list = patches](Button& btn, const Mouse&)
 			{
 				for (auto& p : list)
 					p->toggleState = 0;
@@ -237,16 +246,19 @@ namespace gui
 				btn.toggleState = 1;
 			});
 
-			patch.onClick.push_back([&, &file = patch.file](Button& btn)
+			patch.onClick.push_back([&, &file = patch.file](Button& btn, const Mouse&)
 			{
 				auto& utils = btn.getUtils();
 				const auto stream = file.createInputStream();
-				const auto vt = ValueTree::fromXml(stream->readEntireStreamAsString());
-				utils.loadPatch(vt);
-				notify(EvtType::PatchUpdated, nullptr);
+				if (stream != nullptr)
+				{
+					const auto vt = ValueTree::fromXml(stream->readEntireStreamAsString());
+					utils.loadPatch(vt);
+					notify(EvtType::PatchUpdated, nullptr);
+				}
 			});
 
-			patch.onMouseWheel.push_back([&](const Mouse& mouse, const MouseWheel& wheel)
+			patch.onMouseWheel.push_back([&](Button&, const Mouse& mouse, const MouseWheel& wheel)
 			{
 				mouseWheelMove(mouse, wheel);
 			});
@@ -452,7 +464,7 @@ namespace gui
 			makeTextButton(sortByName, "NAME");
 			makeTextButton(sortByAuthor, "AUTHOR");
 
-			sortByName.onClick.push_back([&](Button& btn)
+			sortByName.onClick.push_back([&](Button& btn, const Mouse&)
 				{
 					btn.toggleState = btn.toggleState == 0 ? 1 : 0;
 
@@ -470,7 +482,7 @@ namespace gui
 					sort(sortFunc);
 				});
 
-			sortByAuthor.onClick.push_back([&](Button& btn)
+			sortByAuthor.onClick.push_back([&](Button& btn, const Mouse&)
 				{
 					btn.toggleState = btn.toggleState == 0 ? 1 : 0;
 
@@ -617,6 +629,8 @@ namespace gui
 			searchBar(u, "Define a name or search for a patch!", "Init.."),
 			authorEditor(u, "Define your author name if you want to save a patch!", "Author..")
 		{
+			setInterceptsMouseClicks(true, true);
+			
 			{
 				auto& props = utils.getProps();
 				const auto& user = *props.getUserSettings();
@@ -628,7 +642,8 @@ namespace gui
 				loadPatchesFromDisk(directory);
 			}
 
-			layout.init(
+			layout.init
+			(
 				{ 1, 3, 34, 13, 3, 3, 1 },
 				{ 1, 3, 34, 21, 1 }
 			);
@@ -636,14 +651,14 @@ namespace gui
 			makeTextButton(closeButton, "X", false);
 			closeButton.getLabel().mode = Label::Mode::TextToLabelBounds;
 			closeButton.getLabel().textCID = ColourID::Abort;
-			closeButton.onClick.push_back([&](Button&)
+			closeButton.onClick.push_back([&](Button&, const Mouse&)
 			{
 				setVisible(false);
 			});
 
 			makeTextButton(saveButton, "save", false);
 			saveButton.getLabel().mode = Label::Mode::TextToLabelBounds;
-			saveButton.onClick.push_back([&](Button&)
+			saveButton.onClick.push_back([&](Button&, const Mouse&)
 			{
 				savePatch();
 			});
@@ -651,18 +666,20 @@ namespace gui
 			searchBar.onReturn = [&]()
 			{
 				savePatch();
+				return true;
 			};
 
 			searchBar.onType = [&]()
 			{
 				applyFilters();
+				return true;
 			};
 
 			authorEditor.onReturn = searchBar.onReturn;
 
 			makeTextButton(removeButton, "rmv", false);
 			removeButton.getLabel().textCID = ColourID::Abort;
-			removeButton.onClick.push_back([&](Button&)
+			removeButton.onClick.push_back([&](Button&, const Mouse&)
 			{
 				removePatch();
 			});
@@ -699,6 +716,8 @@ namespace gui
 									.withMultipliedBrightness(1.5f)
 								);
 				});
+
+			patches.select(nullptr);
 
 #if DebugNumPatches != 0
 			Random rand;
@@ -803,7 +822,8 @@ namespace gui
 			const auto fileTypes = File::TypesOfFileToFind::findFiles;
 			const String extension(".patch");
 			const auto wildCard = "*" + extension;
-			const RangedDirectoryIterator files(
+			const RangedDirectoryIterator files
+			(
 				directory,
 				true,
 				wildCard,
@@ -819,21 +839,33 @@ namespace gui
 	struct ButtonPatchBrowser :
 		public Button
 	{
+		Notify makeNotify(ButtonPatchBrowser& _bpb)
+		{
+			return [&bpb = _bpb](EvtType evt, const void*)
+			{
+				if (evt == EvtType::PatchUpdated)
+				{
+					bpb.getLabel().setText(bpb.browser.getSelectedPatchName());
+					bpb.repaint();
+				}
+			};
+		}
+
 		ButtonPatchBrowser(Utils& u, PatchBrowser& _browser) :
-			Button(u, "Click here to open the patch browser."),
+			Button(u, "Click here to open the patch browser.", makeNotify(*this)),
 			browser(_browser)
 		{
 			makeTextButton(*this, browser.getSelectedPatchName(), false);
-			onClick.push_back([&](Button&)
+			onClick.push_back([&](Button&, const Mouse&)
+			{
+				const auto e = browser.isVisible();
+				if (e)
+					browser.setVisible(false);
+				else
 				{
-					const auto e = browser.isVisible();
-					if (e)
-						browser.setVisible(false);
-					else
-					{
-						browser.setVisible(true);
-					}
-				});
+					browser.setVisible(true);
+				}
+			});
 		}
 
 		void paint(Graphics& g) override

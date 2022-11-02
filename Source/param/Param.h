@@ -7,6 +7,7 @@
 
 #include "../arch/State.h"
 #include "../arch/Range.h"
+#include "../audio/XenManager.h"
 
 namespace param
 {
@@ -18,10 +19,14 @@ namespace param
 	{
 		// high level params
 		Macro,
+		Clipper,
 #if PPDHasGainIn
 		GainIn,
 #endif
 		Mix,
+#if PPD_MixOrGainDry
+		MuteDry,
+#endif
 		Gain,
 #if PPDHasPolarity
 		Polarity,
@@ -35,6 +40,14 @@ namespace param
 #if PPDHasStereoConfig
 		StereoConfig,
 #endif
+#if PPDHasLookahead
+		Lookahead,
+#endif
+#if PPDHasDelta
+		Delta,
+#endif
+
+		// tuning parameters
 		Xen,
 		MasterTune,
 		BaseNote,
@@ -43,14 +56,7 @@ namespace param
 		Power,
 
 		// low level parameters
-		BandpassCutoff,
-		BandpassQ,
-
-		ResonatorFeedback,
-		ResonatorDamp,
-		ResonatorOct,
-		ResonatorSemi,
-		ResonatorFine,
+		
 
 		NumParams
 	};
@@ -59,11 +65,18 @@ namespace param
 	static constexpr int MinLowLevelIdx = static_cast<int>(PID::Power) + 1;
 	static constexpr int NumLowLevelParams = NumParams - MinLowLevelIdx;
 
-	PID ll(PID, int/*offset*/) noexcept;
+	/* pID, offset */
+	PID ll(PID, int) noexcept;
+
+	/* pID, offset */
+	PID offset(PID, int) noexcept;
 
 	String toString(PID);
 
 	PID toPID(const String&);
+
+	/* pIDs, text, seperatorChr */
+	void toPIDs(std::vector<PID>&, const String&, const String&);
 
 	String toTooltip(PID);
 
@@ -88,7 +101,9 @@ namespace param
 		Pan,
 		Xen,
 		Note,
+		Pitch,
 		Q,
+		Slope,
 		NumUnits
 	};
 
@@ -103,6 +118,7 @@ namespace param
 
 	using ParameterBase = juce::AudioProcessorParameter;
 	using State = sta::State;
+	using Xen = audio::XenManager&;
 
 	class Param :
 		public ParameterBase
@@ -172,6 +188,8 @@ namespace param
 
 		String _toString();
 
+		int getNumSteps() const override;
+
 		bool isLocked() const noexcept;
 		void setLocked(bool) noexcept;
 		void switchLock() noexcept;
@@ -202,7 +220,7 @@ namespace param
 		using AudioProcessor = juce::AudioProcessor;
 		using Parameters = std::vector<Param*>;
 
-		Params(AudioProcessor&, State&);
+		Params(AudioProcessor&, State&, const Xen&);
 
 		void loadPatch(juce::ApplicationProperties&);
 
@@ -243,7 +261,6 @@ namespace param
 		StrToValFunc hz();
 		StrToValFunc phase();
 		StrToValFunc oct();
-		StrToValFunc oct2();
 		StrToValFunc semi();
 		StrToValFunc fine();
 		StrToValFunc ratio();
@@ -255,7 +272,9 @@ namespace param
 		StrToValFunc voices();
 		StrToValFunc pan(const Params&);
 		StrToValFunc note();
+		StrToValFunc pitch(const Xen&);
 		StrToValFunc q();
+		StrToValFunc slope();
 	}
 
 	namespace valToStr
@@ -268,7 +287,6 @@ namespace param
 		ValToStrFunc phase();
 		ValToStrFunc phase360();
 		ValToStrFunc oct();
-		ValToStrFunc oct2();
 		ValToStrFunc semi();
 		ValToStrFunc fine();
 		ValToStrFunc ratio();
@@ -281,14 +299,21 @@ namespace param
 		ValToStrFunc voices();
 		ValToStrFunc pan(const Params&);
 		ValToStrFunc note();
+		ValToStrFunc pitch(const Xen&);
 		ValToStrFunc q();
+		ValToStrFunc slope();
 	}
 
+	/* pID, state, valDenormDefault, range, Unit */
 	Param* makeParam(PID, State&,
-		float /*valDenormDefault*/ = 1.f, const Range& = Range(0.f, 1.f),
+		float = 1.f, const Range& = Range(0.f, 1.f),
 		Unit = Unit::Percent);
 
+	/* pID, state, params */
 	Param* makeParamPan(PID, State&, const Params&);
+
+	/* pID, state, valDenormDefault, range, Xen */
+	Param* makeParamPitch(PID, State&, float, const Range&, const Xen&);
 
 	struct MacroProcessor
 	{

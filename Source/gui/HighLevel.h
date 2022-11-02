@@ -26,14 +26,16 @@ namespace gui
 		void paint(Graphics& g) override;
 
 		void resized() override;
-
+		
 	protected:
 #if PPDHasPatchBrowser
 		PatchBrowser patchBrowser;
 		ButtonPatchBrowser patchBrowserButton;
 #endif
 		TuningEditorButton tuningEditorButton;
+
 		Knob macro;
+		Button clipper;
 		Button modDepthLocked;
 		Button swapParamWithModDepth;
 		Button saveModPatch, loadModPatch, removeCurModPatch;
@@ -47,23 +49,17 @@ namespace gui
 #if PPDHasUnityGain && PPDHasGainIn
 		Button unityGain;
 #endif
-#if PPDHasHQ
-		Button hq;
-#endif
-#if PPDHasStereoConfig
-		Button stereoConfig;
-#endif
-		Button power;
-#if PPDHasPolarity
-		Button polarity;
-#endif
+		std::vector<std::unique_ptr<Button>> buttonsBottom;
+
 		MIDICCMonitor ccMonitor;
 		MIDIVoicesComp midiVoices;
 
 		LowLevel* lowLevel;
 		std::unique_ptr<Menu> menu;
 		Button menuButton;
-
+		
 		std::unique_ptr<FileChooser> fileChooser;
+
+		Notify makeNotify(HighLevel&, CompWidgetable*);
 	};
 }

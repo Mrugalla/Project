@@ -58,13 +58,23 @@ namespace gui
         std::vector<int> states;
         bool hidesCursor, locked;
         CursorType activeCursor;
+
+        enum class LooksType
+        {
+            Default,
+            VerticalSlider,
+            NumTypes
+        };
     };
 
-	/* knob, pID, name, modulatable, meter */
-    void makeParameter(Knob&, PID, const String&, bool = true, const std::atomic<float>* = nullptr);
+    /* knob, name, tooltip, pseudo-parameter, looksType */
+    void makePseudoParameter(Knob&, const String&, String&&, std::atomic<float>*, Knob::LooksType = Knob::LooksType::Default);
 
-    /* knob, pID, name, onPaint modulatable, meter */
-    void makeParameter(Knob&, PID, const String&, const Knob::OnPaint&, bool = true, const std::atomic<float>* = nullptr);
+    /* knob, pID, name, modulatable, meter, looksType */
+    void makeParameter(Knob&, PID, const String&, bool = true, const std::atomic<float>* = nullptr, Knob::LooksType = Knob::LooksType::Default);
+
+    /* knob, pIDs, name, modulatable, meter, looksType */
+	void makeParameter(Knob&, const std::vector<PID>&, const String&, bool = true, const std::atomic<float>* = nullptr, Knob::LooksType = Knob::LooksType::Default);
 
 	struct ContextMenuKnobs :
 		public ContextMenu
@@ -73,9 +83,7 @@ namespace gui
 
 		ContextMenuKnobs(Utils&);
 	};
-
-
-
+	
     struct TextEditorKnobs :
         public TextEditor
     {

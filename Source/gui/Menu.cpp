@@ -33,7 +33,7 @@ namespace gui
 		makeTextButton(revert, "Revert", false, true);
 		makeTextButton(deflt, "Default", false, true);
 
-		revert.onClick.push_back([this](Button&)
+		revert.onClick.push_back([this](Button&, const Mouse&)
 			{
 				Colours::c.set(curSheme);
 
@@ -44,7 +44,7 @@ namespace gui
 
 				notify(EvtType::ColourSchemeChanged);
 			});
-		deflt.onClick.push_back([this](Button&)
+		deflt.onClick.push_back([this](Button&, const Mouse&)
 			{
 				Colours::c.set(Colours::c.defaultColour());
 
@@ -97,14 +97,16 @@ namespace gui
 		manifest(u, "Click here to manifest wisdom to the manifest of wisdom!"),
 		inspire(u, "Click here to get inspired by past wisdom of the manifest of wisdom!"),
 		reveal(u, "Click here to reveal wisdom from the manifest of wisdom!"),
-		clear(u, "Click here to clear the wisdom editor to write more wisdom!")
+		clear(u, "Click here to clear the wisdom editor to write more wisdom!"),
+		paste(u, "Click here to paste wisdom from the clipboard to the wisdom editor!")
 	{
 		const File folder(getFolder());
 		if (!folder.exists())
 			folder.createDirectory();
 
-		layout.init(
-			{ 1, 1, 1, 1 },
+		layout.init
+		(
+			{ 1, 1, 1, 1, 1 },
 			{ 8, 1, 1 }
 		);
 
@@ -116,84 +118,98 @@ namespace gui
 		inspire.getLabel().mode = date.mode;
 		reveal.getLabel().mode = date.mode;
 		clear.getLabel().mode = date.mode;
+		paste.getLabel().mode = date.mode;
 
 		addAndMakeVisible(manifest);
 		addAndMakeVisible(inspire);
 		addAndMakeVisible(reveal);
 		addAndMakeVisible(clear);
+		addAndMakeVisible(paste);
 
 		makeTextButton(manifest, "Manifest");
 		makeTextButton(inspire, "Inspire");
 		makeTextButton(reveal, "Reveal");
 		makeTextButton(clear, "Clear");
+		makeTextButton(paste, "Paste");
 
 		editor.onReturn = [&]()
 		{
 			saveToDisk();
+			return true;
 		};
 
 		editor.onClick = [&]()
 		{
 			editor.enable();
+			return true;
 		};
 
-		manifest.onClick.push_back([&](Button&)
+		manifest.onClick.push_back([&](Button&, const Mouse&)
+		{
+			saveToDisk();
+		});
+
+		inspire.onClick.push_back([&](Button&, const Mouse&)
+		{
+			const File folder(getFolder());
+
+			const auto fileTypes = File::TypesOfFileToFind::findFiles;
+			const String extension(".txt");
+			const auto wildCard = "*" + extension;
+			const auto numFiles = folder.getNumberOfChildFiles(fileTypes, wildCard);
+			if (numFiles == 0)
+				return parse("I am deeply sorry. There is no wisdom in the manifest of wisdom yet.");
+
+			Random rand;
+			auto idx = rand.nextInt(numFiles);
+
+			const RangedDirectoryIterator files
+			(
+				folder,
+				false,
+				wildCard,
+				fileTypes
+			);
+
+			for (const auto& it : files)
 			{
-				saveToDisk();
-			});
-
-		inspire.onClick.push_back([&](Button&)
-			{
-				const File folder(getFolder());
-
-				const auto fileTypes = File::TypesOfFileToFind::findFiles;
-				const String extension(".txt");
-				const auto wildCard = "*" + extension;
-				const auto numFiles = folder.getNumberOfChildFiles(fileTypes, wildCard);
-				if (numFiles == 0)
-					return parse("I am deeply sorry. There is no wisdom in the manifest of wisdom yet.");
-
-				Random rand;
-				auto idx = rand.nextInt(numFiles);
-
-				const RangedDirectoryIterator files(
-					folder,
-					false,
-					wildCard,
-					fileTypes
-				);
-
-				for (const auto& it : files)
+				if (idx == 0)
 				{
-					if (idx == 0)
-					{
-						const File file(it.getFile());
-						parse(file.getFileName());
-						editor.setText(file.loadFileAsString());
-						editor.disable();
-						return;
-					}
-					else
-						--idx;
+					const File file(it.getFile());
+					parse(file.getFileName());
+					editor.setText(file.loadFileAsString());
+					editor.disable();
+					return;
 				}
-			});
+				else
+					--idx;
+			}
+		});
 
-		reveal.onClick.push_back([&](Button&)
-			{
-				const File file(getFolder() + date.getText());
-				if (file.exists())
-					file.revealToUser();
+		reveal.onClick.push_back([&](Button&, const Mouse&)
+		{
+			const File file(getFolder() + date.getText());
+			if (file.exists())
+				file.revealToUser();
 
-				const File folder(getFolder());
-				folder.revealToUser();
-			});
+			const File folder(getFolder());
+			folder.revealToUser();
+		});
 
-		clear.onClick.push_back([&](Button&)
-			{
-				editor.clear();
-				editor.enable();
-				parse("");
-			});
+		clear.onClick.push_back([&](Button&, const Mouse&)
+		{
+			editor.clear();
+			editor.enable();
+			parse("");
+		});
+
+		paste.onClick.push_back([&](Button&, const Mouse&)
+		{
+			auto cbTxt = SystemClipboard::getTextFromClipboard();
+			if (cbTxt.isEmpty())
+				return;
+			editor.addText(editor.getText() + cbTxt);
+		});
 
 		startTimerHz(4);
 	}
@@ -211,13 +227,14 @@ namespace gui
 	{
 		layout.resized();
 
-		layout.place(editor, 0, 0, 4, 1, false);
-		layout.place(date, 0, 1, 4, 1, false);
+		layout.place(editor, 0, 0, 5, 1, false);
+		layout.place(date, 0, 1, 5, 1, false);
 
 		layout.place(manifest, 0, 2, 1, 1, false);
 		layout.place(inspire, 1, 2, 1, 1, false);
 		layout.place(reveal, 2, 2, 1, 1, false);
 		layout.place(clear, 3, 2, 1, 1, false);
+		layout.place(paste, 4, 2, 1, 1, false);
 	}
 
 	void ErkenntnisseComp::paint(Graphics&)
@@ -225,9 +242,10 @@ namespace gui
 
 	String ErkenntnisseComp::getFolder()
 	{
-		auto specialLoc = File::getSpecialLocation(File::SpecialLocationType::userApplicationDataDirectory);
+		const auto slash = File::getSeparatorString();
+		const auto specialLoc = File::getSpecialLocation(File::SpecialLocationType::userApplicationDataDirectory);
 
-		return specialLoc.getFullPathName() + "\\Mrugalla\\sharedState\\TheManifestOfWisdom\\";
+		return specialLoc.getFullPathName() + slash + "Mrugalla" + slash + "SharedState" + slash + "TheManifestOfWisdom" + slash;
 	}
 
 	void ErkenntnisseComp::saveToDisk()
@@ -278,7 +296,7 @@ namespace gui
 			addAndMakeVisible(*cmp.c);
 	}
 
-	void CompModular::paint(Graphics&){}
+	void CompModular::paint(Graphics&) {}
 
 	void CompModular::resized()
 	{
@@ -286,7 +304,8 @@ namespace gui
 
 		for (auto& cmp : comps)
 			if (cmp.c != nullptr)
-				layout.place(
+				layout.place
+				(
 					*cmp.c,
 					cmp.b.getX(),
 					cmp.b.getY(),
@@ -338,7 +357,7 @@ namespace gui
 
 	NavBar::NavBar(Utils& u, const ValueTree& xml) :
 		Comp(u, "", CursorType::Default),
-		label(u, "Nav:"),
+		label(u, "Nav"),
 		nodes(makeNodes(xml)),
 		buttons(),
 		numMenus(static_cast<int>(nodes.size())),
@@ -353,6 +372,7 @@ namespace gui
 		layout.init(b, a);
 
 		label.textCID = ColourID::Hover;
+		label.mode = Label::Mode::TextToLabelBounds;
 		addAndMakeVisible(label);
 
 		buttons.reserve(numMenus);
@@ -360,15 +380,18 @@ namespace gui
 		{
 			const auto& node = nodes[i].vt;
 
-			buttons.emplace_back(std::make_unique<Button>(
+			buttons.emplace_back(std::make_unique<Button>
+			(
 				utils, node.getProperty("tooltip").toString()
-				));
+			));
 
 			auto& btn = *buttons[i];
 
-			makeTextButton(btn, "- " + node.getProperty("id").toString(), true, 1);
-			btn.getLabel().just = Just::left;
-			btn.getLabel().font = Font();
+			makeTextButton(btn, node.getProperty("id").toString(), true, 1);
+			auto& lbl = btn.getLabel();
+			lbl.just = Just::left;
+			lbl.font = getFontDosisMedium();
+			lbl.mode = Label::Mode::TextToLabelBounds;
 		}
 
 		makeButtonsGroup(buttons, 0);
@@ -385,14 +408,14 @@ namespace gui
 
 			// make navigation functionality
 
-			btn.onClick.push_back([&sub = subMenu, &prnt = parent, &node = nodes[i]](Button&)
+			btn.onClick.push_back([&sub = subMenu, &prnt = parent, &node = nodes[i]](Button&, const Mouse&)
 			{
 				auto& utils = prnt.getUtils();
 
 				sub.reset(new CompModular(utils, "", CursorType::Default));
 
 				auto& comps = sub->comps;
-
+				
 				{
 					const auto& xLayoutProp = node.vt.getProperty("x");
 					const auto& yLayoutProp = node.vt.getProperty("y");
@@ -402,14 +425,15 @@ namespace gui
 					sub->initLayout(xLayoutProp.toString(), yLayoutProp.toString());
 				}
 
-				enum Type { kTitle, kTxt, kColourScheme, kLink, kErkenntnisse, kNumTypes };
+				enum Type { kTitle, kTxt, kColourScheme, kLink, kErkenntnisse, kJuxtaposition, kNumTypes };
 				std::array<Identifier, kNumTypes> ids
 				{
 					"title",
 					"txt",
 					"colourscheme",
 					"link",
-					"erkenntnisse"
+					"erkenntnisse",
+					"juxtaposition"
 				};
 
 				for (auto c = 0; c < node.vt.getNumChildren(); ++c)
@@ -462,9 +486,16 @@ namespace gui
 
 						comp = cmp;
 					}
+					else if (child.getType() == ids[kJuxtaposition])
+					{
+						auto cmp = new JuxtaComp(utils, child);
+
+						comp = cmp;
+					}
 
 					if (comp != nullptr)
-						comps.push_back(ComponentWithBounds({
+						comps.push_back(ComponentWithBounds(
+							{
 								comp,
 								{
 									static_cast<float>(xProp),
@@ -482,9 +513,19 @@ namespace gui
 				prnt.getLayout().place(*sub, 1, 2, 2, 1, false);
 			});
 		}
-
+		// make a temporary mouse event obj lol, hacky af
+		Mouse tmp
+		(
+			*juce::Desktop::getInstance().getMouseSource(0),
+			{0.f, 0.f},
+			juce::ModifierKeys(),
+			1.f, 1.f, 1.f, 1.f, 1.f,
+			this, this, juce::Time(),
+			{0.f, 0.f}, juce::Time(),
+			1, false
+		);
 		for (auto& oc : buttons.front()->onClick)
-			oc(*buttons.front().get());
+			oc(*buttons.front().get(), tmp);
 	}
 
 	void NavBar::paint(Graphics&) {}
@@ -494,7 +535,7 @@ namespace gui
 		layout.resized();
 
 		layout.place(label, 0, 0, deepestNode + 1, 1, false);
-
+		
 		if (numMenus > 0)
 		{
 			for (auto i = 0; i < numMenus; ++i)
@@ -502,13 +543,16 @@ namespace gui
 				auto& btn = *buttons[i];
 				const auto& node = nodes[i];
 
-				layout.place(btn,
+				layout.place
+				(
+					btn,
 					0.f + .5f * node.x,
 					1 + node.y,
 					1.f + deepestNode - .5f * node.x,
 					1,
 					false
 				);
+				btn.getLabel().updateTextBounds();
 			}
 		}
 	}
@@ -517,16 +561,20 @@ namespace gui
 
 	Menu::Menu(Utils& u, const ValueTree& xml) :
 		CompWidgetable(u, "", CursorType::Default),
-		label(u, xml.getProperty("id", "")),
+		label(u, xml.getProperty("id", "").toString().replaceCharacters("\n"," ")),
 		navBar(u, xml),
 		subMenu(nullptr)
 	{
-		layout.init(
+		setInterceptsMouseClicks(true, true);
+
+		layout.init
+		(
 			{ 20, 50, 20 },
 			{ 20, 50, 750, 20 }
 		);
 
 		label.textCID = ColourID::Hover;
+		label.mode = Label::Mode::TextToLabelBounds;
 		addAndMakeVisible(label);
 		addAndMakeVisible(navBar);
 
@@ -543,12 +591,11 @@ namespace gui
 	void Menu::resized()
 	{
 		layout.resized();
-
+		
 		layout.place(label, 1, 1, 1, 1, false);
 		layout.place(navBar, 0, 2, 1, 1, false);
 		if (subMenu != nullptr)
 			layout.place(*subMenu, 1, 2, 2, 1, false);
-
 	}
 
 

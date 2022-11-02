@@ -2,57 +2,6 @@
 
 namespace audio
 {
-	// DryWetMix::LatencyCompensation
-
-	DryWetMix::LatencyCompensation::LatencyCompensation() :
-		ring(),
-		wHead(),
-		latency(0)
-	{}
-
-	void DryWetMix::LatencyCompensation::prepare(int blockSize, int _latency)
-	{
-		latency = _latency;
-		if (latency != 0)
-		{
-			ring.setSize(2, latency, false, true, false);
-			wHead.prepare(blockSize, latency);
-		}
-		else
-		{
-			ring.setSize(0, 0);
-			wHead.prepare(0, 0);
-		}
-	}
-
-	void DryWetMix::LatencyCompensation::operator()(float** dry, float** inputSamples, int numChannels, int numSamples) noexcept
-	{
-		if (latency != 0)
-		{
-			wHead(numSamples);
-
-			for (auto ch = 0; ch < numChannels; ++ch)
-			{
-				const auto smpls = inputSamples[ch];
-
-				auto rng = ring.getWritePointer(ch);
-				auto dr = dry[ch];
-
-				for (auto s = 0; s < numSamples; ++s)
-				{
-					const auto w = wHead[s];
-					const auto r = (w + 1) % latency;
-
-					rng[w] = smpls[s];
-					dr[s] = rng[r];
-				}
-			}
-		}
-		else
-			for (auto ch = 0; ch < numChannels; ++ch)
-				SIMD::copy(dry[ch], inputSamples[ch], numSamples);
-	}
-
 	// DryWetMix
 
 	DryWetMix::DryWetMix() :
@@ -118,7 +67,11 @@ namespace audio
 #endif
 #endif
 		auto mixBuf = bufs[Mix];
+#if PPD_MixOrGainDry == 0
 		mixSmooth(mixBuf, mixP, numSamples);
+#else
+		mixSmooth(mixBuf, decibelToGain(mixP, -80.f), numSamples);
+#endif
 
 		gainP = Decibels::decibelsToGain(gainP);
 #if PPDHasPolarity
@@ -155,11 +108,15 @@ namespace audio
 			SIMD::multiply(samples[ch], gainBuf, numSamples);
 	}
 
-	void DryWetMix::processMix(float** samples, int numChannels, int numSamples) const noexcept
+	void DryWetMix::processMix(float** samples, int numChannels, int numSamples
+#if PPDHasDelta
+		, bool deltaP
+#endif
+		) const noexcept
 	{
 		auto bufs = buffers.getArrayOfReadPointers();
 		const auto mix = bufs[Mix];
-		
+
 		for (auto ch = 0; ch < numChannels; ++ch)
 		{
 			const auto dry = dryBuf.getReadPointer(ch);
@@ -167,12 +124,33 @@ namespace audio
 
 			for (auto s = 0; s < numSamples; ++s)
 			{
-				auto d = dry[s];
-				auto w = smpls[s];
-				auto m = mix[s];
-
+				const auto d = dry[s];
+				const auto w = smpls[s];
+				const auto m = mix[s];
+#if PPD_MixOrGainDry == 0
 				smpls[s] = d + m * (w - d);
+#else
+				smpls[s] = m * d + w;
+#endif
 			}
 		}
+#if PPDHasDelta
+		if(deltaP)
+		{
+			for (auto ch = 0; ch < numChannels; ++ch)
+			{
+				const auto dry = dryBuf.getReadPointer(ch);
+				auto smpls = samples[ch];
+
+				for (auto s = 0; s < numSamples; ++s)
+				{
+					const auto d = dry[s];
+					const auto w = smpls[s];
+					
+					smpls[s] = w - d;
+				}
+			}
+		}
+#endif
 	}
 }

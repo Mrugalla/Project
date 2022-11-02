@@ -6,41 +6,54 @@ namespace gui
 	TextEditor::TextEditor(Utils& u, const String& _tooltip, Notify&& _notify, const String& _emptyString) :
 		Comp(u, _tooltip, std::move(_notify)),
 		Timer(),
-		onEscape([]() {}),
-		onReturn([]() {}),
-		onType([]() {}),
-		onRemove([]() {}),
-		onClick([]() {}),
+		onEscape([]() { return true; }),
+		onReturn([]() { return true; }),
+		onType([]() { return true; }),
+		onRemove([]() { return true; }),
+		onClick([]() { return true; }),
 
 		label(u, ""),
 		emptyString(_emptyString), txt(""),
 		blinkyBoy(),
 		tickIdx(0),
-		drawTick(false)
+		drawTick(false),
+		multiLine(true)
+	{
+		addAndMakeVisible(label);
+		label.mode = Label::Mode::TextToLabelBounds;
+		setWantsKeyboardFocus(true);
+		setInterceptsMouseClicks(true, true);
+	}
+
+	TextEditor::TextEditor(Utils& u, const String& _tooltip, const String& _emptyString) :
+		Comp(u, _tooltip),
+		Timer(),
+		onEscape([]() { return true; }),
+		onReturn([]() { return true; }),
+		onType([]() { return true; }),
+		onRemove([]() { return true; }),
+		onClick([]() { return true; }),
+
+		label(u, ""),
+		emptyString(_emptyString), txt(""),
+		blinkyBoy(),
+		tickIdx(0),
+		drawTick(false),
+		multiLine(false)
 	{
 		addAndMakeVisible(label);
 		label.mode = Label::Mode::TextToLabelBounds;
 		setWantsKeyboardFocus(true);
 	}
 
-	TextEditor::TextEditor(Utils& u, const String& _tooltip, const String& _emptyString) :
-		Comp(u, _tooltip),
-		Timer(),
-		onEscape([]() {}),
-		onReturn([]() {}),
-		onType([]() {}),
-		onRemove([]() {}),
-		onClick([]() {}),
-
-		label(u, ""),
-		emptyString(_emptyString), txt(""),
-		blinkyBoy(),
-		tickIdx(0),
-		drawTick(false)
+	void TextEditor::addText(const String& text)
 	{
-		addAndMakeVisible(label);
-		label.mode = Label::Mode::TextToLabelBounds;
-		setWantsKeyboardFocus(true);
+		auto nText = text;
+		removeMultiLine(nText);
+		txt = txt.substring(0, tickIdx) + nText + txt.substring(tickIdx);
+		
+		tickIdx += nText.length();
+		updateLabel();
 	}
 
 	void TextEditor::setVisible(bool e)
@@ -88,6 +101,7 @@ namespace gui
 		if (txt == str)
 			return;
 		txt = str;
+		removeMultiLine(txt);
 		tickIdx = juce::jlimit(0, txt.length(), tickIdx);
 		updateLabel();
 	}
@@ -125,7 +139,7 @@ namespace gui
 				auto xRatio = xShifted / strWidth;
 				auto xMapped = xRatio * strLen;
 				auto xLimited = juce::jlimit(0.f, strLen, xMapped);
-				tickIdx = static_cast<int>(std::rint(xLimited));
+				tickIdx = static_cast<int>(std::round(xLimited));
 			}
 			//else
 			//	return; // not implemented yet cause not needed lol
@@ -177,9 +191,25 @@ namespace gui
 
 	bool TextEditor::keyPressed(const KeyPress& key)
 	{
+		if (key == KeyPress::createFromDescription("ctrl+c"))
+		{
+			if (!txt.isEmpty())
+			{
+				SystemClipboard::copyTextToClipboard(txt);
+				return true;
+			}
+		}
+		if (key == KeyPress::createFromDescription("ctrl+v"))
+		{
+			addText(SystemClipboard::getTextFromClipboard());
+			onType();
+			return true;
+		}
 		if (key == key.escapeKey)
 		{
 			onEscape();
+			txt = "";
+			giveAwayKeyboardFocus();
 			return true;
 		}
 		else if (key == key.returnKey)
@@ -227,12 +257,24 @@ namespace gui
 		else
 		{
 			const auto chr = key.getTextCharacter();
+			if(!multiLine)
+				if (chr == '\n' || chr == '\r')
+					return false;
 			txt = txt.substring(0, tickIdx) + chr + txt.substring(tickIdx);
 			++tickIdx;
 			drawTick = true;
 			updateLabel();
 			onType();
 			return true;
+		}
+	}
+
+	void TextEditor::removeMultiLine(String& text)
+	{
+		if (!multiLine)
+		{
+			text = text.replace("\r", "");
+			text = text.replace("\n", "");
 		}
 	}
 

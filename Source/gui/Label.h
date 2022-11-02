@@ -14,7 +14,8 @@ namespace gui
 			NumModes
 		};
 
-		Label(Utils&, const String& /*text*/, Notify && = [](EvtType, const void*) {});
+		/* utils, text, notify */
+		Label(Utils&, const String&, Notify && = [](EvtType, const void*) {});
 
 		void setText(const String&);
 
@@ -30,14 +31,13 @@ namespace gui
 		Font font;
 		float minFontHeight;
 		Mode mode;
+
+		void updateTextBounds();
 	protected:
 		String text;
 
 		void paint(Graphics&) override;
 
 		void resized() override;
-
-	private:
-		void updateTextBounds();
 	};
 }

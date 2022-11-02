@@ -24,7 +24,8 @@ namespace gui
 	juce::MouseCursor makeCursor(CursorType);
 
 	void hideCursor();
-	void showCursor(const Component&, const Point* = nullptr);
+	void showCursor(const Component&);
+	void centreCursor(const Component&, juce::MouseInputSource&);
 
 	class Utils
 	{
@@ -34,6 +35,11 @@ namespace gui
 
 		Param* getParam(PID pID) noexcept;
 		const Param* getParam(PID pID) const noexcept;
+
+		/* pID, offset */
+		Param* getParam(PID pID, int) noexcept;
+		/* pID, offset */
+		const Param* getParam(PID pID, int) const noexcept;
 		
 		std::vector<Param*>& getAllParams() noexcept;
 		const std::vector<Param*>& getAllParams() const noexcept;
@@ -70,10 +76,12 @@ namespace gui
 			return audioProcessor.midiVoices.voices;
 		}
 
+		void giveDAWKeyboardFocus();
+
 		Component& pluginTop;
 		float thicc;
-	protected:
 		Processor& audioProcessor;
+	protected:
 		Params& params;
 		EventSystem eventSystem;
 		Evt evt;

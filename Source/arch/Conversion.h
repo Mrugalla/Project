@@ -1,9 +1,11 @@
 #pragma once
+#include <juce_core/juce_core.h>
 
 namespace audio
 {
     static constexpr float Tau = 6.28318530718f;
     static constexpr float Pi = 3.14159265359f;
+	static constexpr float PiInv = 1.f / Pi;
     static constexpr float PiHalf = Pi * .5f;
     static constexpr float PiHalfInv = 1.f / PiHalf;
     using Char = juce::juce_wchar;
@@ -56,7 +58,7 @@ namespace audio
     }
 
     template<typename Float>
-    inline Float freqHzInNote(Float freqHz, Float xen = static_cast<Float>(12), Float rootNote = static_cast<Float>(69)) noexcept
+    inline Float freqHzInNote2(Float freqHz, Float xen = static_cast<Float>(12), Float rootNote = static_cast<Float>(69)) noexcept
     {
         return std::log2(freqHz * static_cast<Float>(.00227272727)) * xen + rootNote;
     }
@@ -66,6 +68,12 @@ namespace audio
     {
 		return freq / Fs;
     }
+
+	template<typename Float>
+	inline Float fcInFreqHz(Float fc, Float Fs) noexcept
+	{
+		return fc * Fs;
+	}
 
 	template<typename Float>
     inline Float gainToDecibel(Float gain) noexcept
@@ -79,11 +87,19 @@ namespace audio
 		return std::pow(static_cast<Float>(10), db * static_cast<Float>(.05));
 	}
 
+    template<typename Float>
+    inline Float decibelToGain(Float db, Float threshold) noexcept
+    {
+        if (db <= threshold)
+            return 0.f;
+        return std::pow(static_cast<Float>(10), db * static_cast<Float>(.05));
+    }
+
     /* oct [-n, n], semi [-12, 12], fine [-1, 1]*/
     template<typename Float>
     inline Float getRetuneValue(Float oct, Float semi, Float fine) noexcept
     {
-        return static_cast<Float>(12) * std::rint(oct) + std::rint(semi) + fine;
+        return static_cast<Float>(12) * std::round(oct) + std::round(semi) + fine;
     }
 
 	/* x, a [0, 1[ */
@@ -210,5 +226,25 @@ namespace audio
     inline bool isBlackKey(int pitchclass) noexcept
     {
 		return !isWhiteKey(pitchclass);
+    }
+
+	template<typename Float>
+    void applySomeWindowingFunction(Float* buffer, int size) noexcept
+    {
+        https://www.desmos.com/calculator/qzrswwvqfo
+        const auto a0 = static_cast<Float>(0.35875f);
+        const auto a1 = static_cast<Float>(0.48829f);
+        const auto a2 = static_cast<Float>(0.14128f);
+        const auto a3 = static_cast<Float>(0.01168f);
+        const auto inc = Tau / static_cast<Float>(size);
+        auto x = static_cast<Float>(0);
+        for (auto i = 0; i < size; ++i, x += inc)
+        {
+            const auto w0 = a1 * std::cos(x);
+            const auto w1 = a2 * std::cos(static_cast<Float>(2) * x);
+            const auto w2 = a3 * std::cos(static_cast<Float>(3) * x);
+            const auto w = a0 - w0 + w1 - a3 * w2;
+            buffer[i] *= w;
+        }
     }
 }

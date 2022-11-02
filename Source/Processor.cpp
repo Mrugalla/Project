@@ -27,9 +27,9 @@ namespace audio
         props(),
         sus(*this),
         state(),
-        params(*this, state),
-        macroProcessor(params),
         xenManager(),
+        params(*this, state, xenManager),
+        macroProcessor(params),
         midiManager(params, state),
 #if PPDHasHQ
         oversampler(),
@@ -38,7 +38,11 @@ namespace audio
 #if PPDHasStereoConfig
         , midSideEnabled(false)
 #endif
-		, midiVoices(midiManager)
+#if PPDHasLookahead
+		, lookaheadEnabled(false)
+#endif
+		, midiVoices(midiManager),
+        tuningEditorSynth(xenManager)
     {
         {
             juce::PropertiesFile::Options options;
@@ -118,33 +122,20 @@ namespace audio
     {
         params.savePatch(props);
         midiManager.savePatch();
+        tuningEditorSynth.savePatch(state);
     }
 
     void ProcessorBackEnd::loadPatch()
     {
         params.loadPatch(props);
         midiManager.loadPatch();
-        forcePrepareToPlay();
+        tuningEditorSynth.loadPatch(state);
     }
 
     bool ProcessorBackEnd::hasEditor() const { return PPDHasEditor; }
     bool ProcessorBackEnd::acceptsMidi() const { return true; }
     bool ProcessorBackEnd::producesMidi() const { return true; }
     bool ProcessorBackEnd::isMidiEffect() const { return false; }
-
-    /////////////////////////////////////////////
-    /////////////////////////////////////////////;
-    void ProcessorBackEnd::getStateInformation(juce::MemoryBlock& destData)
-    {
-        savePatch();
-        state.savePatch(*this, destData);
-    }
-
-    void ProcessorBackEnd::setStateInformation(const void* data, int sizeInBytes)
-    {
-        state.loadPatch(*this, data, sizeInBytes);
-        loadPatch();
-    }
 
     void ProcessorBackEnd::forcePrepareToPlay()
     {
@@ -153,11 +144,20 @@ namespace audio
 
     void ProcessorBackEnd::timerCallback()
     {
+        bool shallForcePrepare = false;
 #if PPDHasHQ
         const auto ovsrEnabled = params[PID::HQ]->getValMod() > .5f;
         if (oversampler.isEnabled() != ovsrEnabled)
-            forcePrepareToPlay();
+            shallForcePrepare = true;
 #endif
+#if PPDHasLookahead
+		const auto _lookaheadEnabled = params[PID::Lookahead]->getValMod() > .5f;
+		if (lookaheadEnabled != _lookaheadEnabled)
+			shallForcePrepare = true;
+#endif
+
+        if (shallForcePrepare)
+			forcePrepareToPlay();
     }
 
     void ProcessorBackEnd::processBlockBypassed(AudioBuffer& buffer, juce::MidiBuffer&)
@@ -187,27 +187,32 @@ namespace audio
     // PROCESSOR
 
     Processor::Processor() :
-        ProcessorBackEnd(),
-        resonator(midiVoices, xenManager)
-    {
+        ProcessorBackEnd()
+	{
     }
 
     void Processor::prepareToPlay(double sampleRate, int maxBlockSize)
     {
         auto latency = 0;
+        auto sampleRateUp = sampleRate;
+        auto blockSizeUp = maxBlockSize;
 #if PPDHasHQ
         oversampler.setEnabled(params[PID::HQ]->getValMod() > .5f);
         oversampler.prepare(sampleRate, maxBlockSize);
-        const auto sampleRateUp = oversampler.getFsUp();
-        const auto sampleRateUpF = static_cast<float>(sampleRateUp);
-        const auto blockSizeUp = oversampler.getBlockSizeUp();
+        sampleRateUp = oversampler.getFsUp();
+        blockSizeUp = oversampler.getBlockSizeUp();
         latency = oversampler.getLatency();
 #endif
+		
+#if PPDHasLookahead
+        lookaheadEnabled = params[PID::Lookahead]->getValMod() > .5f;
+#endif
+        const auto sampleRateUpF = static_cast<float>(sampleRateUp);
         const auto sampleRateF = static_cast<float>(sampleRate);
 
         midiVoices.prepare(blockSizeUp);
+		tuningEditorSynth.prepare(sampleRateF, maxBlockSize);
 
-        resonator.prepare(sampleRateUpF, blockSizeUp);
 
         dryWetMix.prepare(sampleRateF, maxBlockSize, latency);
 
@@ -236,12 +241,12 @@ namespace audio
 
         xenManager
         (
-            std::rint(params[PID::Xen]->getValModDenorm()),
+            std::round(params[PID::Xen]->getValModDenorm()),
             params[PID::MasterTune]->getValModDenorm(),
-            std::rint(params[PID::BaseNote]->getValModDenorm())
+            std::round(params[PID::BaseNote]->getValModDenorm())
         );
 
-        midiVoices.pitchbendRange = std::rint(params[PID::PitchbendRange]->getValModDenorm());
+        midiVoices.pitchbendRange = std::round(params[PID::PitchbendRange]->getValModDenorm());
 		
         midiManager(midi, numSamples);
 
@@ -252,7 +257,11 @@ namespace audio
         const auto constSamples = mainBuffer.getArrayOfReadPointers();
         const auto numChannels = mainBuffer.getNumChannels();
 
-        dryWetMix.saveDry(
+#if PPD_MixOrGainDry
+        bool muteDry = params[PID::MuteDry]->getValMod() > .5f;
+#endif
+        dryWetMix.saveDry
+        (
             samples,
             numChannels,
             numSamples,
@@ -262,7 +271,11 @@ namespace audio
             params[PID::UnityGain]->getValMod(),
 #endif
 #endif
+#if PPD_MixOrGainDry == 0
             params[PID::Mix]->getValMod(),
+#else
+			params[PID::Mix]->getValModDenorm(),
+#endif
             params[PID::Gain]->getValModDenorm()
 #if PPDHasPolarity
             , (params[PID::Polarity]->getValMod() > .5f ? -1.f : 1.f)
@@ -281,27 +294,29 @@ namespace audio
 #if PPDHasSidechain
             encodeMS(samples, numSamples, 1);
 #endif
-        } 
+        }
 
 #endif
+        processBlockDownsampled(samples, numChannels, numSamples);
 
 #if PPDHasHQ
-            auto resampledBuf = &oversampler.upsample(buffer);
+        auto resampledBuf = &oversampler.upsample(buffer);
 #else
-            auto resampledBuf = &buffer;
+        auto resampledBuf = &buffer;
 #endif
-            auto resampledMainBuf = mainBus->getBusBuffer(*resampledBuf);
-            
+        auto resampledMainBuf = mainBus->getBusBuffer(*resampledBuf);
+
 #if PPDHasSidechain
         if (wrapperType != wrapperType_Standalone)
         {
             auto scBus = getBus(true, 1);
             if (scBus != nullptr)
-                if(scBus->isEnabled())
+                if (scBus->isEnabled())
                 {
                     auto scBuffer = scBus->getBusBuffer(*resampledBuf);
 
-                    processBlockCustom(
+                    processBlockUpsampled
+                    (
                         resampledMainBuf.getArrayOfWritePointers(),
                         resampledMainBuf.getNumChannels(),
                         resampledMainBuf.getNumSamples(),
@@ -309,20 +324,20 @@ namespace audio
                         scBuffer.getNumChannels()
                     );
                 }
-        }
+		}
         else
         {
 
         }
 #else
-        processBlockCustom
+        processBlockUpsampled
         (
             resampledMainBuf.getArrayOfWritePointers(),
             resampledMainBuf.getNumChannels(),
             resampledMainBuf.getNumSamples()
         );
 #endif
-            
+
 #if PPDHasHQ
         oversampler.downsample(mainBuffer);
 #endif
@@ -330,16 +345,37 @@ namespace audio
 #if PPDHasStereoConfig
         if (midSideEnabled)
         {
-			decodeMS(samples, numSamples, 0);
+            decodeMS(samples, numSamples, 0);
 #if PPDHasSidechain
-			encodeMS(samples, numSamples, 1);
+            encodeMS(samples, numSamples, 1);
 #endif
         }
 #endif
         
         dryWetMix.processOutGain(samples, numChannels, numSamples);
+        tuningEditorSynth(samples, numChannels, numSamples);
+        {
+            const auto isClipping = params[PID::Clipper]->getValMod() > .5f ? 1.f : 0.f;
+            if (isClipping)
+            {
+                for (auto ch = 0; ch < numChannels; ++ch)
+                    for (auto s = 0; s < numSamples; ++s)
+                        samples[ch][s] = softclip(samples[ch][s], .6f);
+            }
+        }
         meters.processOut(constSamples, numChannels, numSamples);
-        dryWetMix.processMix(samples, numChannels, numSamples);
+#if PPD_MixOrGainDry
+        if (!muteDry)
+#endif
+        dryWetMix.processMix
+        (
+            samples,
+            numChannels,
+            numSamples
+#if PPDHasDelta
+            , params[PID::Delta]->getValMod() > .5f
+#endif
+        );
 
 #if JUCE_DEBUG
         for (auto ch = 0; ch < numChannels; ++ch)
@@ -348,50 +384,47 @@ namespace audio
 
             for (auto s = 0; s < numSamples; ++s)
             {
-                if (smpls[s] > 1.f)
-                    smpls[s] = 1.f;
-                else if (smpls[s] < -1.f)
-                    smpls[s] = -1.f;
+                if (smpls[s] > 2.f)
+                    smpls[s] = 2.f;
+                else if (smpls[s] < -2.f)
+                    smpls[s] = -2.f;
             }
         }
 #endif
     }
 
-    void Processor::processBlockCustom(float** samples, int numChannels, int numSamples
+    void Processor::processBlockDownsampled(float** samples, int numChannels, int numSamples
+#if PPDHasSidechain
+        , float** samplesSC, int numChannelsSC
+#endif
+        ) noexcept
+        {
+        }
+
+    void Processor::processBlockUpsampled(float** samples, int numChannels, int numSamples
 #if PPDHasSidechain
         , float** samplesSC, int numChannelsSC
 #endif
     ) noexcept
     {
-        auto fb = params[PID::ResonatorFeedback]->getValModDenorm();
-        auto damp = params[PID::ResonatorDamp]->getValModDenorm();
         
-        auto oct = params[PID::ResonatorOct]->getValModDenorm();
-        auto semi = params[PID::ResonatorSemi]->getValModDenorm();
-		auto fine = params[PID::ResonatorFine]->getValModDenorm();
-        auto retuneVal = getRetuneValue(oct, semi, fine);
-        
-        resonator(samples, numChannels, numSamples, fb, damp, retuneVal);
-
-        {
-            const auto note = params[PID::BandpassCutoff]->getValModDenorm();
-            const auto freq = noteInFreqHz(note);
-            const auto fc = freqHzInFc(freq, (float)oversampler.getFsUp());
-			const auto q = params[PID::BandpassQ]->getValModDenorm();
-            filter.setFc(fc, q);
-        }
-        
-        for (auto s = 0; s < numSamples; ++s)
-        {
-            samples[0][s] = filter.processSample(samples[0][s]);
-        }
-            
-        
-        for (auto ch = 1; ch < numChannels; ++ch)
-            SIMD::copy(samples[ch], samples[0], numSamples);
     }
 
     void Processor::releaseResources() {}
+
+    /////////////////////////////////////////////
+    /////////////////////////////////////////////;
+    void Processor::getStateInformation(juce::MemoryBlock& destData)
+    {
+        savePatch();
+        state.savePatch(*this, destData);
+    }
+
+    void Processor::setStateInformation(const void* data, int sizeInBytes)
+    {
+        state.loadPatch(*this, data, sizeInBytes);
+        loadPatch();
+    }
 
     void Processor::savePatch()
     {
@@ -401,6 +434,7 @@ namespace audio
     void Processor::loadPatch()
     {
         ProcessorBackEnd::loadPatch();
+        forcePrepareToPlay();
     }
 }
 

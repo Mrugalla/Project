@@ -19,6 +19,7 @@
 namespace gui
 {
     using Colour = juce::Colour;
+    using Gradient = juce::ColourGradient;
     using String = juce::String;
     using Font = juce::Font;
     using Props = juce::PropertiesFile;
@@ -54,6 +55,8 @@ namespace gui
     using Time = juce::Time;
     using FileChooser = juce::FileChooser;
     using Component = juce::Component;
+    using SystemClipboard = juce::SystemClipboard;
+    using SIMD = juce::FloatVectorOperations;
     
     using Processor = audio::Processor;
     

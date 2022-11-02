@@ -8,12 +8,11 @@
 #include "audio/MIDILearn.h"
 #include "audio/ProcessSuspend.h"
 #include "audio/DryWetMix.h"
+#if PPDHasStereoConfig
 #include "audio/MidSide.h"
+#endif
 #include "audio/Oversampling.h"
 #include "audio/Meter.h"
-#include "audio/Filter.h"
-
-#include "audio/Resonator.h"
 
 #include "audio/AudioUtils.h"
 
@@ -52,26 +51,21 @@ namespace audio
 
         juce::AudioProcessor::BusesProperties makeBusesProperties();
 
-        /////////////////////////////////////////////
-        /////////////////////////////////////////////
-        void getStateInformation(juce::MemoryBlock&) override;
-        void setStateInformation(const void* /*data*/, int /*sizeInBytes*/) override;
-
         AppProps props;
         ProcessSuspender sus;
 
+        XenManager xenManager;
         State state;
         Params params;
         MacroProcessor macroProcessor;
-		XenManager xenManager;
         MIDIManager midiManager;
-
         DryWetMix dryWetMix;
 #if PPDHasHQ
         Oversampler oversampler;
 #endif
         Meters meters;
         MIDIVoices midiVoices;
+        TuningEditorSynth tuningEditorSynth;
 
         void forcePrepareToPlay();
 
@@ -81,6 +75,9 @@ namespace audio
 
 #if PPDHasStereoConfig
         bool midSideEnabled;
+#endif
+#if PPDHasLookahead
+		bool lookaheadEnabled;
 #endif
 
         JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(ProcessorBackEnd)
@@ -95,22 +92,32 @@ namespace audio
 
         void processBlock(AudioBuffer&, juce::MidiBuffer&);
         
-        /* samples,numChannels,numSamples,samplesSC,numChannelsSC */
-        void processBlockCustom(float**, int, int
+        /* samples, numChannels, numSamples, samplesSC, numChannelsSC */
+        void processBlockDownsampled(float**, int numChannels, int numSamples
+#if PPDHasSidechain
+            , float**, int
+#endif
+        ) noexcept;
+
+        /* samples, numChannels, numSamples, samplesSC, numChannelsSC */
+        void processBlockUpsampled(float**, int, int
 #if PPDHasSidechain
             , float**, int
 #endif
         ) noexcept;
 
         void releaseResources() override;
-
+		
+        /////////////////////////////////////////////
+        /////////////////////////////////////////////
+        void getStateInformation(juce::MemoryBlock&) override;
+		/* data, sizeInBytes */
+        void setStateInformation(const void*, int) override;
+		
         void savePatch();
 
         void loadPatch();
 
         juce::AudioProcessorEditor* createEditor() override;
-
-        FilterBandpass filter;
-        Resonator resonator;
     };
 }

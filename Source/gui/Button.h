@@ -24,32 +24,37 @@ namespace gui
 		public Comp,
 		public Timer
 	{
-		using OnClick = std::function<void(Button&)>;
+		using OnClick = std::function<void(Button&, const Mouse&)>;
+		using OnTimer = std::function<void(Button&)>;
 		using OnPaint = std::function<void(Graphics&, Button&)>;
-		using OnMouseWheel = std::function<void(const Mouse&, const MouseWheel&)>;
+		using OnMouseWheel = std::function<void(Button&, const Mouse&, const MouseWheel&)>;
 
 		void enableLabel(const String&);
 
-		void enableLabel(std::vector<String>&&);
+		void enableLabel(const std::vector<String>&);
+		
+		void initLockButton();
 
-		void enableParameterSwitch(PID);
+		/* pIDs */
+		void enableParameter(const std::vector<PID>&);
 
-		void enableParameter(PID, int /*val*/);
-
-		/* utils, tooltip */
-		Button(Utils&, String&& = "");
+		/* utils, tooltip, notify */
+		Button(Utils&, String&& = "", Notify&& = [](EvtType, const void*){});
 
 		Label& getLabel() noexcept;
 
 		const String& getText() const noexcept;
 
-		std::vector<OnClick> onClick, onRightClick, onTimer;
+		std::vector<OnClick> onClick;
+		std::vector<OnTimer> onTimer;
 		std::vector<OnPaint> onPaint;
 		std::vector<OnMouseWheel> onMouseWheel;
 		BlinkyBoy blinkyBoy;
 		int toggleState;
-		PID pID;
+		std::vector<PID> pID;
 		bool locked;
+		int toggleNext;
+		std::unique_ptr<Button> lockButton;
 	protected:
 		Label label;
 		std::vector<String> toggleTexts;
@@ -73,6 +78,9 @@ namespace gui
 
 	/* button; text/name; withToggle; targetToggleState */
 	void makeTextButton(Button&, const String&, bool = false, int = 1);
+	
+	/* button; toggletexts; withToggle; targetToggleState */
+	void makeTextButton(Button&, const std::vector<String>&, bool = false, int = 1);
 
 	enum class ButtonSymbol
 	{
@@ -91,6 +99,8 @@ namespace gui
 		Load,
 		Remove,
 		TuningFork,
+		Lookahead,
+		Img,
 		NumSymbols
 	};
 
@@ -101,9 +111,17 @@ namespace gui
 
 	void makeToggleButton(Button&, const String&);
 
-	void makeParameterSwitchButton(Button&, PID, String&& /*text*/);
+	/* button, pIDs, symbol, withToggle */
+	void makeParameter(Button&, const std::vector<PID>&, ButtonSymbol);
+	
+	/* button, pIDs, text, withToggle */
+	void makeParameter(Button&, const std::vector<PID>&, const String& = "", bool = false);
 
-	void makeParameterSwitchButton(Button&, PID, ButtonSymbol);
+	/* button, pID, symbol, withToggle */
+	void makeParameter(Button&, PID, ButtonSymbol);
+
+	/* button, pID, text, withToggle */
+	void makeParameter(Button&, PID, const String & = "", bool = false);
 
 	template<size_t NumButtons>
 	void makeParameterButtonsGroup(std::array<Button, NumButtons>&, PID, const char* /*txt*/, bool /*onlyText*/);

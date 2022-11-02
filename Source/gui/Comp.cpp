@@ -13,6 +13,7 @@ namespace gui
 		evts.emplace_back(utils.getEventSystem(), makeNotifyBasic(this));
 
 		setMouseCursor(makeCursor(cursorType));
+		setInterceptsMouseClicks(false, true);
 	}
 
 	Comp::Comp(Utils& _utils, const String& _tooltip, Notify&& _notify, CursorType _cursorType) :
@@ -27,6 +28,7 @@ namespace gui
 		evts.emplace_back(utils.getEventSystem(), _notify);
 
 		setMouseCursor(makeCursor(cursorType));
+		setInterceptsMouseClicks(false, true);
 	}
 
 	const Utils& Comp::getUtils() const noexcept { return utils; }
@@ -105,7 +107,7 @@ namespace gui
 		};
 	}
 
-	
+	////////////////////////////////////
 	
 	CompWidgetable::CompWidgetable(Utils& u, String&& _tooltip, CursorType _cursorType) :
 		Comp(u, std::move(_tooltip), _cursorType),
@@ -154,7 +156,7 @@ namespace gui
 		if (widgetEnvelope < 0.f || widgetEnvelope > 1.f)
 		{
 			stopTimer();
-			widgetEnvelope = std::rint(widgetEnvelope);
+			widgetEnvelope = std::round(widgetEnvelope);
 		}
 
 		updateBounds();
@@ -273,7 +275,7 @@ namespace gui
 				updateHandlePosX(relPos * scrollable.actualHeight);
 			}
 			const auto pos = mouse.position.toInt();
-			showCursor(*this, &pos);
+			showCursor(*this);
 		}
 	}
 

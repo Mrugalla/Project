@@ -3,8 +3,10 @@
 
 namespace gui
 {
+	BoundsF smallestBoundsIn(const LineF& line) noexcept;
+	
 	BoundsF maxQuadIn(const BoundsF&) noexcept;
-
+	
 	void repaintWithChildren(Component*);
 
 	std::unique_ptr<juce::XmlElement> loadXML(const char*, const int);
@@ -76,12 +78,13 @@ namespace gui
 	
 	void drawVerticalLine(Graphics&, int /*x*/, float /*top*/, float /*bottom*/, int /*thicc*/ = 1);
 
-	void drawRectEdges(Graphics&, const BoundsF&,
-		float /*edgeWidth*/, float /*edgeHeight*/, Stroke);
+	/* graphics, bounds, edgeWidth, edgeHeight, stroke */
+	void drawRectEdges(Graphics&, const BoundsF&, float, float, Stroke);
 
-	void drawRectEdges(Graphics&, const BoundsF&,
-		float /*edgeWidth*/, Stroke);
+	/* graphics, bounds, edgeWidth, stroke */
+	void drawRectEdges(Graphics&, const BoundsF&, float, Stroke);
 
+	/* graphics, bounds, text */
 	void drawHeadLine(Graphics&, const BoundsF&, const String&);
 
 	template<class ArrayCompPtr>

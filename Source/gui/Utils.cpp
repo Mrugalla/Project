@@ -24,6 +24,16 @@ namespace gui
 		return params[pID];
 	}
 
+	Param* Utils::getParam(PID pID, int offset) noexcept
+	{
+		return params[static_cast<PID>(static_cast<int>(pID) + offset)];
+	}
+
+	const Param* Utils::getParam(PID pID, int offset) const noexcept
+	{
+		return params[static_cast<PID>(static_cast<int>(pID) + offset)];
+	}
+
 	Params& Utils::getParams() noexcept
 	{
 		return audioProcessor.params;
@@ -88,6 +98,11 @@ namespace gui
 		return std::floor(8.5f + norm * 5.f);
 	}
 
+	void Utils::giveDAWKeyboardFocus()
+	{
+		pluginTop.giveAwayKeyboardFocus();
+	}
+
 	EventSystem& Utils::getEventSystem()
 	{
 		return eventSystem;
@@ -108,7 +123,6 @@ namespace gui
 	{
 		audioProcessor.state.loadPatch(vt);
 		audioProcessor.loadPatch();
-		audioProcessor.forcePrepareToPlay();
 	}
 
 	AppProps& Utils::getProps() noexcept
@@ -156,17 +170,21 @@ namespace gui
 
 	void hideCursor()
 	{
-		juce::Desktop::getInstance().getMainMouseSource().enableUnboundedMouseMovement(true, false);
+		auto mms = juce::Desktop::getInstance().getMainMouseSource();
+		mms.enableUnboundedMouseMovement(true, false);
 	}
 
-	void showCursor(const Component& comp, const Point* pos)
+	void showCursor(const Component& comp)
 	{
 		auto mms = juce::Desktop::getInstance().getMainMouseSource();
-		const Point centre(comp.getWidth() / 2, comp.getHeight() / 2);
-		if (pos == nullptr)
-			pos = &centre;
-		mms.setScreenPosition((comp.getScreenPosition() + *pos).toFloat());
+		centreCursor(comp, mms);
 		mms.enableUnboundedMouseMovement(false, true);
+	}
+
+	void centreCursor(const Component& comp, juce::MouseInputSource& mms)
+	{
+		const Point centre(comp.getWidth() / 2, comp.getHeight() / 2);
+		mms.setScreenPosition((comp.getScreenPosition() + centre).toFloat());
 	}
 
 	void appendRandomString(String& str, Random& rand, int length, const String& legalChars)

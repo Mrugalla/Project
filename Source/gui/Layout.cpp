@@ -2,6 +2,11 @@
 
 namespace gui
 {
+	BoundsF smallestBoundsIn(const LineF& line) noexcept
+	{
+		return { line.getStart(), line.getEnd() };
+	}
+
 	BoundsF maxQuadIn(const BoundsF& b) noexcept
 	{
 		const auto minDimen = std::min(b.getWidth(), b.getHeight());
@@ -373,7 +378,7 @@ namespace gui
 		std::array<float, 3> rgb;
 		enum { R, G, B };
 
-		juce::Image::BitmapData bitmap(img, Image::BitmapData::ReadWriteMode::readWrite);
+		Image::BitmapData bitmap(img, Image::BitmapData::ReadWriteMode::readWrite);
 
 		for (auto j = 0; j < its; ++j)
 			for (auto y = 1; y < h; ++y)

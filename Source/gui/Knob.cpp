@@ -27,6 +27,8 @@ namespace gui
         locked(false),
         activeCursor(_cursorType)
     {
+        setInterceptsMouseClicks(true, true);
+
         setName(_name);
 
         label.textCID = ColourID::Txt;
@@ -81,22 +83,25 @@ namespace gui
     {
         if (mouse.mods.isLeftButtonDown())
         {
-            if (hidesCursor)
-                hideCursor();
-
-            dragXY.setXY(
+            dragXY.setXY
+            (
                 mouse.position.x,
                 mouse.position.y
             );
 
             onDown(*this);
         }
+
+        utils.giveDAWKeyboardFocus();
     }
 
     void Knob::mouseDrag(const Mouse& mouse)
     {
         if (mouse.mods.isLeftButtonDown())
         {
+            if (hidesCursor)
+                hideCursor();
+			
             auto dragOffset = mouse.position - dragXY;
             auto shiftDown = mouse.mods.isShiftDown();
             onDrag(*this, dragOffset, shiftDown);
@@ -109,7 +114,8 @@ namespace gui
         onUp(*this, mouse);
 
         if (hidesCursor)
-            showCursor(*this);
+			if(mouse.mouseWasDraggedSinceMouseDown())
+                showCursor(*this);
     }
 
     void Knob::mouseWheelMove(const Mouse& mouse, const MouseWheel& wheel)
@@ -120,7 +126,8 @@ namespace gui
         const bool reversed = wheel.isReversed ? -1.f : 1.f;
         const bool isTrackPad = wheel.deltaY * wheel.deltaY < .0549316f;
         if (isTrackPad)
-            dragXY.setXY(
+            dragXY.setXY
+            (
                 reversed * wheel.deltaX,
                 reversed * wheel.deltaY
             );
@@ -128,7 +135,8 @@ namespace gui
         {
             const auto deltaXPos = wheel.deltaX > 0.f ? 1.f : -1.f;
             const auto deltaYPos = wheel.deltaY > 0.f ? 1.f : -1.f;
-            dragXY.setXY(
+            dragXY.setXY
+            (
                 reversed * WheelDefaultSpeed * deltaXPos,
                 reversed * WheelDefaultSpeed * deltaYPos
             );
@@ -160,34 +168,305 @@ namespace gui
         }
     }
 
+	// KNOB LOOK AND FEEL FREE FUNCS
 
-    // FREE FUNC
-
-    void makeParameter(Knob& knob, PID pID, const String& name, const Knob::OnPaint& onPaint, bool modulatable, const std::atomic<float>* meter)
+    namespace looks
     {
-        //const bool hasMeter = meter != nullptr;
-
-        knob.getInfo = [pID](int i)
+        enum { Value, MaxModDepth, ValMod, ModBias, Meter, NumValues };
+        enum { ModDial, LockButton, NumComps };
+		
+        namespace def
         {
-            if (i == 0)
-                return toString(pID);
-            return String();
-        };
+            static constexpr float AngleWidth = PiQuart * 3.f;
+            static constexpr float AngleRange = AngleWidth * 2.f;
 
+            static std::function<void(Knob&, Graphics&)> paint(bool modulatable, bool hasMeter)
+            {
+                return [modulatable, hasMeter](Knob& k, Graphics& g)
+                {
+                    const auto& vals = k.values;
+                    const auto thicc = k.getUtils().thicc;
+                    const auto thicc2 = thicc * 2.f;
+                    const auto thicc3 = thicc * 3.f;
+                    const auto thicc5 = thicc * 5.f;
+                    Stroke strokeType(thicc, Stroke::JointStyle::curved, Stroke::EndCapStyle::butt);
+                    const auto radius = k.knobBounds.getWidth() * .5f;
+                    const auto radiusInner = radius * .8f;
+                    const auto radDif = (radius - radiusInner) * .8f;
+
+                    PointF centre
+                    (
+                        radius + k.knobBounds.getX(),
+                        radius + k.knobBounds.getY()
+                    );
+
+                    const auto col = Colours::c(ColourID::Interact);
+
+                    if (hasMeter)
+                    {
+                        // METER
+						auto valMeter = vals[Meter];
+#if !JUCE_DEBUG
+						if (std::isnan(valMeter))
+#endif
+                        if (valMeter != 0.f)
+                        {
+                            const auto radiusBetween = radiusInner + radDif;
+                            const auto metr = vals[Meter] > 1.f ? 1.f : vals[Meter];
+                            const auto meterAngle = AngleRange * metr;
+                            
+                            Path meterArc;
+                            meterArc.addCentredArc
+                            (
+                                centre.x, centre.y,
+                                radiusBetween, radiusBetween,
+                                -AngleWidth,
+                                0.f, meterAngle,
+                                true
+                            );
+
+                            strokeType.setStrokeThickness(radDif);
+                            g.setColour(Colours::c(ColourID::Mod));
+                            g.strokePath(meterArc, strokeType);
+                            strokeType.setStrokeThickness(thicc);
+                        }
+                    }
+
+                    { // paint lines
+                        
+                        Path arcOutline;
+                        arcOutline.addCentredArc
+                        (
+                            centre.x, centre.y,
+                            radius, radius,
+                            0.f,
+                            -AngleWidth, AngleWidth,
+                            true
+                        );
+                        g.setColour(col);
+                        g.strokePath(arcOutline, strokeType);
+
+                        Path arcInline;
+                        arcInline.addCentredArc
+                        (
+                            centre.x, centre.y,
+                            radiusInner, radiusInner,
+                            0.f,
+                            -AngleWidth, AngleWidth,
+                            true
+                        );
+                        auto stroke2 = strokeType;
+                        stroke2.setStrokeThickness(radDif);
+                        g.strokePath(arcInline, stroke2);
+                    };
+
+                    const auto valNormAngle = vals[Value] * AngleRange;
+                    const auto valAngle = -AngleWidth + valNormAngle;
+                    const auto radiusExt = radius + thicc;
+
+                    // paint modulation
+                    if (modulatable)
+                    {
+                        const auto valModAngle = vals[ValMod] * AngleRange;
+                        const auto modAngle = -AngleWidth + valModAngle;
+                        const auto modTick = LineF::fromStartAndAngle(centre, radiusExt, modAngle);
+                        const auto shortenedModTick = modTick.withShortenedStart(radiusInner - thicc);
+
+                        g.setColour(Colours::c(ColourID::Bg));
+                        g.drawLine(shortenedModTick, thicc * 4.f);
+
+                        const auto maxModDepthAngle = juce::jlimit(-AngleWidth, AngleWidth, valNormAngle + vals[MaxModDepth] * AngleRange - AngleWidth);
+                        const auto biasAngle = AngleRange * vals[ModBias] - AngleWidth;
+
+                        g.setColour(Colours::c(ColourID::Bias));
+                        {
+                            Path biasPath;
+                            biasPath.addCentredArc
+                            (
+                                centre.x, centre.y,
+                                radiusInner, radiusInner,
+                                0.f,
+                                0.f, biasAngle,
+                                true
+                            );
+                            auto bStroke = strokeType;
+                            bStroke.setStrokeThickness(radDif);
+
+                            g.strokePath(biasPath, bStroke);
+                        }
+
+                        g.setColour(Colours::c(ColourID::Mod));
+                        g.drawLine(modTick.withShortenedStart(radiusInner), thicc2);
+                        {
+                            Path modPath;
+                            modPath.addCentredArc
+                            (
+                                centre.x, centre.y,
+                                radius, radius,
+                                0.f,
+                                maxModDepthAngle, valAngle,
+                                true
+                            );
+                            g.strokePath(modPath, strokeType);
+                        }
+                    };
+					
+                    { // paint tick
+                        const auto tickLine = LineF::fromStartAndAngle(centre, radius, valAngle);
+                        const auto shortened = tickLine.withShortenedStart(radiusInner - thicc);
+                        g.setColour(Colours::c(ColourID::Bg));
+                        g.drawLine(shortened, thicc5);
+                        g.setColour(col);
+                        g.drawLine(shortened, thicc3);
+                    }
+                };
+            }
+
+            static void create(Knob& k, bool modulatable, bool hasMeter)
+            {
+                k.onPaint = paint(modulatable, hasMeter);
+
+                k.onResize = [modulatable](Knob& k)
+                {
+                    const auto thicc = k.getUtils().thicc;
+                    auto& layout = k.getLayout();
+
+                    k.knobBounds = layout(0, 0, 3, 2, true).reduced(thicc);
+                    layout.place(k.label, 0, 2, 3, 1, false);
+                    if (modulatable)
+                    {
+                        layout.place(*k.comps[ModDial], 1, 1, 1, 1, true);
+                        layout.place(*k.comps[LockButton], 2.f, 1.5f, 1.f, 1.f, true);
+                    }
+                };
+
+                k.init
+                (
+                    { 1, 1, 1 },
+                    { 13, 5, 5 }
+                );
+            }
+        }
+
+        namespace vertSlidr
+        {
+            static void create(Knob& k, bool modulatable, bool hasMeter)
+            {
+                k.onPaint = [modulatable, hasMeter](Knob& k, Graphics& g)
+                {
+					// remember to implement hasMeter
+                    const auto& bounds = k.knobBounds;
+					const auto thicc = k.utils.thicc;
+					const auto thicc2 = thicc * 2.f;
+					const auto thicc4 = thicc * 4.f;
+                    const auto x = bounds.getX();
+					const auto y = bounds.getY();
+					const auto w = bounds.getWidth();
+					const auto h = bounds.getHeight();
+                    const auto btm = bounds.getBottom();
+                    const PointF centre
+                    (
+                        x + w * .5f,
+                        y + h * .5f
+                    );
+
+                    const auto values = k.values;
+                    const auto val = values[Value];
+                    const auto valHeight = val * h;
+					const auto valY = btm - valHeight;
+
+                    auto col = Colours::c(ColourID::Interact);
+                    g.setColour(col);
+					
+                    const auto line0X = centre.x - thicc;
+                    const auto line1X = centre.x + thicc2;
+                    { // paint lines
+                        const auto lineY0 = y;
+                        const auto lineY1 = btm;
+                        g.drawLine({ line0X, lineY0, line0X, lineY1 }, thicc);
+                        g.drawLine({ line1X, lineY0,  line1X, lineY1 }, thicc2);
+                    }
+					
+					if(modulatable)
+                    { // paint modulation
+                        const auto maxModDepth = values[MaxModDepth];
+						const auto mmdHeight = maxModDepth * h;
+						const auto mmdY = juce::jlimit(y, btm, valY - mmdHeight);
+						
+                        col = Colours::c(ColourID::Mod);
+                        g.setColour(col);
+						g.drawLine({ line0X, valY, line0X, mmdY }, thicc);
+
+						const auto valMod = values[ValMod];
+						const auto valModHeight = valMod * h;
+						const auto valModY = juce::jlimit(y, btm, btm - valModHeight);
+                        g.drawLine({ line0X, valModY, line1X, valModY }, thicc2);
+						
+						const auto bias = values[ModBias];
+						const auto biasHeight = bias * h;
+                        const auto biasX = line1X;
+                        const auto biasY0 = centre.y;
+						const auto biasY1 = btm - biasHeight;
+                        col = Colours::c(ColourID::Bias);
+                        g.setColour(col);
+						g.drawLine({ biasX, biasY0, biasX, biasY1 }, thicc2);
+                    }
+					
+                    { // paint tick
+                        col = Colours::c(ColourID::Bg);
+						g.setColour(col);
+                        g.drawLine({ line0X, valY, line1X, valY }, thicc4);
+                        col = Colours::c(ColourID::Interact);
+						g.setColour(col);
+						g.drawLine({ line0X, valY, line1X, valY }, thicc2);
+					}
+                };
+
+                k.onResize = [modulatable](Knob& k)
+                {
+                    const auto thicc = k.utils.thicc;
+                    auto& layout = k.layout;
+
+                    k.knobBounds = layout(0, 1, 1, 1, false).reduced(thicc);
+                    layout.place(k.label, 0, 3, 1, 1, false);
+                    if (modulatable)
+                    {
+                        layout.place(*k.comps[LockButton], 0, 0, 1, 1, true);
+                        layout.place(*k.comps[ModDial], 0, 2, 1, 1, true);
+                    }
+                        
+                };
+
+                k.init
+                (
+                    { 1 },
+                    { 3, 13, 3, 3 }
+                );
+            }
+        }
+    }
+
+    // PARAMETER CREATION FREE FUNCS
+
+    void makePseudoParameter(Knob& knob, const String& name, String&& tooltip, std::atomic<float>* param, Knob::LooksType looksType)
+    {
         knob.setName(name);
+        knob.setTooltip(std::move(tooltip));
         knob.label.setText(name);
-        knob.setTooltip(param::toTooltip(pID));
-
-        auto& utils = knob.getUtils();
-        auto param = utils.getParam(pID);
-        const auto angleWidth = PiQuart * 3.f;
-        const auto angleRange = angleWidth * 2.f;
-
-        knob.locked = param->isLocked();
+		
+        switch (looksType)
+        {
+        case Knob::LooksType::VerticalSlider:
+            looks::vertSlidr::create(knob, false, false);
+            break;
+        default:
+            looks::def::create(knob, false, false);
+            break;
+        }
 
         knob.onEnter = [param](Knob& k)
         {
-            k.label.setText(param->getCurrentValueAsText());
+            k.label.setText(String(param->load(), 2));
             k.label.repaint();
         };
 
@@ -199,11 +478,7 @@ namespace gui
 
         knob.onDown = [param](Knob& k)
         {
-            if (param->isInGesture())
-                return;
-            param->beginGesture();
-
-            k.label.setText(param->getCurrentValueAsText());
+            k.label.setText(String(param->load(), 2));
             k.label.repaint();
         };
 
@@ -214,135 +489,283 @@ namespace gui
 
             const auto speed = 1.f / k.getUtils().getDragSpeed();
 
-            const auto newValue = juce::jlimit(0.f, 1.f, param->getValue() - dragOffset.y * speed);
-            param->setValueNotifyingHost(newValue);
+            const auto newValue = juce::jlimit(0.f, 1.f, param->load() - dragOffset.y * speed);
+            param->store(newValue);
+            k.values[0] = newValue;
 
-            k.label.setText(param->getCurrentValueAsText());
-            k.label.repaint();
-
-            k.notify(EvtType::ParametrDragged, &k);
+            k.label.setText(String(newValue, 2));
+            repaintWithChildren(&k);
         };
 
-        knob.onUp = [param, angleWidth, angleRange](Knob& k, const Mouse& mouse)
+        knob.onUp = [param](Knob& k, const Mouse& mouse)
         {
             if (mouse.mods.isLeftButtonDown())
             {
                 if (!mouse.mouseWasDraggedSinceMouseDown())
                 {
-                    if (mouse.mods.isCtrlDown())
-                        param->setValueNotifyingHost(param->getDefaultValue());
-                    else
-                    {
-                        PointF centre(
-                            static_cast<float>(k.getWidth()) * .5f,
-                            static_cast<float>(k.getHeight()) * .5f
-                        );
-                        const LineF fromCentre(centre, mouse.position);
-                        const auto angle = fromCentre.getAngle();
-
-                        const auto newValue = juce::jlimit(0.f, 1.f, (angle + angleWidth) / angleRange);
-                        param->setValue(newValue);
-                    }
+                    if (mouse.mods.isAltDown())
+                        param->store(.25f);
                 }
-                param->endGesture();
             }
             else if (mouse.mods.isRightButtonDown())
                 if (!mouse.mouseWasDraggedSinceMouseDown())
-                    if (mouse.mods.isCtrlDown())
-                        param->setValueWithGesture(param->getDefaultValue());
-                    else
-                        k.notify(EvtType::ParametrRightClicked, &k);
+                    if (mouse.mods.isAltDown())
+                        param->store(.25f);
 
-            k.label.setText(param->getCurrentValueAsText());
-            k.label.repaint();
+            const auto newValue = param->load();
+            k.values[0] = newValue;
+            k.label.setText(String(newValue, 2));
+            repaintWithChildren(&k);
         };
 
         knob.onWheel = [param](Knob& k)
         {
-            const auto newValue = juce::jlimit(0.f, 1.f, param->getValue() + k.dragXY.y);
-            param->setValueWithGesture(newValue);
+            const auto newValue = juce::jlimit(0.f, 1.f, param->load() + k.dragXY.y);
+            param->store(newValue);
+            k.values[0] = newValue;
 
-            k.label.setText(param->getCurrentValueAsText());
-            k.label.repaint();
+            k.label.setText(String(newValue, 2));
+            repaintWithChildren(&k);
         };
 
         knob.onDoubleClick = [param](Knob& k)
         {
-            const auto dVal = param->getDefaultValue();
+            const auto dVal = .25f;
+            param->store(dVal);
+            k.values[0] = dVal;
 
-            while (param->isInGesture()) {}
-            param->setValueWithGesture(dVal);
+            k.label.setText(String(dVal, 2));
+            repaintWithChildren(&k);
+        };
 
-            k.label.setText(param->getCurrentValueAsText());
+        knob.values.reserve(1);
+        auto& values = knob.values;
+
+        values.emplace_back(param->load());
+    }
+
+    void makeParameter(Knob& knob, PID pID, const String& name, bool modulatable, const std::atomic<float>* meter, Knob::LooksType looksType)
+    {
+        std::vector<PID> pIDs;
+        pIDs.push_back(pID);
+
+		makeParameter(knob, pIDs, name, modulatable, meter, looksType);
+    }
+
+    void makeParameter(Knob& knob, const std::vector<PID>& pIDs, const String& name, bool modulatable, const std::atomic<float>* meter, Knob::LooksType looksType)
+    {
+		bool hasMeter = meter != nullptr;
+
+        switch (looksType)
+        {
+        case Knob::LooksType::VerticalSlider:
+            looks::vertSlidr::create(knob, modulatable, hasMeter);
+            break;
+        default:
+            looks::def::create(knob, modulatable, hasMeter);
+            break;
+        }
+
+        knob.getInfo = [pIDs](int i)
+        {
+            if (i == 0)
+            {
+                String idsStr;
+                for (auto pid : pIDs)
+                    idsStr += toString(pid) + "\n";
+                return idsStr;
+            }
+
+            return String();
+        };
+
+        auto mainPID = pIDs[0];
+
+        knob.setName(name);
+        knob.label.setText(name);
+        knob.setTooltip(param::toTooltip(mainPID));
+
+        auto& utils = knob.getUtils();
+        auto mainParam = utils.getParam(mainPID);
+
+        knob.setLocked(mainParam->isLocked());
+
+        knob.onEnter = [mainParam](Knob& k)
+        {
+            k.label.setText(mainParam->getCurrentValueAsText());
+            k.label.repaint();
+        };
+
+        knob.onExit = [](Knob& k)
+        {
+            k.label.setText(k.getName());
+            k.label.repaint();
+        };
+
+        knob.onDown = [pIDs, mainParam](Knob& k)
+        {
+            for (auto& pID : pIDs)
+            {
+                auto param = k.getUtils().getParam(pID);
+                if (!param->isInGesture())
+                    param->beginGesture();
+            }
+
+            k.label.setText(mainParam->getCurrentValueAsText());
+            k.label.repaint();
+        };
+
+        knob.onDrag = [pIDs, mainParam](Knob& k, PointF& dragOffset, bool shiftDown)
+        {
+            if (shiftDown)
+                dragOffset *= SensitiveDrag;
+
+            const auto speed = 1.f / k.getUtils().getDragSpeed();
+
+            for (auto& pID : pIDs)
+            {
+                auto param = k.getUtils().getParam(pID);
+                const auto newValue = juce::jlimit(0.f, 1.f, param->getValue() - dragOffset.y * speed);
+                param->setValueNotifyingHost(newValue);
+            }
+
+            k.label.setText(mainParam->getCurrentValueAsText());
             k.label.repaint();
 
             k.notify(EvtType::ParametrDragged, &k);
         };
 
-        enum { Value, MaxModDepth, ValMod, ModBias, Meter, NumValues };
-        knob.values.reserve(NumValues);
-        auto& values = knob.values;
-
-        values.emplace_back(param->getValue());
-        values.emplace_back(param->getMaxModDepth());
-        values.emplace_back(param->getValMod());
-        values.emplace_back(param->getModBias());
-        values.emplace_back(0.f);
-
-        if (meter != nullptr)
-            knob.onTimer = [param, meter](Knob& k)
+        knob.onUp = [pIDs, mainParam](Knob& k, const Mouse& mouse)
         {
-            const auto lckd = param->isLocked();
-            if (k.locked != lckd)
-                k.locked = lckd;
-
-            const auto vn = param->getValue();
-            const auto mmd = param->getMaxModDepth();
-            const auto vm = param->getValMod();
-            const auto mb = param->getModBias();
-            const auto metr = std::floor(meter->load() * 128.f) * .0078125f;
-
-            auto& vals = k.values;
-
-            if (vals[Value] != vn || vals[MaxModDepth] != mmd || vals[ValMod] != vm || vals[ModBias] != mb || vals[Meter] != metr)
+            if (mouse.mods.isLeftButtonDown())
             {
-                vals[Value] = vn;
-                vals[MaxModDepth] = mmd;
-                vals[ValMod] = vm;
-                vals[ModBias] = mb;
-                vals[Meter] = metr;
-                return true;
+                if (!mouse.mouseWasDraggedSinceMouseDown())
+                {
+                    if (mouse.mods.isAltDown())
+                        for (auto& pID : pIDs)
+                        {
+                            auto param = k.getUtils().getParam(pID);
+                            param->setValueNotifyingHost(param->getDefaultValue());
+                        }
+                    else if (mouse.mods.isCtrlDown())
+                    {
+                        k.utils.getEventSystem().notify(EvtType::EnterParametrValue, &k);
+                    }
+
+                }
+                for (auto& pID : pIDs)
+                {
+                    auto param = k.getUtils().getParam(pID);
+                    param->endGesture();
+                }
+            }
+            else if (mouse.mods.isRightButtonDown())
+                if (!mouse.mouseWasDraggedSinceMouseDown())
+                    if (mouse.mods.isAltDown())
+                        for (auto& pID : pIDs)
+                        {
+                            auto param = k.getUtils().getParam(pID);
+                            param->setValueWithGesture(param->getDefaultValue());
+                        }
+                    else
+                        k.notify(EvtType::ParametrRightClicked, &k);
+
+            k.label.setText(mainParam->getCurrentValueAsText());
+            k.label.repaint();
+        };
+
+        knob.onWheel = [pIDs, mainParam](Knob& k)
+        {
+            for (auto& pID : pIDs)
+            {
+                auto param = k.getUtils().getParam(pID);
+                const auto& range = param->range;
+                const auto interval = range.interval;
+                if (interval > 0.f)
+                {
+                    const auto nStep = interval / range.getRange().getLength();
+                    k.dragXY.setY(k.dragXY.y > 0.f ? nStep : -nStep);
+                    auto newValue = juce::jlimit(0.f, 1.f, param->getValue() + k.dragXY.y);
+                    newValue = range.convertTo0to1(range.snapToLegalValue(range.convertFrom0to1(newValue)));
+                    param->setValueWithGesture(newValue);
+                }
+                else
+                {
+                    const auto newValue = juce::jlimit(0.f, 1.f, param->getValue() + k.dragXY.y);
+                    param->setValueWithGesture(newValue);
+                }
             }
 
-            return false;
+            k.label.setText(mainParam->getCurrentValueAsText());
+            k.label.repaint();
         };
-        else
-            knob.onTimer = [param](Knob& k)
+
+        knob.onDoubleClick = [pIDs, mainParam](Knob& k)
         {
-            const auto lckd = param->isLocked();
+            for (auto& pID : pIDs)
+            {
+                auto param = k.getUtils().getParam(pID);
+                if (param->isInGesture())
+                    return;
+
+                const auto dVal = param->getDefaultValue();
+                param->setValueWithGesture(dVal);
+            }
+
+            k.label.setText(mainParam->getCurrentValueAsText());
+            k.label.repaint();
+
+            k.notify(EvtType::ParametrDragged, &k);
+        };
+
+        knob.values.reserve(looks::NumValues);
+        auto& values = knob.values;
+
+        values.emplace_back(mainParam->getValue());
+        values.emplace_back(mainParam->getMaxModDepth());
+        values.emplace_back(mainParam->getValMod());
+        values.emplace_back(mainParam->getModBias());
+        values.emplace_back(0.f);
+
+        knob.onTimer = [mainParam, meter](Knob& k)
+        {
+			bool hasMeter = meter != nullptr;
+            bool shallRepaint = false;
+
+            const auto lckd = mainParam->isLocked();
             if (k.locked != lckd)
                 k.setLocked(lckd);
 
-            const auto vn = param->getValue();
-            const auto mmd = param->getMaxModDepth();
-            const auto vm = param->getValMod();
-            const auto mb = param->getModBias();
+            const auto vn = mainParam->getValue();
+            const auto mmd = mainParam->getMaxModDepth();
+            const auto vm = mainParam->getValMod();
+            const auto mb = mainParam->getModBias();
 
             auto& vals = k.values;
 
-            if (vals[Value] != vn || vals[MaxModDepth] != mmd || vals[ValMod] != vm || vals[ModBias] != mb)
+            if (vals[looks::Value] != vn || vals[looks::MaxModDepth] != mmd || vals[looks::ValMod] != vm || vals[looks::ModBias] != mb)
             {
-                vals[Value] = vn;
-                vals[MaxModDepth] = mmd;
-                vals[ValMod] = vm;
-                vals[ModBias] = mb;
-                return true;
+                vals[looks::Value] = vn;
+                vals[looks::MaxModDepth] = mmd;
+                vals[looks::ValMod] = vm;
+                vals[looks::ModBias] = mb;
+                shallRepaint = true;
             }
 
-            return false;
+            if (hasMeter)
+            {
+                const auto metr = std::floor(meter->load() * 128.f) * .0078125f;
+                if (vals[looks::Meter] != metr)
+                {
+                    vals[looks::Meter] = metr;
+                    shallRepaint = true;
+                }
+            }
+
+            return shallRepaint;
         };
 
-        enum { ModDial, NumComps };
+        knob.comps.reserve(looks::NumComps);
 
         if (modulatable)
         {
@@ -360,7 +783,7 @@ namespace gui
                 dial.onResize = [](Knob& k)
                 {
                     k.knobBounds = k.getLocalBounds().toFloat();
-                    const auto thicc = k.getUtils().thicc * .5f;
+                    const auto thicc = k.utils.thicc * .5f;
                     k.label.setBounds(k.knobBounds.reduced(thicc).toNearestInt());
                 };
 
@@ -382,7 +805,7 @@ namespace gui
                     g.fillEllipse(k.knobBounds);
                 };
 
-                dial.onDrag = [param](Knob& k, PointF& dragOffset, bool shiftDown)
+                dial.onDrag = [pIDs](Knob& k, PointF& dragOffset, bool shiftDown)
                 {
                     if (shiftDown)
                         dragOffset *= SensitiveDrag;
@@ -394,29 +817,36 @@ namespace gui
                     const auto speed = 1.f / utils.getDragSpeed();
                     dragOffset *= speed;
 
-                    float newValue;
-                    switch (state)
+                    for (auto pID : pIDs)
                     {
-                    case StateMaxModDepth:
-                        newValue = param->getMaxModDepth() - dragOffset.y;
-                        param->setMaxModDepth(newValue);
-                        break;
-                    case StateModBias:
-                        newValue = param->getModBias() - dragOffset.y;
-                        param->setModBias(newValue);
-                        break;
+                        auto param = utils.getParam(pID);
+                        float newValue;
+                        switch (state)
+                        {
+                        case StateMaxModDepth:
+                            newValue = param->getMaxModDepth() - dragOffset.y;
+                            param->setMaxModDepth(newValue);
+                            break;
+                        case StateModBias:
+                            newValue = param->getModBias() - dragOffset.y;
+                            param->setModBias(newValue);
+                            break;
+                        }
                     }
+
                 };
 
-                dial.onUp = [param](Knob& k, const Mouse& mouse)
+                dial.onUp = [pIDs](Knob& k, const Mouse& mouse)
                 {
                     if (!mouse.mouseWasDraggedSinceMouseDown())
                     {
                         if (mouse.mods.isCtrlDown())
-                        {
-                            param->setMaxModDepth(0.f);
-                            param->setModBias(.5f);
-                        }
+                            for (auto pID : pIDs)
+                            {
+                                auto param = k.getUtils().getParam(pID);
+                                param->setMaxModDepth(0.f);
+                                param->setModBias(.5f);
+                            }
                         else if (mouse.mods.isRightButtonDown())
                         {
                             auto& state = k.states[0];
@@ -441,268 +871,45 @@ namespace gui
                     }
                 };
 
-                dial.onDoubleClick = [param](Knob&)
+                dial.onDoubleClick = [pIDs](Knob& k)
                 {
-                    param->setMaxModDepth(0.f);
-                    param->setModBias(.5f);
+                    for (auto pID : pIDs)
+                    {
+                        auto param = k.getUtils().getParam(pID);
+                        param->setMaxModDepth(0.f);
+                        param->setModBias(.5f);
+                    }
                 };
 
-                knob.comps.push_back(std::move(modDial));
+                knob.comps.emplace_back(std::move(modDial));
                 knob.addAndMakeVisible(*knob.comps.back());
             }
+
+            { // lockable
+                auto lockButton = std::make_unique<Button>(knob.getUtils(), "Un-/Lock this parameter.");
+                {
+                    auto& lck = *lockButton;
+
+                    makeTextButton(lck, "L", true);
+
+                    lck.onClick.push_back([pIDs](Button& btn, const Mouse&)
+                    {
+                        for (auto pID : pIDs)
+                        {
+                            auto param = btn.utils.getParam(pID);
+							param->setLocked(!param->isLocked());
+                        }
+
+                        btn.toggleState = btn.utils.getParam(pIDs[0])->isLocked() ? 1 : 0;
+                    });
+
+                    knob.comps.emplace_back(std::move(lockButton));
+                    knob.addAndMakeVisible(*knob.comps.back());
+                }
+            }
         }
-
-        if (modulatable)
-            knob.onResize = [](Knob& k)
-        {
-            const auto thicc = k.getUtils().thicc;
-            auto& layout = k.getLayout();
-
-            k.knobBounds = layout(0, 0, 3, 2, true).reduced(thicc);
-            layout.place(k.label, 0, 2, 3, 1, false);
-            layout.place(*k.comps[ModDial], 1, 1, 1, 1, true);
-        };
-        else
-        {
-            knob.onResize = [](Knob& k)
-            {
-                const auto thicc = k.getUtils().thicc;
-                auto& layout = k.getLayout();
-
-                k.knobBounds = layout(0, 0, 3, 2, true).reduced(thicc);
-                layout.place(k.label, 0, 2, 3, 1, false);
-            };
-        }
-
-        knob.onPaint = onPaint;
-
-        knob.init
-        (
-            { 40, 40, 40 },
-            { 100, 40, 40 }
-        );
 
         knob.startTimerHz(PPDFPSKnobs);
-    }
-
-    void makeParameter(Knob& knob, PID pID, const String& name, bool modulatable, const std::atomic<float>* meter)
-    {
-        const bool hasMeter = meter != nullptr;
-        const auto angleWidth = PiQuart * 3.f;
-        const auto angleRange = angleWidth * 2.f;
-        enum { Value, MaxModDepth, ValMod, ModBias, Meter, NumValues };
-		
-        const auto paintLines = [angleWidth](Graphics& g, Colour col, const PointF& centre, float radius, float radiusInner, float radDif, Stroke& strokeType)
-        {
-            g.setColour(col);
-            Path arcOutline;
-
-            arcOutline.addCentredArc(
-                centre.x, centre.y,
-                radius, radius,
-                0.f,
-                -angleWidth, angleWidth,
-                true
-            );
-            g.strokePath(arcOutline, strokeType);
-
-            Path arcInline;
-            arcInline.addCentredArc(
-                centre.x, centre.y,
-                radiusInner, radiusInner,
-                0.f,
-                -angleWidth, angleWidth,
-                true
-            );
-            auto stroke2 = strokeType;
-            stroke2.setStrokeThickness(radDif);
-            g.strokePath(arcInline, stroke2);
-        };
-
-        const auto paintMod = [angleRange, angleWidth](Graphics& g, const PointF& centre, const float* vals,
-            float valNormAngle, float valAngle, float thicc, float thicc2, float radius, float radiusInner, float radiusExt,
-            float radDif, Stroke strokeType)
-        {
-            const auto valModAngle = vals[ValMod] * angleRange;
-            const auto modAngle = -angleWidth + valModAngle;
-            const auto modTick = LineF::fromStartAndAngle(centre, radiusExt, modAngle);
-
-            g.setColour(Colours::c(ColourID::Bg));
-            g.drawLine(modTick, thicc * 4.f);
-
-            const auto maxModDepthAngle = juce::jlimit(-angleWidth, angleWidth, valNormAngle + vals[MaxModDepth] * angleRange - angleWidth);
-            const auto biasAngle = angleRange * vals[ModBias] - angleWidth;
-
-            g.setColour(Colours::c(ColourID::Bias));
-            {
-                Path biasPath;
-                biasPath.addCentredArc(
-                    centre.x, centre.y,
-                    radiusInner, radiusInner,
-                    0.f,
-                    0.f, biasAngle,
-                    true
-                );
-                auto bStroke = strokeType;
-                bStroke.setStrokeThickness(radDif);
-
-                g.strokePath(biasPath, bStroke);
-            }
-
-            g.setColour(Colours::c(ColourID::Mod));
-            g.drawLine(modTick.withShortenedStart(radiusInner), thicc2);
-            {
-                Path modPath;
-                modPath.addCentredArc(
-                    centre.x, centre.y,
-                    radius, radius,
-                    0.f,
-                    maxModDepthAngle, valAngle,
-                    true
-                );
-                g.strokePath(modPath, strokeType);
-            }
-        };
-
-        const auto paintTick = [](Graphics& g, Colour col, const PointF& centre,
-            float radius, float radiusInner, float valAngle,
-            float thicc, float thicc3, float thicc5)
-        {
-            const auto tickLine = LineF::fromStartAndAngle(centre, radius, valAngle);
-            g.setColour(Colours::c(ColourID::Bg));
-            g.drawLine(tickLine, thicc5);
-            g.setColour(col);
-            g.drawLine(tickLine.withShortenedStart(radiusInner - thicc), thicc3);
-        };
-
-        Knob::OnPaint onPaint;
-        
-        if (hasMeter)
-            onPaint = [paintLines, paintMod, paintTick, angleWidth, angleRange, modulatable](Knob& k, Graphics& g)
-        {
-            const auto& vals = k.values;
-            const auto thicc = k.getUtils().thicc;
-            const auto thicc2 = thicc * 2.f;
-            const auto thicc3 = thicc * 3.f;
-            const auto thicc5 = thicc * 5.f;
-            Stroke strokeType(thicc, Stroke::JointStyle::curved, Stroke::EndCapStyle::butt);
-            const auto radius = k.knobBounds.getWidth() * .5f;
-            const auto radiusInner = radius * .8f;
-            const auto radDif = (radius - radiusInner) * .8f;
-            const auto radiusBetween = radiusInner + radDif;
-
-            PointF centre
-            (
-                radius + k.knobBounds.getX(),
-                radius + k.knobBounds.getY()
-            );
-
-            const auto col = Colours::c(ColourID::Interact);
-
-            // METER
-            if (vals[Meter] != 0.f)
-            {
-                g.setColour(Colours::c(ColourID::Txt));
-                Path meterArc;
-
-                const auto metr = vals[Meter] > 1.f ? 1.f : vals[Meter];
-
-                const auto meterAngle = angleRange * metr - angleWidth;
-
-                meterArc.addCentredArc(
-                    centre.x, centre.y,
-                    radiusBetween, radiusBetween,
-                    0.f,
-                    -angleWidth, meterAngle,
-                    true
-                );
-
-                strokeType.setStrokeThickness(radDif);
-                g.strokePath(meterArc, strokeType);
-                strokeType.setStrokeThickness(thicc);
-            }
-
-            paintLines(g, col, centre, radius, radiusInner, radDif, strokeType);
-
-            const auto valNormAngle = vals[Value] * angleRange;
-            const auto valAngle = -angleWidth + valNormAngle;
-            const auto radiusExt = radius + thicc;
-
-            // draw modulation
-            if (modulatable)
-            {
-                paintMod
-                (
-                    g,
-                    centre,
-                    vals.data(), valNormAngle, valAngle,
-                    thicc, thicc2,
-                    radius, radiusInner, radiusExt, radDif,
-                    strokeType
-                );
-            }
-				
-            paintTick
-            (
-                g,
-                col,
-                centre,
-                radius, radiusInner, valAngle,
-                thicc, thicc3, thicc5
-            );
-        };
-        else
-            onPaint = [paintLines, paintMod, paintTick, angleWidth, angleRange, modulatable](Knob& k, Graphics& g)
-        {
-            const auto& vals = k.values;
-            const auto thicc = k.getUtils().thicc;
-            const auto thicc2 = thicc * 2.f;
-            const auto thicc3 = thicc * 3.f;
-            const auto thicc5 = thicc * 5.f;
-            Stroke strokeType(thicc, Stroke::JointStyle::curved, Stroke::EndCapStyle::butt);
-            const auto radius = k.knobBounds.getWidth() * .5f;
-            const auto radiusInner = radius * .8f;
-            const auto radDif = (radius - radiusInner) * .8f;
-
-            PointF centre
-            (
-                radius + k.knobBounds.getX(),
-                radius + k.knobBounds.getY()
-            );
-
-            const auto col = Colours::c(ColourID::Interact);
-
-            paintLines(g, col, centre, radius, radiusInner, radDif, strokeType);
-
-            const auto valNormAngle = vals[Value] * angleRange;
-            const auto valAngle = -angleWidth + valNormAngle;
-            const auto radiusExt = radius + thicc;
-
-            // draw modulation
-            if (modulatable)
-            {
-                paintMod
-                (
-                    g,
-                    centre,
-                    vals.data(), valNormAngle, valAngle,
-                    thicc, thicc2,
-                    radius, radiusInner, radiusExt, radDif,
-                    strokeType
-                );
-            }
-				
-            paintTick
-            (
-                g,
-                col,
-                centre,
-                radius, radiusInner, valAngle,
-                thicc, thicc3, thicc5
-            );
-        };
-        
-        makeParameter(knob, pID, name, onPaint, modulatable, meter);
     }
 
     // CONTEXT MENU
@@ -714,48 +921,63 @@ namespace gui
             if (type == EvtType::ParametrRightClicked)
             {
                 const auto& knob = *static_cast<const Knob*>(stuff);
-                auto& utils = pop.getUtils();
                 
-                const auto pIDStr = knob.getInfo(0);
-                const PID pID = param::toPID(pIDStr);
-                auto& param = *utils.getParam(pID);
+                const auto pIDsStr = knob.getInfo(0);
+                std::vector<PID> pIDs;
+                param::toPIDs(pIDs, pIDsStr, "\n");
 
-                pop.setButton([&p = param](Button&)
+                pop.setButton([pIDs](Button& btn, const Mouse&)
                 {
                     Random rand;
-                    p.setValueWithGesture(rand.nextFloat());
+                    for(auto pID: pIDs)
+                        btn.getUtils().getParam(pID)->setValueWithGesture(rand.nextFloat());
                 }, 0);
-                pop.setButton([&p = param](Button&)
+                pop.setButton([pIDs](Button& btn, const Mouse&)
                 {
                     juce::Random rand;
-                    auto val = p.getValue();
-                    val += .05f * (rand.nextFloat() - .5f);
-                    p.setValueWithGesture(juce::jlimit(0.f, 1.f, val));
+                    for (auto pID : pIDs)
+                    {
+						auto param = btn.getUtils().getParam(pID);
+                        auto val = param->getValue();
+                        val += .05f * (rand.nextFloat() - .5f);
+                        param->setValueWithGesture(juce::jlimit(0.f, 1.f, val));
+                    }
                 }, 1);
-                pop.setButton([&p = param](Button&)
+                pop.setButton([pIDs](Button& btn, const Mouse&)
                 {
-                    const auto val = p.getDefaultValue();
-                    p.setValueWithGesture(val);
+                    for (auto pID : pIDs)
+                    {
+						auto param = btn.getUtils().getParam(pID);
+                        const auto val = param->getDefaultValue();
+                        param->setValueWithGesture(val);
+                    }
                 }, 2);
-                pop.setButton([&p = param](Button&)
+                pop.setButton([pIDs](Button& btn, const Mouse&)
                 {
-                    p.setDefaultValue(p.getValue());
+                    for (auto pID : pIDs)
+                    {
+                        auto param = btn.getUtils().getParam(pID);
+                        param->setDefaultValue(param->getValue());
+                    }
                 }, 3);
-                pop.setButton([&p = param](Button&)
+                pop.setButton([pIDs](Button& btn, const Mouse&)
                 {
-                    p.switchLock();
+                    for (auto pID : pIDs)
+                        btn.getUtils().getParam(pID)->switchLock();
                 }, 4);
-                pop.setButton([&u = utils, pID = pID](Button&)
+                pop.setButton([pIDs](Button& btn, const Mouse&)
                 {
-                    u.assignMIDILearn(pID);
+                    for (auto pID : pIDs)
+                        btn.getUtils().assignMIDILearn(pID);
                 }, 5);
-                pop.setButton([&u = utils, pID = pID](Button&)
+                pop.setButton([pIDs](Button& btn, const Mouse&)
                 {
-                    u.removeMIDILearn(pID);
+                    for (auto pID : pIDs)
+                        btn.getUtils().removeMIDILearn(pID);
                 }, 6);
-                pop.setButton([&u = utils, &k = knob](Button&)
+                pop.setButton([&k = knob](Button& btn, const Mouse&)
                 {
-                    u.getEventSystem().notify(EvtType::EnterParametrValue, &k);
+                    btn.getUtils().getEventSystem().notify(EvtType::EnterParametrValue, &k);
                 }, 7);
 
                 pop.place(&knob);
@@ -798,30 +1020,50 @@ namespace gui
                 editor.txt.clear();
 
                 const auto& knob = *static_cast<const Knob*>(stuff);
-                const auto pID = param::toPID(knob.getInfo(0));
+                const auto pIDsStr = knob.getInfo(0);
+                std::vector<PID> pIDs;
+                param::toPIDs(pIDs, pIDsStr, "\n");
                 auto& utils = editor.getUtils();
-                auto& param = *utils.getParam(pID);
 
                 editor.onEscape = [&tek = editor]()
                 {
                     tek.disable();
+                    return true;
                 };
 
-                editor.onReturn = [&tek = editor, &prm = param]()
+                editor.onReturn = [&tek = editor, pIDs]()
                 {
                     if (tek.txt.isNotEmpty())
                     {
-                        const auto val = juce::jlimit(0.f, 1.f, prm.getValueForText(tek.txt));
-                        prm.setValueWithGesture(val);
+                        for (auto pID : pIDs)
+                        {
+							auto param = tek.getUtils().getParam(pID);
+                            auto& range = param->range;
+
+                            const auto valDenorm = param->getValForTextDenorm(tek.txt);
+							const auto val = range.convertTo0to1(range.snapToLegalValue(juce::jlimit(range.start, range.end, valDenorm)));
+                            if (valDenorm >= range.start && valDenorm <= range.end)
+                            {
+								param->setValueWithGesture(val);
+                            }
+                            else
+                            {
+                                tek.setText(param->getText(val, 0));
+                                tek.enable();
+                                tek.repaint();
+                            }
+                        }
                     }
                     tek.disable();
+                    return true;
                 };
 
                 const auto mouse = juce::Desktop::getInstance().getMainMouseSource();
                 const auto screenPos = utils.getScreenPosition();
                 const auto parametrScreenPos = knob.getScreenPosition();
                 const auto parametrPos = parametrScreenPos - screenPos;
-                const Point parametrCentre(
+                const Point parametrCentre
+                (
                     knob.getWidth() / 2,
                     knob.getHeight() / 2
                 );
@@ -834,7 +1076,7 @@ namespace gui
     TextEditorKnobs::TextEditorKnobs(Utils& u) :
         TextEditor(u, "Enter a value for this parameter.", makeNotify(*this))
     {
-
+        multiLine = false;
     }
 
     void TextEditorKnobs::paint(Graphics& g)

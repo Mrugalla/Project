@@ -2,14 +2,39 @@
 
 namespace gui
 {
+	Notify HighLevel::makeNotify(HighLevel& hl, CompWidgetable* te)
+	{
+		return [&highLevel = hl, &tuningEditor = *te](EvtType t, const void*)
+		{
+			if (t == EvtType::ClickedEmpty)
+			{
+				// host grabs keyboard focus
+				auto& pluginTop = highLevel.utils.pluginTop;
+				pluginTop.giveAwayKeyboardFocus();
+				if (highLevel.menu != nullptr)
+				{
+					highLevel.menu->setVisible(false);
+					highLevel.menuButton.toggleState = 0;
+					highLevel.menuButton.repaint();
+				}
+#if PPDHasPatchBrowser
+				highLevel.patchBrowser.setVisible(false);
+				highLevel.patchBrowserButton.toggleState = 0;
+				highLevel.patchBrowserButton.repaint();
+#endif
+			}
+		};
+	}
+
 	HighLevel::HighLevel(Utils& u, LowLevel* _lowLevel, CompWidgetable* tuningEditor) :
-		Comp(u, "", CursorType::Default),
+		Comp(u, "", makeNotify(*this, tuningEditor), CursorType::Default),
 #if PPDHasPatchBrowser
 		patchBrowser(u),
 		patchBrowserButton(u, patchBrowser),
 #endif
 		tuningEditorButton(u, tuningEditor),
 		macro(u),
+		clipper(u),
 		modDepthLocked(u, "(Un-)Lock this patch's modulation patch."),
 		swapParamWithModDepth(u, "Swap parameter patch with modulation patch."),
 		saveModPatch(u, "Save the current Modulation Patch to disk."),
@@ -25,16 +50,7 @@ namespace gui
 #if PPDHasUnityGain && PPDHasGainIn
 		unityGain(u, param::toTooltip(PID::UnityGain)),
 #endif
-#if PPDHasHQ
-		hq(u, param::toTooltip(PID::HQ)),
-#endif
-#if PPDHasStereoConfig
-		stereoConfig(u, param::toTooltip(PID::StereoConfig)),
-#endif
-		power(u, param::toTooltip(PID::Power)),
-#if PPDHasPolarity
-		polarity(u, param::toTooltip(PID::Polarity)),
-#endif
+		buttonsBottom(),
 
 		ccMonitor(u, u.getMIDILearn()),
 		midiVoices(u),
@@ -66,11 +82,11 @@ namespace gui
 
 			modDepthLocked.toggleState = params.isModDepthLocked();
 
-			modDepthLocked.onClick.push_back([&prms = params](Button&)
+			modDepthLocked.onClick.push_back([&prms = params](Button&, const Mouse&)
 				{
 					prms.switchModDepthLocked();
 				});
-			modDepthLocked.onClick.push_back([](Button& btn)
+			modDepthLocked.onClick.push_back([](Button& btn, const Mouse&)
 				{
 					btn.toggleState = btn.toggleState == 0 ? 1 : 0;
 				});
@@ -82,7 +98,7 @@ namespace gui
 		{
 			auto& params = utils.getParams();
 
-			swapParamWithModDepth.onClick.push_back([&prms = params](Button&)
+			swapParamWithModDepth.onClick.push_back([&prms = params](Button&, const Mouse&)
 				{
 					for (auto i = static_cast<int>(prms.numParams() - 1); i > 0; --i)
 					{
@@ -109,7 +125,7 @@ namespace gui
 
 		addAndMakeVisible(saveModPatch);
 		{
-			saveModPatch.onClick.push_back([](Button& btn)
+			saveModPatch.onClick.push_back([](Button& btn, const Mouse&)
 			{
 				auto& utils = btn.getUtils();
 				const auto& params = utils.getParams();
@@ -176,7 +192,7 @@ namespace gui
 		
 		addAndMakeVisible(loadModPatch);
 		{
-			loadModPatch.onClick.push_back([&](Button&)
+			loadModPatch.onClick.push_back([&](Button&, const Mouse&)
 			{
 				auto& props = utils.getProps();
 				auto& user = *props.getUserSettings();
@@ -249,7 +265,7 @@ namespace gui
 
 		addAndMakeVisible(removeCurModPatch);
 		{
-			removeCurModPatch.onClick.push_back([](Button& btn)
+			removeCurModPatch.onClick.push_back([](Button& btn, const Mouse&)
 			{
 				auto& utils = btn.getUtils();
 				auto& params = utils.getParams();
@@ -267,6 +283,9 @@ namespace gui
 
 		makeParameter(macro, PID::Macro, "Macro", false);
 
+		makeParameter(clipper, { PID::Clipper }, "Clip", true);
+		addAndMakeVisible(clipper);
+
 #if PPDHasPatchBrowser
 		addAndMakeVisible(patchBrowserButton);
 #endif
@@ -279,35 +298,55 @@ namespace gui
 		makeParameter(gainIn, PID::GainIn, "In", true, &utils.getMeter(0));
 		addAndMakeVisible(gainIn);
 #if PPDHasUnityGain
-		makeParameterSwitchButton(unityGain, PID::UnityGain, ButtonSymbol::UnityGain);
+		makeParameter(unityGain, PID::UnityGain, ButtonSymbol::UnityGain);
 		addAndMakeVisible(unityGain);
 #endif
 #endif
 		makeParameter(gainOut, PID::Gain, "Out", true, &utils.getMeter(PPDHasGainIn ? 1 : 0));
 		addAndMakeVisible(gainOut);
+#if PPD_MixOrGainDry == 0
 		makeParameter(mix, PID::Mix, "Mix");
+#else
+		makeParameter(mix, PID::Mix, "Gain Dry");
+#endif
 		addAndMakeVisible(mix);
 #if PPDHasHQ
-		makeParameterSwitchButton(hq, PID::HQ, "HQ");
-		hq.getLabel().mode = Label::Mode::TextToLabelBounds;
-		addAndMakeVisible(hq);
+		buttonsBottom.push_back(std::make_unique<Button>(u, param::toTooltip(PID::HQ)));
+		makeParameter(*buttonsBottom.back(), PID::HQ, "HQ");
+		buttonsBottom.back()->getLabel().mode = Label::Mode::TextToLabelBounds;
 #endif
 #if PPDHasStereoConfig
-		makeParameterSwitchButton(stereoConfig, PID::StereoConfig, ButtonSymbol::StereoConfig);
-		stereoConfig.getLabel().mode = Label::Mode::TextToLabelBounds;
-		addAndMakeVisible(stereoConfig);
+		buttonsBottom.push_back(std::make_unique<Button>(u, param::toTooltip(PID::StereoConfig)));
+		makeParameter(*buttonsBottom.back(), PID::StereoConfig, ButtonSymbol::StereoConfig);
+		buttonsBottom.back()->getLabel().mode = Label::Mode::TextToLabelBounds;
 #endif
-		makeParameterSwitchButton(power, PID::Power, ButtonSymbol::Power);
-		addAndMakeVisible(power);
+		buttonsBottom.push_back(std::make_unique<Button>(u, param::toTooltip(PID::Power)));
+		makeParameter(*buttonsBottom.back(), PID::Power, ButtonSymbol::Power);
 #if PPDHasPolarity
-		makeParameterSwitchButton(polarity, PID::Polarity, ButtonSymbol::Polarity);
-		addAndMakeVisible(polarity);
+		buttonsBottom.push_back(std::make_unique<Button>(u, param::toTooltip(PID::Polarity)));
+		makeParameter(*buttonsBottom.back(), PID::Polarity, ButtonSymbol::Polarity);
 #endif
+#if PPDHasLookahead
+		buttonsBottom.push_back(std::make_unique<Button>(u, param::toTooltip(PID::Lookahead)));
+		makeParameter(*buttonsBottom.back(), PID::Lookahead, ButtonSymbol::Lookahead);
+#endif
+#if PPD_MixOrGainDry == 1
+		buttonsBottom.push_back(std::make_unique<Button>(u, param::toTooltip(PID::MuteDry)));
+		makeParameter(*buttonsBottom.back(), PID::MuteDry, "Mute\nDry", true);
+#endif
+#if PPDHasDelta
+		buttonsBottom.push_back(std::make_unique<Button>(u, param::toTooltip(PID::Delta)));
+		makeParameter(*buttonsBottom.back(), PID::Delta, "D");
+#endif
+
+		for (auto& bb : buttonsBottom)
+			addAndMakeVisible(*bb);
+
 		addAndMakeVisible(ccMonitor);
 
 		makeSymbolButton(menuButton, ButtonSymbol::Settings);
 		menuButton.toggleState = 0;
-		menuButton.onClick.push_back([this](Button& btn)
+		menuButton.onClick.push_back([this](Button& btn, const Mouse&)
 			{
 				auto& ts = btn.toggleState;
 				ts = ts == 0 ? 1 : 0;
@@ -379,9 +418,10 @@ namespace gui
 	{
 		layout.resized();
 
-		layout.place(tuningEditorButton, 3.f, 1.f, 1.f, 1.f, true);
-		layout.place(menuButton, 5.f, 1.f, 1.f, 1.f, true);
-		layout.place(parameterRandomizer, 7.f, 1.f, 1.f, 1.f, true);
+		layout.place(tuningEditorButton, 1.f, 1.f, 1.f, 1.f, true);
+		layout.place(menuButton, 3.f, 1.f, 1.f, 1.f, true);
+		layout.place(parameterRandomizer, 5.f, 1.f, 1.f, 1.f, true);
+		layout.place(clipper, 7.f, 1.f, 1.f, 1.f, true);
 
 #if PPDHasPatchBrowser
 		layout.place(patchBrowserButton, 1.f, 3.f, 7.f, 1.f, false);
@@ -408,15 +448,22 @@ namespace gui
 #endif
 
 		layout.place(mix, 3.f, 7.f + patchBrowserOffset, 3.f, 1.f, true);
-
-		layout.place(power, 1.f, 9.f + patchBrowserOffset, 1.f, 1.f, true);
-#if PPDHasPolarity
-		layout.place(polarity, 3.f, 9.f + patchBrowserOffset, 1.f, 1.f, true);
-#endif
-#if PPDHasStereoConfig
-		layout.place(stereoConfig, 5.f, 9.f + patchBrowserOffset, 1.f, 1.f, true);
-#endif
-		layout.place(hq, 7.f, 9.f + patchBrowserOffset, 1.f, 1.f, true);
+		
+		{
+			const auto bbBounds = layout(1.f, 9.f + patchBrowserOffset, 7.f, 1.f, false);
+			const auto sizeF = static_cast<float>(buttonsBottom.size());
+			const auto sizeFInv = 1.f / sizeF;
+			const auto w = bbBounds.getWidth() * sizeFInv;
+			const auto y = bbBounds.getY();
+			const auto h = bbBounds.getHeight();
+			for (auto i = 0; i < buttonsBottom.size(); ++i)
+			{
+				const auto r = static_cast<float>(i) * sizeFInv;
+				auto x = bbBounds.getX() + r * bbBounds.getWidth();
+				const BoundsF bbBound(x, y, w, h);
+				buttonsBottom[i]->setBounds(maxQuadIn(bbBound).toNearestInt());
+			}
+		}
 
 		layout.place(ccMonitor, 1.f, 10.f + patchBrowserOffset, 7.f, 1.f, false);
 		layout.place(midiVoices, 1.f, 11.f + patchBrowserOffset, 7.f, 1.f, false);

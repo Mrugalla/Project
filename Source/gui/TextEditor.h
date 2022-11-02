@@ -16,6 +16,8 @@ namespace gui
 
 		void setVisible(bool) override;
 
+		void addText(const String&);
+
 		void enable();
 
 		bool isEnabled() const noexcept;
@@ -32,13 +34,15 @@ namespace gui
 
 		void clear();
 
-		std::function<void()> onEscape, onReturn, onType, onRemove, onClick;
+		std::function<bool()> onEscape, onReturn, onType, onRemove, onClick;
 	protected:
 		Label label;
 		String emptyString, txt;
 		BlinkyBoy blinkyBoy;
 		int tickIdx;
 		bool drawTick;
+	public:
+		bool multiLine;
 
 		void mouseUp(const Mouse&) override;
 
@@ -51,6 +55,8 @@ namespace gui
 		void timerCallback() override;
 
 		bool keyPressed(const KeyPress&) override;
+
+		void removeMultiLine(String& text);
 	};
 }
 
