@@ -697,7 +697,6 @@ namespace param::strToVal
 			enum class State { Pitchclass, FlatOrSharp, Parse, numStates };
 
 			auto state = State::Pitchclass;
-			auto signMult = 1.f;
 			
 			for (auto i = 0; i < text.length(); ++i)
 			{
@@ -1091,7 +1090,7 @@ namespace param
 
 	// PARAMS
 
-	Params::Params(AudioProcessor& audioProcessor, State& _state, const Xen& xen) :
+	Params::Params(AudioProcessor& audioProcessor, State& _state, const Xen&) :
 		params(),
 		state(_state),
 		modDepthLocked(false)

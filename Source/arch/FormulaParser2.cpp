@@ -1,7 +1,11 @@
 #include "FormulaParser2.h"
+#include <random>
 
 namespace fx
 {
+	using MersenneTwister = std::mt19937;
+	using RandDistribution = std::uniform_real_distribution<float>;
+	
 	bool isDigit(Char chr) noexcept
 	{
 		return chr >= '0' && chr <= '9';
@@ -15,19 +19,19 @@ namespace fx
 	template<typename Float>
 	Float getNumber(const String& txt, int& i) noexcept
 	{
-		auto num = 0.f;
+		auto num = static_cast<Float>(0);
 		if (txt[i] != '.')
 		{
 			num = static_cast<Float>(getDigit(txt[i]));
 			while (i + 1 < txt.length() && isDigit(txt[i + 1]))
-				num = num * 10.f + static_cast<Float>(getDigit(txt[++i]));
+				num = num * static_cast<Float>(10) + static_cast<Float>(getDigit(txt[++i]));
 		}
 		else
 			--i;
 		if (txt[i + 1] == '.')
 		{
 			++i;
-			auto frac = .1f;
+			auto frac = static_cast<Float>(.1);
 			while (i + 1 < txt.length() && isDigit(txt[i + 1]))
 			{
 				num += frac * static_cast<Float>(getDigit(txt[++i]));

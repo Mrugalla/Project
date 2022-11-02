@@ -1,7 +1,7 @@
 #pragma once
 #include <functional>
 #include "juce_core/juce_core.h"
-#include <random>
+
 
 #define DebugFormularParser false
 
@@ -12,8 +12,6 @@ namespace fx
 	using Func2 = std::function<float(float, float)>;
 	using Char = juce::juce_wchar;
 	using Random = juce::Random;
-	using MersenneTwister = std::mt19937;
-	using RandDistribution = std::uniform_real_distribution<float>;
 	
 	bool isDigit(Char) noexcept;
 

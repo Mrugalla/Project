@@ -32,6 +32,7 @@
         <FILE id="JDxwWb" name="AbsorbProcessor.h" compile="0" resource="0"
               file="Source/audio/AbsorbProcessor.h"/>
         <FILE id="SX6ccp" name="AudioUtils.h" compile="0" resource="0" file="Source/audio/AudioUtils.h"/>
+        <FILE id="x6ew2y" name="AutoGain.cpp" compile="1" resource="0" file="Source/audio/AutoGain.cpp"/>
         <FILE id="EuIWYd" name="AutoGain.h" compile="0" resource="0" file="Source/audio/AutoGain.h"/>
         <FILE id="DT8T5u" name="Bitcrusher.h" compile="0" resource="0" file="Source/audio/Bitcrusher.h"/>
         <FILE id="gCh4Uk" name="DryWetMix.cpp" compile="1" resource="0" file="Source/audio/DryWetMix.cpp"/>

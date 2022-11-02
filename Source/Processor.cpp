@@ -207,7 +207,7 @@ namespace audio
 #if PPDHasLookahead
         lookaheadEnabled = params[PID::Lookahead]->getValMod() > .5f;
 #endif
-        const auto sampleRateUpF = static_cast<float>(sampleRateUp);
+        //const auto sampleRateUpF = static_cast<float>(sampleRateUp);
         const auto sampleRateF = static_cast<float>(sampleRate);
 
         midiVoices.prepare(blockSizeUp);
@@ -393,17 +393,17 @@ namespace audio
 #endif
     }
 
-    void Processor::processBlockDownsampled(float** samples, int numChannels, int numSamples
+    void Processor::processBlockDownsampled(float**, int, int
 #if PPDHasSidechain
-        , float** samplesSC, int numChannelsSC
+        , float**, int
 #endif
         ) noexcept
         {
         }
 
-    void Processor::processBlockUpsampled(float** samples, int numChannels, int numSamples
+    void Processor::processBlockUpsampled(float**, int, int
 #if PPDHasSidechain
-        , float** samplesSC, int numChannelsSC
+        , float**, int
 #endif
     ) noexcept
     {
