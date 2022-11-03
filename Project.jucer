@@ -71,16 +71,21 @@
         <FILE id="Ew9Z1a" name="Oversampling.cpp" compile="1" resource="0"
               file="Source/audio/Oversampling.cpp"/>
         <FILE id="KE2g4j" name="Oversampling.h" compile="0" resource="0" file="Source/audio/Oversampling.h"/>
+        <FILE id="RECs8z" name="Phasor.cpp" compile="1" resource="0" file="Source/audio/Phasor.cpp"/>
         <FILE id="pucw6o" name="Phasor.h" compile="0" resource="0" file="Source/audio/Phasor.h"/>
         <FILE id="wvGOKd" name="PitchGlitcher.cpp" compile="1" resource="0"
               file="Source/audio/PitchGlitcher.cpp"/>
         <FILE id="wWm8Gd" name="PitchGlitcher.h" compile="0" resource="0" file="Source/audio/PitchGlitcher.h"/>
         <FILE id="tau91r" name="PRM.cpp" compile="1" resource="0" file="Source/audio/PRM.cpp"/>
         <FILE id="Gk45AM" name="PRM.h" compile="0" resource="0" file="Source/audio/PRM.h"/>
+        <FILE id="TZd7QU" name="ProcessSuspend.cpp" compile="1" resource="0"
+              file="Source/audio/ProcessSuspend.cpp"/>
         <FILE id="Td7oEO" name="ProcessSuspend.h" compile="0" resource="0"
               file="Source/audio/ProcessSuspend.h"/>
+        <FILE id="tX4qzv" name="Rectifier.cpp" compile="1" resource="0" file="Source/audio/Rectifier.cpp"/>
         <FILE id="QAmb7f" name="Rectifier.h" compile="0" resource="0" file="Source/audio/Rectifier.h"/>
-        <FILE id="bvD1oL" name="Resonator.h" compile="0" resource="0" file="Source/audio/Resonator.h"/>
+        <FILE id="yvoHyq" name="CombFilter.cpp" compile="1" resource="0" file="Source/audio/CombFilter.cpp"/>
+        <FILE id="bvD1oL" name="CombFilter.h" compile="0" resource="0" file="Source/audio/CombFilter.h"/>
         <FILE id="sw95KA" name="SpectroBeam.h" compile="0" resource="0" file="Source/audio/SpectroBeam.h"/>
         <FILE id="IXDptL" name="WaveTable.h" compile="0" resource="0" file="Source/audio/WaveTable.h"/>
         <FILE id="joPwDQ" name="WHead.cpp" compile="1" resource="0" file="Source/audio/WHead.cpp"/>

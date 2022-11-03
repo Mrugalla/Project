@@ -5,10 +5,7 @@ namespace audio
 	template<typename Float>
 	struct PhaseInfo
 	{
-		PhaseInfo(Float _phase, Float _retrig) :
-			phase(_phase),
-			retrig(_retrig)
-		{}
+		PhaseInfo(Float, Float);
 
 		Float phase;
 		bool retrig;
@@ -19,41 +16,17 @@ namespace audio
 	{
 		using Phase = PhaseInfo<Float>;
 
-		void setFrequencyHz(Float hz) noexcept
-		{
-			inc = hz * fsInv;
-		}
+		void setFrequencyHz(Float) noexcept;
 
-		Phasor(Float _phase = static_cast<Float>(0), Float _inc = static_cast<Float>(0)) :
-			phase(_phase, false),
-			inc(_inc),
-			fsInv(static_cast<Float>(1))
-		{
+		/* phase, inc */
+		Phasor(Float = static_cast<Float>(0), Float = static_cast<Float>(0));
 
-		}
-
-		void prepare(Float _fsInv) noexcept
-		{
-			fsInv = _fsInv;
-		}
+		/* fsInv */
+		void prepare(Float) noexcept;
 		
-		void reset(Float p = static_cast<Float>(0)) noexcept
-		{
-			phase.phase = p;
-		}
+		void reset(Float = static_cast<Float>(0)) noexcept;
 		
-		Phase operator()() noexcept
-		{
-			phase.phase += inc;
-			if (phase.phase >= static_cast<Float>(1))
-			{
-				--phase.phase;
-				phase.retrig = true;
-				return phase;
-			}
-			phase.retrig = false;
-			return phase;
-		}
+		Phase operator()() noexcept;
 
 		Phase phase;
 		Float inc, fsInv;

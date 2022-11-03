@@ -13,50 +13,14 @@ namespace audio
 			NumStages
 		};
 
-		ProcessSuspender(juce::AudioProcessor& p) :
-			processor(p),
-			stage(Stage::Running)
-		{
+		ProcessSuspender(juce::AudioProcessor&);
 
-		}
-
-		void suspend() noexcept
-		{
-			stage.store(Stage::Suspending);
-		}
+		void suspend() noexcept;
 
 		/* returns true if suspending is needed (= return from processBlock) */
-		bool suspendIfNeeded(AudioBuffer& buf) noexcept
-		{
-			auto samples = buf.getArrayOfWritePointers();
-			const auto numChannels = buf.getNumChannels();
-			const auto numSamples = buf.getNumSamples();
-
-			const auto stg = stage.load();
-			if (stg == Stage::Running)
-				return false;
-
-			if(numSamples != 0)
-				for (auto ch = 0; ch < numChannels; ++ch)
-					SIMD::fill(samples[ch], 0.f, numSamples);
-
-			if (stg == Stage::Suspending)
-			{
-				stage.store(Stage::Suspended);
-				processor.prepareToPlay
-				(
-					processor.getSampleRate(),
-					processor.getBlockSize()
-				);
-			}
-
-			return true;
-		}
+		bool suspendIfNeeded(AudioBuffer&) noexcept;
 		
-		void prepareToPlay() noexcept
-		{
-			stage.store(Stage::Running);
-		}
+		void prepareToPlay() noexcept;
 
 	protected:
 		juce::AudioProcessor& processor;
