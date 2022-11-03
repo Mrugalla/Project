@@ -123,6 +123,7 @@
         <FILE id="abkRAU" name="nel19.ttf" compile="0" resource="1" file="Source/fonts/nel19.ttf"/>
       </GROUP>
       <GROUP id="{DA435779-5001-4379-F809-3E7C21D55DC0}" name="gui">
+        <FILE id="f9XwbB" name="BGImage.h" compile="0" resource="0" file="Source/gui/BGImage.h"/>
         <FILE id="VaWEbx" name="SpectroBeamComp.cpp" compile="1" resource="0"
               file="Source/gui/SpectroBeamComp.cpp"/>
         <FILE id="iT1NDp" name="PatchBrowser.cpp" compile="1" resource="0"

@@ -58,12 +58,12 @@ namespace gui
 		repaint();
 	}
 
-	template class SpectroBeamComp<8>;
-	template class SpectroBeamComp<9>;
-	template class SpectroBeamComp<10>;
-	template class SpectroBeamComp<11>;
-	template class SpectroBeamComp<12>;
-	template class SpectroBeamComp<13>;
-	template class SpectroBeamComp<14>;
-	template class SpectroBeamComp<15>;
+	template struct SpectroBeamComp<8>;
+	template struct SpectroBeamComp<9>;
+	template struct SpectroBeamComp<10>;
+	template struct SpectroBeamComp<11>;
+	template struct SpectroBeamComp<12>;
+	template struct SpectroBeamComp<13>;
+	template struct SpectroBeamComp<14>;
+	template struct SpectroBeamComp<15>;
 }
