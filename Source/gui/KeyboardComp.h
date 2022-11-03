@@ -7,7 +7,8 @@ namespace gui
 	struct KeyboardComp :
 		public Comp
 	{
-		using PitchCallback = std::function<void(int /* noteVal */)>;
+		/* noteVal */
+		using PitchCallback = std::function<void(int)>;
 
 	private:
 		struct Key :
