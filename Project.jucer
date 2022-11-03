@@ -123,6 +123,8 @@
         <FILE id="abkRAU" name="nel19.ttf" compile="0" resource="1" file="Source/fonts/nel19.ttf"/>
       </GROUP>
       <GROUP id="{DA435779-5001-4379-F809-3E7C21D55DC0}" name="gui">
+        <FILE id="ifOBfp" name="FormulaParser.cpp" compile="1" resource="0"
+              file="Source/gui/FormulaParser.cpp"/>
         <FILE id="m4dsVM" name="EQPad.cpp" compile="1" resource="0" file="Source/gui/EQPad.cpp"/>
         <FILE id="hAbAZ7" name="EQPad.h" compile="0" resource="0" file="Source/gui/EQPad.h"/>
         <FILE id="rcwZky" name="FilterResponseGraph.cpp" compile="1" resource="0"
