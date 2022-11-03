@@ -1,9 +1,7 @@
 #pragma once
 #include <array>
 #include <functional>
-
 #include "AudioUtils.h"
-#include "../arch/Interpolation.h"
 #include "../arch/State.h"
 
 namespace audio
@@ -19,68 +17,25 @@ namespace audio
 		using Table = std::array<float, FullSize>;
 		using Func = std::function<float(float)>;
 
-		WaveTable() :
-			table()
-		{
-			create([](float x) { return std::cos(x * Pi); });
-		}
+		WaveTable();
 
-		void create(const Func& func) noexcept
-		{
-			auto x = -1.f + SizeInv * .5f;
-			const auto inc = 2.f * SizeInv;
-			for (auto s = 0; s < Size; ++s, x += inc)
-				table[s] = func(x);
-			for (auto i = 0; i < NumExtraSamples; ++i)
-				table[Size + i] = table[i];
-		}
+		void create(const Func&) noexcept;
 
-		void savePatch(sta::State& state, const String& key)
-		{
-			juce::MemoryBlock mb;
-			const auto dataSize = FullSize * sizeof(float);
-			mb.append(table.data(), dataSize);
-			const auto base64 = mb.toBase64Encoding();
-			state.set(key, "wt", base64, false);
-		}
+		/* state, key*/
+		void savePatch(sta::State&, const String&);
 
-		void loadPatch(sta::State& state, const String& key)
-		{
-			auto var = state.get(key, "wt");
-			if (var != nullptr)
-			{
-				const auto base64 = var->toString();
-				juce::MemoryBlock mb;
-				mb.fromBase64Encoding(base64);
-#if JUCE_DEBUG
-				const auto mbSize = mb.getSize();
-#endif
-				const auto dataSize = FullSize * sizeof(float);
-				jassert(mbSize == dataSize);
-				mb.copyTo(table.data(), 0, dataSize);
-			}
-		}
+		/* state, key*/
+		void loadPatch(sta::State&, const String&);
 
-		float operator()(int idx) const noexcept
-		{
-			return table[idx];
-		}
+		/* idx */
+		float operator()(int) const noexcept;
 
-		float operator()(float phase) const noexcept
-		{
-			const auto idx = phase * SizeF;
-			return interpolate::lerp(table.data(), idx);
-		}
+		/* phase */
+		float operator()(float) const noexcept;
 
-		float* data() noexcept
-		{
-			return table.data();
-		}
+		float* data() noexcept;
 
-		const float* data() const noexcept
-		{
-			return table.data();
-		}
+		const float* data() const noexcept;
 		
 	protected:
 		Table table;
@@ -125,10 +80,10 @@ namespace audio
 	template<size_t Size>
 	inline void createWaveTableNoise(WaveTable<Size>& table)
 	{
-		table.create([](float x)
+		juce::Random rand;
+		table.create([r = rand](float x)
 		{
-			juce::Random rand;
-			return rand.nextFloat() * 2.f - 1.f;
+			return r.nextFloat() * 2.f - 1.f;
 		});
 	}
 

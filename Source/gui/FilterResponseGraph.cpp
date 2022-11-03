@@ -1,4 +1,5 @@
 #include "FilterResponseGraph.h"
+#include "../arch/Interpolation.h"
 
 namespace gui
 {

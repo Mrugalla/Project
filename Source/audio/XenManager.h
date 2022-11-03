@@ -1,6 +1,4 @@
 #pragma once
-#include "../arch/Conversion.h"
-#include "../arch/Interpolation.h"
 #include "../arch/State.h"
 #include <array>
 #include <atomic>
@@ -9,61 +7,25 @@ namespace audio
 {
 	struct XenManager
 	{
-		XenManager() :
-			xen(12.f),
-			masterTune(440.f),
-			baseNote(69.f),
-			temperaments()
-		{
-			for (auto& t : temperaments)
-				t = 0.f;
-		}
+		XenManager();
 
-		void setTemperament(float tmprVal, int noteVal) noexcept
-		{
-			temperaments[noteVal] = tmprVal;
-			const auto idx2 = noteVal + PPD_MaxXen;
-			if (idx2 >= temperaments.size())
-				temperaments[idx2] = tmprVal;
-		}
+		/* tmprVal, noteVal */
+		void setTemperament(float, int) noexcept;
 		
-		void operator()(float _xen, float _masterTune, float _baseNote) noexcept
-		{
-			xen = _xen;
-			masterTune = _masterTune;
-			baseNote = _baseNote;
-		}
+		/* xen, masterTune, baseNote */
+		void operator()(float, float, float) noexcept;
 
 		template<typename Float>
-		Float noteToFreqHz(Float note) const noexcept
-		{
-			const auto noteCap = juce::jlimit(static_cast<Float>(0), static_cast<Float>(PPD_MaxXen), note);
-			const auto tmprmt = temperaments[static_cast<int>(std::round(noteCap))].load();
+		Float noteToFreqHz(Float) const noexcept;
 
-			return noteInFreqHz(note + tmprmt, baseNote, xen, masterTune);
-		}
+		/* note, lowestFreq, highestFreq */
+		template<typename Float>
+		Float noteToFreqHzWithWrap(Float, Float = static_cast<Float>(0), Float = static_cast<Float>(22000)) const noexcept;
 
 		template<typename Float>
-		Float noteToFreqHzWithWrap(Float note, Float lowestFreq = static_cast<Float>(0), Float highestFreq = static_cast<Float>(22000)) const noexcept
-		{
-			auto freq = noteToFreqHz(note);
-			while (freq < lowestFreq)
-				freq *= static_cast<Float>(2);
-			while (freq >= highestFreq)
-				freq *= static_cast<Float>(.5);
-			return freq;
-		}
-
-		template<typename Float>
-		Float freqHzToNote(Float hz) noexcept
-		{
-			return freqHzInNote(hz, baseNote, xen, masterTune);
-		}
+		Float freqHzToNote(Float) noexcept;
 		
-		float getXen() const noexcept
-		{
-			return xen;
-		}
+		float getXen() const noexcept;
 
 	protected:
 		float xen, masterTune, baseNote;
@@ -80,58 +42,17 @@ namespace audio
 	{
 		using SIMD = juce::FloatVectorOperations;
 
-		TuningEditorSynth(const XenManager& _xen) :
-			pitch(69.f),
-			gain(.25f),
-			noteOn(false),
-			
-			xen(_xen),
-			osc(),
-			buffer()
-		{
+		TuningEditorSynth(const XenManager& _xen);
 
-		}
+		void loadPatch(sta::State&);
 
-		void loadPatch(sta::State& state)
-		{
-			const auto idStr = getIDString();
-			auto g = state.get(idStr, "gain");
-			if (g != nullptr)
-				gain.store(static_cast<float>(*g));
-		}
+		void savePatch(sta::State&);
 
-		void savePatch(sta::State& state)
-		{
-			const auto idStr = getIDString();
-			state.set(idStr, "gain", gain.load());
-		}
+		/* Fs, blockSize */
+		void prepare(float, int);
 
-		void prepare(float Fs, int blockSize)
-		{
-			const auto fsInv = 1.f / Fs;
-			osc.prepare(fsInv);
-
-			buffer.resize(blockSize, 0.f);
-		}
-
-		void operator()(float** samples, int numChannels, int numSamples) noexcept
-		{
-			if (noteOn.load())
-			{
-				auto buf = buffer.data();
-
-				auto g = gain.load();
-
-				const auto freqHz = xen.noteToFreqHzWithWrap(pitch.load());
-				osc.setFreqHz(freqHz);
-
-				for (auto s = 0; s < numSamples; ++s)
-					buf[s] = std::tanh(4.f * osc()) * g;
-
-				for (auto ch = 0; ch < numChannels; ++ch)
-					SIMD::add(samples[ch], buf, numSamples);
-			}
-		}
+		/* samples, numChannels, numSamples */
+		void operator()(float**, int, int) noexcept;
 
 		std::atomic<float> pitch, gain;
 		std::atomic<bool> noteOn;
@@ -139,10 +60,5 @@ namespace audio
 		const XenManager& xen;
 		OscSine<float> osc;
 		std::vector<float> buffer;
-
-		static String getIDString()
-		{
-			return "tuningEditor";
-		}
 	};
 }

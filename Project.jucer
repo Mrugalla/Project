@@ -27,6 +27,9 @@
         <FILE id="Uad8Jv" name="State.h" compile="0" resource="0" file="Source/arch/State.h"/>
       </GROUP>
       <GROUP id="{6A8CB2D6-E6E3-8D1E-1148-21BD24558A7A}" name="audio">
+        <FILE id="pqdwbw" name="XenManager.cpp" compile="1" resource="0" file="Source/audio/XenManager.cpp"/>
+        <FILE id="egTK63" name="WaveTable.cpp" compile="1" resource="0" file="Source/audio/WaveTable.cpp"/>
+        <FILE id="SboLkX" name="SpectroBeam.cpp" compile="1" resource="0" file="Source/audio/SpectroBeam.cpp"/>
         <FILE id="rrYIGS" name="AbsorbProcessor.cpp" compile="1" resource="0"
               file="Source/audio/AbsorbProcessor.cpp"/>
         <FILE id="JDxwWb" name="AbsorbProcessor.h" compile="0" resource="0"
