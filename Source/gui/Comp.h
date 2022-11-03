@@ -8,9 +8,11 @@ namespace gui
 	struct Comp :
 		public Component
 	{
-		Comp(Utils&, const String& /*_tooltip*/ = "", CursorType = CursorType::Interact);
+		/* utils, tooltip, cursorType */
+		Comp(Utils&, const String& = "", CursorType = CursorType::Interact);
 
-		Comp(Utils&, const String& /*_tooltip*/, Notify&&, CursorType = CursorType::Interact);
+		/* utils, tooltip, notify, cursorType */
+		Comp(Utils&, const String&, Notify&&, CursorType = CursorType::Interact);
 
 		const Utils& getUtils() const noexcept;
 		Utils& getUtils() noexcept;
@@ -26,9 +28,11 @@ namespace gui
 
 		const Layout& getLayout() const noexcept;
 		
-		void initLayout(const std::vector<int>& /*xL*/, const std::vector<int>& /*yL*/);
+		/* xL, yL */
+		void initLayout(const std::vector<int>&, const std::vector<int>&);
 		
-		void initLayout(const String& /*xL*/, const String& /*yL*/);
+		/* xL, yL */
+		void initLayout(const String&, const String&);
 
 		void notify(EvtType, const void* = nullptr);
 
@@ -54,9 +58,11 @@ namespace gui
 		public Comp,
 		public Timer
 	{
+		/* utils, tooltip, cursorType */
 		CompWidgetable(Utils&, String&& /*_tooltip*/, CursorType = CursorType::Interact);
 		
-		CompWidgetable(Utils&, String&& /*_tooltip*/,
+		/* utils, tooltip, notify, cursorType */
+		CompWidgetable(Utils&, String&&,
 			Notify&& = [](EvtType, const void*) {}, CursorType = CursorType::Interact);
 
 		void defineBounds(const BoundsF&, const BoundsF&);
@@ -83,7 +89,8 @@ namespace gui
 			static constexpr float SensitiveDrag = .2f;
 			static constexpr float WheelDefaultSpeed = 12.f;
 
-			ScrollBar(Utils&, CompScrollable&, bool /*vertical*/ = true);
+			/* utils, compScrollable, isVertical */
+			ScrollBar(Utils&, CompScrollable&, bool = true);
 
 			bool needed() const noexcept;
 
@@ -111,7 +118,8 @@ namespace gui
 			void updateHandlePosX(float);
 		};
 
-		CompScrollable(Utils&, bool /*vertical*/ = true);
+		/* utils, isVertical */
+		CompScrollable(Utils&, bool = true);
 
 		void mouseWheelMove(const Mouse&, const MouseWheel&) override;
 

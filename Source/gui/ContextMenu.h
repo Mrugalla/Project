@@ -18,9 +18,11 @@ namespace gui
 
 		void paint(Graphics&) override;
 
-		void addButton(String&& /*name*/, String&& /*tooltip*/);
+		/* name, tooltip */
+		void addButton(String&&, String&&);
 		
-		void setButton(const Button::OnClick&, int/*idx*/);
+		/* onClick, idx */
+		void setButton(const Button::OnClick&, int);
 
 		std::vector<std::unique_ptr<Button>> buttons;
 		std::vector<Label*> labelPtr;
@@ -35,7 +37,7 @@ namespace gui
 	class ContextMenuButtons :
 		public ContextMenu
 	{
-		Notify makeNotify2(ContextMenuButtons& popUp);
+		Notify makeNotify2(ContextMenuButtons&);
 
 	public:
 		ContextMenuButtons(Utils&);
@@ -45,7 +47,7 @@ namespace gui
 	class ContextMenuMacro :
 		public ContextMenu
 	{
-		Notify makeNotify2(ContextMenuMacro& popUp);
+		Notify makeNotify2(ContextMenuMacro&);
 
 	public:
 		ContextMenuMacro(Utils&);
