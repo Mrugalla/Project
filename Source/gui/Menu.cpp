@@ -275,6 +275,103 @@ namespace gui
 		date.repaint();
 	}
 
+	// JuxtaComp::Jux
+
+	JuxtaComp::Jux::Jux(Utils& u, String&& text, String&& textA, String&& textB) :
+		Comp(u),
+		labelA(u, text.isEmpty() ? textA : text),
+		labelB(u, text.isEmpty() ? textB : "")
+	{
+		layout.init
+		(
+			{ 13, 1, 13 },
+			{ 1 }
+		);
+
+		bool isTitle = text.isNotEmpty();
+		labelA.mode = Label::Mode::TextToLabelBounds;
+		addAndMakeVisible(labelA);
+		if (!isTitle)
+		{
+			labelA.just = Just::centredRight;
+			labelB.just = Just::centredLeft;
+			labelB.mode = Label::Mode::TextToLabelBounds;
+			addAndMakeVisible(labelB);
+		}
+		else
+			labelA.textCID = ColourID::Interact;
+	}
+
+	void JuxtaComp::Jux::paint(Graphics& g)
+	{
+		const bool isTitle = labelB.getText() == "";
+		const auto cID = isTitle ? ColourID::Interact : ColourID::Hover;
+		g.setColour(Colours::c(cID));
+		const auto thicc = static_cast<int>(utils.thicc);
+		const auto h = getHeight();
+		const auto w = static_cast<float>(getWidth());
+		for (auto y = h - 1; y > h - thicc; --y)
+			g.drawHorizontalLine(y, 0.f, w);
+	}
+
+	void JuxtaComp::Jux::resized()
+	{
+		bool isTitle = labelB.getText() == "";
+
+		if (isTitle)
+			labelA.setBounds(getLocalBounds());
+		else
+		{
+			layout.resized();
+
+			layout.place(labelA, 0, 0, 1, 1);
+			layout.place(labelB, 2, 0, 1, 1);
+		}
+	}
+
+	// JuxtaComp
+
+	JuxtaComp::JuxtaComp(Utils& u, const ValueTree& vt) :
+		Comp(u),
+		juxi()
+	{
+		const auto numJuxi = vt.getNumChildren();
+		juxi.reserve(numJuxi);
+		for (auto i = 0; i < numJuxi; ++i)
+		{
+			const auto juxChild = vt.getChild(i);
+			juxi.emplace_back(std::make_unique<Jux>
+				(
+					u,
+					juxChild.getProperty("text").toString(),
+					juxChild.getProperty("textA").toString(),
+					juxChild.getProperty("textB").toString()
+					));
+		}
+
+		for (auto& j : juxi)
+			addAndMakeVisible(*j);
+	}
+
+	void JuxtaComp::paint(Graphics&) {}
+
+	void JuxtaComp::resized()
+	{
+		const auto w = static_cast<float>(getWidth());
+		const auto h = static_cast<float>(getHeight());
+		const auto x = 0.f;
+
+		const auto numJuxi = juxi.size();
+		const auto inc = h / numJuxi;
+
+		auto y = 0.f;
+		for (auto& j : juxi)
+		{
+			j->setBounds(BoundsF(x, y, w, inc).toNearestInt());
+			y += inc;
+		}
+	}
+
 	// ComponentWithBounds
 
 	template<typename CompType>
