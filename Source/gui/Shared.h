@@ -24,148 +24,41 @@ namespace gui
     {
         using Array = std::array<Colour, static_cast<int>(ColourID::NumCols)>;
     public:
-        Colours() :
-            cols(),
-            props(nullptr)
-        {
-            setInternal(ColourID::Transp, Colour(0x00000000));
-            setInternal(ColourID::Abort, Colour(0xffff0000));
-        }
+        Colours();
 
-        Colour defaultColour() noexcept
-        {
-            return Colour(0xffeba021);
-        }
+        Colour defaultColour() noexcept;
 
-        void init(Props* p)
-        {
-            props = p;
-            if (props->isValidFile())
-            {
-                const auto colStr = props->getValue(coloursID(), defaultColour().toString());
-                set(juce::Colour::fromString(colStr));
-            }
-        }
+        void init(Props*);
 
-        bool set(Colour col)
-        {
-            if (props->isValidFile())
-            {
-                setInternal(ColourID::Interact, col);
-                props->setValue(coloursID(), col.toString());
+        bool set(Colour);
 
-                setInternal(ColourID::Bg, col.darker(8.f).withMultipliedSaturation(.15f));
-                setInternal(ColourID::Txt, col.withMultipliedBrightness(.6f));
-                setInternal(ColourID::Mod, col.withRotatedHue(.3333f));
-                setInternal(ColourID::Bias, col.withRotatedHue(.6666f));
-                setInternal(ColourID::Darken, col.darker(3.f).withMultipliedAlpha(.5f));
-                setInternal(ColourID::Hover, col.withMultipliedSaturation(2.f).brighter(2.f).withMultipliedAlpha(.3f));
-                setInternal(ColourID::Inactive, col.withMultipliedSaturation(.1f));
-                
-                if (props->needsToBeSaved())
-                {
-                    props->save();
-                    props->sendChangeMessage();
-                    return true;
-                }
-            }
-            return false;
-        }
+        Colour operator()(ColourID) const noexcept;
 
-        Colour operator()(ColourID i) const noexcept
-        {
-            return get(static_cast<int>(i));
-        }
+        Colour operator()(int) const noexcept;
 
-        Colour operator()(int i) const noexcept
-        {
-            return get(i);
-        }
-
-        Colour get(int i) const noexcept
-        {
-            return cols[i];
-        }
+        Colour get(int) const noexcept;
 
         static Colours c;
     private:
         Array cols;
         Props* props;
 
-        void setInternal(ColourID cID, Colour col) noexcept
-        {
-            cols[static_cast<int>(cID)] = col;
-        }
+        void setInternal(ColourID, Colour) noexcept;
 
-        String coloursID()
-        {
-            return "coloursMain";
-        }
+        String coloursID();
     };
 
     // GET FONT
-    inline Font getFont(const char* ttf, size_t size)
-    {
-        auto typeface = juce::Typeface::createSystemTypefaceFor(ttf, size);
-        return Font(typeface);
-    }
-    
-    // GET FONT NEL
-    inline Font getFontNEL()
-    {
-        return getFont(BinaryData::nel19_ttf, BinaryData::nel19_ttfSize);
-    }
-
-    // GET FONT LOBSTER
-    inline Font getFontLobster()
-    {
-        return getFont(BinaryData::LobsterRegular_ttf, BinaryData::LobsterRegular_ttfSize);
-    }
-
-    // GET FONT MS MADI
-    inline Font getFontMsMadi()
-    {
-        return getFont(BinaryData::MsMadiRegular_ttf, BinaryData::MsMadiRegular_ttfSize);
-    }
-
-    // GET FONT DOSIS
-    inline Font getFontDosisSemiBold()
-    {
-        return getFont(BinaryData::DosisSemiBold_ttf, BinaryData::DosisSemiBold_ttfSize);
-    }
-
-    inline Font getFontDosisBold()
-    {
-        return getFont(BinaryData::DosisBold_ttf, BinaryData::DosisBold_ttfSize);
-    }
-
-    inline Font getFontDosisExtraBold()
-    {
-        return getFont(BinaryData::DosisExtraBold_ttf, BinaryData::DosisExtraBold_ttfSize);
-    }
-
-    inline Font getFontDosisLight()
-    {
-        return getFont(BinaryData::DosisLight_ttf, BinaryData::DosisLight_ttfSize);
-    }
-
-    inline Font getFontDosisExtraLight()
-    {
-        return getFont(BinaryData::DosisExtraLight_ttf, BinaryData::DosisExtraLight_ttfSize);
-    }
-
-    inline Font getFontDosisMedium()
-    {
-        return getFont(BinaryData::DosisMedium_ttf, BinaryData::DosisMedium_ttfSize);
-    }
-
-    inline Font getFontDosisRegular()
-    {
-        return getFont(BinaryData::DosisRegular_ttf, BinaryData::DosisRegular_ttfSize);
-    }
-
-    inline Font getFontDosisVariable()
-    {
-        return getFont(BinaryData::DosisVariableFont_wght_ttf, BinaryData::DosisVariableFont_wght_ttfSize);
-    }
+	
+    Font getFontNEL();
+    Font getFontLobster();
+    Font getFontMsMadi();
+    Font getFontDosisSemiBold();
+    Font getFontDosisBold();
+    Font getFontDosisExtraBold();
+    Font getFontDosisLight();
+    Font getFontDosisExtraLight();
+    Font getFontDosisMedium();
+    Font getFontDosisRegular();
+    Font getFontDosisVariable();
 }
