@@ -97,6 +97,8 @@ namespace gui
 				else if (val < range.start)
 					val = range.end;
 				btn.toggleState = static_cast<int>(val - range.start);
+				if(!btn.toggleTexts.empty())
+					btn.label.setText(btn.toggleTexts[btn.toggleState % static_cast<int>(btn.toggleTexts.size())]);
 				param->setValueWithGesture(range.convertTo0to1(val));
 			}
 		});
@@ -885,7 +887,7 @@ namespace gui
 			}
 		});
 
-		b.toggleNext = withToggle ? 1 : 0;
+		b.toggleNext = withToggle || symbol == ButtonSymbol::StereoConfig ? 1 : 0;
 	}
 
 	void makeToggleButton(Button& b, const String& txt)

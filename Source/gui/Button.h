@@ -55,7 +55,6 @@ namespace gui
 		bool locked;
 		int toggleNext;
 		std::unique_ptr<Button> lockButton;
-	protected:
 		Label label;
 		std::vector<String> toggleTexts;
 

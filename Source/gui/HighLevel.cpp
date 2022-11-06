@@ -312,7 +312,7 @@ namespace gui
 		addAndMakeVisible(mix);
 #if PPDHasHQ
 		buttonsBottom.push_back(std::make_unique<Button>(u, param::toTooltip(PID::HQ)));
-		makeParameter(*buttonsBottom.back(), PID::HQ, "HQ");
+		makeParameter(*buttonsBottom.back(), PID::HQ, "HQ", true);
 		buttonsBottom.back()->getLabel().mode = Label::Mode::TextToLabelBounds;
 #endif
 #if PPDHasStereoConfig
