@@ -110,12 +110,10 @@ namespace audio
 			if (noteOn)
 			{
 				const auto dcy = dcyP[s];
-				const auto sus = susP[s];
 
 				envRaw += dcy;
 				if (envRaw >= 1.f)
 				{
-					envRaw = sus;
 					state = State::Sustain;
 					synthesizeSustain(s);
 				}
