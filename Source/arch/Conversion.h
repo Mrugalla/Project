@@ -11,6 +11,12 @@ namespace audio
     using Char = juce::juce_wchar;
     using String = juce::String;
 	
+	template <typename Float>
+    inline Float slightlySmaller(Float x) noexcept
+    {
+		return x * (static_cast<Float>(1) - std::numeric_limits<Float>::epsilon());
+    }
+
     template<typename Float>
     inline Float secsInSamples(Float secs, Float Fs) noexcept
     {
@@ -21,6 +27,12 @@ namespace audio
     inline Float msInSamples(Float ms, Float Fs) noexcept
     {
         return secsInSamples(ms * static_cast<Float>(.001), Fs);
+    }
+
+    template<typename Float>
+    inline Float msInInc(Float ms, Float Fs) noexcept
+    {
+		return static_cast<Float>(1) / msInSamples(ms, Fs);
     }
 
     template<typename Float>

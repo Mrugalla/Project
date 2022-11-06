@@ -17,6 +17,9 @@ namespace audio
 		/* numSamples */
 		float* operator()(int) noexcept;
 
+		/* idx */
+		float operator[](int) const noexcept;
+
 		Smooth smooth;
 		std::vector<float> buf;
 	};

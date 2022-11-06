@@ -24,6 +24,9 @@ HOW TO USE:
 
 TO DO:
 
+buttons dont work
+	hq, l/r m/s
+
 make toast component
 	use for formulaparser error messages
 

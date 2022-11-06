@@ -18,7 +18,7 @@ namespace audio
 		MIDILearn midiLearn;
 
 		/* numSamples */
-		std::vector<std::function<void(int)>> onInit, onEnd;
+		std::vector<std::function<void(int)>> onInit, onEnd, onSample;
 		/* midiMessage, sampleIndex */
 		std::vector<std::function<void(const MidiMessage&, int)>> onCC, onNoteOn, onNoteOff, onPitchbend;
 		/* sampleIndex */

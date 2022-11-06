@@ -64,7 +64,14 @@ namespace param
 
 		case PID::Power: return "Power";
 
-			// LOW LEVEL PARAMS:
+		// LOW LEVEL PARAMS:
+		case PID::EnvGenAttack: return "EnvGen Attack";
+		case PID::EnvGenDecay: return "EnvGen Decay";
+		case PID::EnvGenSustain: return "EnvGen Sustain";
+		case PID::EnvGenRelease: return "EnvGen Release";
+		case PID::EnvGenAtkShape: return "EnvGen Atk Shape";
+		case PID::EnvGenDcyShape: return "EnvGen Dcy Shape";
+		case PID::EnvGenRlsShape: return "EnvGen Rls Shape";
 
 		default: return "Invalid Parameter Name";
 		}
@@ -1136,6 +1143,14 @@ namespace param
 		}
 
 		// LOW LEVEL PARAMS:
+		auto envGenCentre = 120.f;
+		params.push_back(makeParam(PID::EnvGenAttack, state, envGenCentre, makeRange::withCentre(0.f, 32000.f, envGenCentre), Unit::Ms));
+		params.push_back(makeParam(PID::EnvGenDecay, state, envGenCentre, makeRange::withCentre(0.f, 32000.f, envGenCentre), Unit::Ms));
+		params.push_back(makeParam(PID::EnvGenSustain, state, 1.f, makeRange::lin(0.f, 1.f), Unit::Percent));
+		params.push_back(makeParam(PID::EnvGenRelease, state, envGenCentre, makeRange::withCentre(0.f, 32000.f, envGenCentre), Unit::Ms));
+		params.push_back(makeParam(PID::EnvGenAtkShape, state, 0.f, makeRange::lin(-1.f, 1.f)));
+		params.push_back(makeParam(PID::EnvGenDcyShape, state, 0.f, makeRange::lin(-1.f, 1.f)));
+		params.push_back(makeParam(PID::EnvGenRlsShape, state, 0.f, makeRange::lin(-1.f, 1.f)));
 		// LOW LEVEL PARAMS END
 
 		for (auto param : params)

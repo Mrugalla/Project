@@ -39,7 +39,7 @@ namespace gui
 		blinkyBoy(),
 		tickIdx(0),
 		drawTick(false),
-		multiLine(false)
+		multiLine(true)
 	{
 		addAndMakeVisible(label);
 		label.mode = Label::Mode::TextToLabelBounds;

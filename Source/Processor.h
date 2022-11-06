@@ -14,6 +14,8 @@
 #include "audio/Oversampling.h"
 #include "audio/Meter.h"
 
+#include "audio/EnvelopeGenerator.h"
+
 #include "audio/AudioUtils.h"
 
 namespace audio
@@ -90,14 +92,10 @@ namespace audio
 
         void prepareToPlay(double, int) override;
 
-        void processBlock(AudioBuffer&, juce::MidiBuffer&);
+        void processBlock(AudioBuffer&, juce::MidiBuffer&) override;
         
-        /* samples, numChannels, numSamples, samplesSC, numChannelsSC */
-        void processBlockDownsampled(float**, int numChannels, int numSamples
-#if PPDHasSidechain
-            , float**, int
-#endif
-        ) noexcept;
+        /* samples, numChannels, numSamples, midi, samplesSC, numChannelsSC */
+        void processBlockPreUpscaled(float**, int numChannels, int numSamples, juce::MidiBuffer& midi) noexcept;
 
         /* samples, numChannels, numSamples, samplesSC, numChannelsSC */
         void processBlockUpsampled(float**, int, int
@@ -119,5 +117,7 @@ namespace audio
         void loadPatch();
 
         juce::AudioProcessorEditor* createEditor() override;
+
+        EnvGenMIDI envGenMIDI;
     };
 }

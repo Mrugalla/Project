@@ -56,7 +56,13 @@ namespace param
 		Power,
 
 		// low level parameters
-		
+		EnvGenAttack,
+		EnvGenDecay,
+		EnvGenSustain,
+		EnvGenRelease,
+		EnvGenAtkShape,
+		EnvGenDcyShape,
+		EnvGenRlsShape,
 
 		NumParams
 	};

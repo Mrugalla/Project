@@ -8,6 +8,7 @@ namespace audio
 		midiLearn(params, state),
 		onInit(),
 		onEnd(),
+		onSample(),
 		onCC(),
 		onNoteOn(),
 		onNoteOff(),
@@ -107,6 +108,8 @@ namespace audio
 						ts = ref.samplePosition;
 					}
 				}
+				for (auto& func : onSample)
+					func(s);
 				//bufNotes[s] = currentValue;
 				//bufEnv[s] = env(noteOn) * SafetyCoeff;
 			}

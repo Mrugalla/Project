@@ -187,7 +187,8 @@ namespace audio
     // PROCESSOR
 
     Processor::Processor() :
-        ProcessorBackEnd()
+        ProcessorBackEnd(),
+		envGenMIDI()
 	{
     }
 
@@ -213,6 +214,7 @@ namespace audio
         midiVoices.prepare(blockSizeUp);
 		tuningEditorSynth.prepare(sampleRateF, maxBlockSize);
 
+		envGenMIDI.prepare(sampleRateF, maxBlockSize);
 
         dryWetMix.prepare(sampleRateF, maxBlockSize, latency);
 
@@ -297,7 +299,7 @@ namespace audio
         }
 
 #endif
-        processBlockDownsampled(samples, numChannels, numSamples);
+        processBlockPreUpscaled(samples, numChannels, numSamples, midi);
 
 #if PPDHasHQ
         auto resampledBuf = &oversampler.upsample(buffer);
@@ -393,13 +395,24 @@ namespace audio
 #endif
     }
 
-    void Processor::processBlockDownsampled(float**, int, int
-#if PPDHasSidechain
-        , float**, int
-#endif
-        ) noexcept
-        {
-        }
+    void Processor::processBlockPreUpscaled(float** samples, int numChannels, int numSamples, MIDIBuffer& midi) noexcept
+    {
+        envGenMIDI
+        (
+            midi,
+            numSamples,
+            params[PID::EnvGenAttack]->getValModDenorm(),
+			params[PID::EnvGenDecay]->getValModDenorm(),
+			params[PID::EnvGenSustain]->getValMod(),
+			params[PID::EnvGenRelease]->getValModDenorm(),
+			params[PID::EnvGenAtkShape]->getValModDenorm(),
+			params[PID::EnvGenDcyShape]->getValModDenorm(),
+			params[PID::EnvGenRlsShape]->getValModDenorm()
+        );
+		
+        for (auto ch = 0; ch < numChannels; ++ch)
+            SIMD::copy(samples[ch], envGenMIDI.data(), numSamples);
+    }
 
     void Processor::processBlockUpsampled(float**, int, int
 #if PPDHasSidechain
