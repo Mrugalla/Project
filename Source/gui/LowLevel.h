@@ -1,5 +1,6 @@
 #pragma once
 #include "Knob.h"
+#include "EnvelopeGenerator.h"
 
 namespace gui
 {
@@ -8,14 +9,20 @@ namespace gui
     {
         LowLevel(Utils& u) :
             Comp(u, "", CursorType::Default),
+			envGen
+            (u,
+                PID::EnvGenAttack, PID::EnvGenDecay,
+                PID::EnvGenSustain, PID::EnvGenRelease,
+                PID::EnvGenAtkShape, PID::EnvGenDcyShape,
+                PID::EnvGenRlsShape
+            ),
             atk(u),
 			dcy(u),
 			sus(u),
-			rls(u),
-			atkShape(u),
-			dcyShape(u),
-			rlsShape(u)
+			rls(u)
         {
+            addAndMakeVisible(envGen);
+
             makeParameter(atk, PID::EnvGenAttack, "Attack", true);
             addAndMakeVisible(atk);
 
@@ -28,19 +35,10 @@ namespace gui
 			makeParameter(rls, PID::EnvGenRelease, "Release", true);
 			addAndMakeVisible(rls);
 
-			makeParameter(atkShape, PID::EnvGenAtkShape, "Shape", true);
-			addAndMakeVisible(atkShape);
-
-			makeParameter(dcyShape, PID::EnvGenDcyShape, "Shape", true);
-			addAndMakeVisible(dcyShape);
-
-			makeParameter(rlsShape, PID::EnvGenRlsShape, "Shape", true);
-			addAndMakeVisible(rlsShape);
-
             layout.init
             (
-                { 1, 1, 1, 1, 1, 1 },
-                { 1, 1 }
+                { 1, 2, 2, 2, 2, 1 },
+                { 5, 2 }
             );
         }
 
@@ -52,18 +50,16 @@ namespace gui
         {
             layout.resized();
 
-            layout.place(atk, 1, 0, 1, 1);
-			layout.place(dcy, 2, 0, 1, 1);
-			layout.place(sus, 3, 0, 1, 1);
-			layout.place(rls, 4, 0, 1, 1);
+            layout.place(envGen, 1, 0, 4, 1);
 
-			layout.place(atkShape, 1, 1, 1, 1);
-			layout.place(dcyShape, 2, 1, 1, 1);
-			layout.place(rlsShape, 4, 1, 1, 1);
+            layout.place(atk, 1, 1, 1, 1);
+			layout.place(dcy, 2, 1, 1, 1);
+			layout.place(sus, 3, 1, 1, 1);
+			layout.place(rls, 4, 1, 1, 1);
         }
 
     protected:
+        EnvGenComp envGen;
         Knob atk, dcy, sus, rls;
-        Knob atkShape, dcyShape, rlsShape;
     };
 }

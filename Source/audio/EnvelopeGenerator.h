@@ -182,7 +182,7 @@ namespace audio
  			env = noteOffVal - getSkewed(envRaw, rlsShapeP[s]) * noteOffVal;
 		}
 
-		float getSkewed(float x, float bias) noexcept
+		static float getSkewed(float x, float bias) noexcept
 		{
 			const auto b2 = 2.f * bias;
 			const auto bM = 1.f - bias;
@@ -269,6 +269,11 @@ namespace audio
 		const float* data() const noexcept
 		{
 			return buffer.data();
+		}
+
+		static float getSkewed(float x, float bias) noexcept
+		{
+			return EnvGen::getSkewed(x, bias);
 		}
 
 		std::vector<float> buffer;
