@@ -19,7 +19,9 @@ namespace param
 	{
 		// high level params
 		Macro,
+#if PPDHasClipper
 		Clipper,
+#endif
 #if PPDHasGainIn
 		GainIn,
 #endif
@@ -27,9 +29,11 @@ namespace param
 #if PPD_MixOrGainDry
 		MuteDry,
 #endif
+#if PPDHasGainOut
 		Gain,
 #if PPDHasPolarity
 		Polarity,
+#endif
 #endif
 #if PPDHasUnityGain && PPDHasGainIn
 		UnityGain,
@@ -48,21 +52,17 @@ namespace param
 #endif
 
 		// tuning parameters
+#if PPDHasTuningEditor
 		Xen,
 		MasterTune,
 		BaseNote,
 		PitchbendRange,
+#endif
 		
 		Power,
 
 		// low level parameters
-		EnvGenAttack,
-		EnvGenDecay,
-		EnvGenSustain,
-		EnvGenRelease,
-		EnvGenAtkShape,
-		EnvGenDcyShape,
-		EnvGenRlsShape,
+		SmoothTest,
 
 		NumParams
 	};
@@ -110,6 +110,9 @@ namespace param
 		Pitch,
 		Q,
 		Slope,
+		Legato,
+		Custom,
+		FilterType,
 		NumUnits
 	};
 
@@ -226,7 +229,11 @@ namespace param
 		using AudioProcessor = juce::AudioProcessor;
 		using Parameters = std::vector<Param*>;
 
-		Params(AudioProcessor&, State&, const Xen&);
+		Params(AudioProcessor&, State&
+#if PPDHasTuningEditor
+			, const Xen&
+#endif
+		);
 
 		void loadPatch(juce::ApplicationProperties&);
 
@@ -281,6 +288,9 @@ namespace param
 		StrToValFunc pitch(const Xen&);
 		StrToValFunc q();
 		StrToValFunc slope();
+		StrToValFunc beats();
+		StrToValFunc legato();
+		StrToValFunc filterType();
 	}
 
 	namespace valToStr
@@ -308,18 +318,10 @@ namespace param
 		ValToStrFunc pitch(const Xen&);
 		ValToStrFunc q();
 		ValToStrFunc slope();
+		ValToStrFunc beats();
+		ValToStrFunc legato();
+		ValToStrFunc filterType();
 	}
-
-	/* pID, state, valDenormDefault, range, Unit */
-	Param* makeParam(PID, State&,
-		float = 1.f, const Range& = Range(0.f, 1.f),
-		Unit = Unit::Percent);
-
-	/* pID, state, params */
-	Param* makeParamPan(PID, State&, const Params&);
-
-	/* pID, state, valDenormDefault, range, Xen */
-	Param* makeParamPitch(PID, State&, float, const Range&, const Xen&);
 
 	struct MacroProcessor
 	{

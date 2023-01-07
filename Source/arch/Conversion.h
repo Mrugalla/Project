@@ -259,4 +259,46 @@ namespace audio
             buffer[i] *= w;
         }
     }
+
+    inline float getNumBeats(const String& str)
+    {
+		for (auto i = 0; i < str.length(); ++i)
+        {
+            auto chr = str[i];
+            if (chr == '/')
+            {
+				auto num = str.substring(0, i).getFloatValue();
+				auto den = str.substring(i + 1).getFloatValue();
+				return num / den;
+            }
+        }
+        return -1.f;
+    }
+
+    inline float nextLowestPowTwoX(float x) noexcept
+    {
+        return std::pow(2.f, std::floor(std::log2(x)));
+    }
+
+    inline bool stringNegates(const String& t)
+    {
+        return t == "off"
+            || t == "false"
+            || t == "no"
+            || t == "0"
+            || t == "disabled"
+            || t == "none"
+            || t == "null"
+            || t == "nil"
+            || t == "nada"
+            || t == "nix"
+            || t == "nichts"
+            || t == "niente"
+            || t == "nope"
+            || t == "nay"
+            || t == "nein"
+            || t == "njet"
+            || t == "nicht"
+            || t == "nichts";
+    }
 }

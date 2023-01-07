@@ -5,40 +5,21 @@
 namespace gui
 {
     struct LowLevel :
-        public Comp
+        public Comp,
+		public Timer
     {
         LowLevel(Utils& u) :
             Comp(u, "", CursorType::Default),
-			envGen
-            (u,
-                PID::EnvGenAttack, PID::EnvGenDecay,
-                PID::EnvGenSustain, PID::EnvGenRelease,
-                PID::EnvGenAtkShape, PID::EnvGenDcyShape,
-                PID::EnvGenRlsShape
-            ),
-            atk(u),
-			dcy(u),
-			sus(u),
-			rls(u)
+			Timer(),
+            smooth(u)
         {
-            addAndMakeVisible(envGen);
-
-            makeParameter(atk, PID::EnvGenAttack, "Attack", true);
-            addAndMakeVisible(atk);
-
-			makeParameter(dcy, PID::EnvGenDecay, "Decay", true);
-			addAndMakeVisible(dcy);
-			
-			makeParameter(sus, PID::EnvGenSustain, "Sustain", true);
-			addAndMakeVisible(sus);
-
-			makeParameter(rls, PID::EnvGenRelease, "Release", true);
-			addAndMakeVisible(rls);
-
+            makeParameter(smooth, PID::SmoothTest, "Smooth");
+            addAndMakeVisible(smooth);
+            
             layout.init
             (
-                { 1, 2, 2, 2, 2, 1 },
-                { 5, 2 }
+                { 1, 2, 1 },
+                { 1, 2, 1 }
             );
         }
 
@@ -50,16 +31,13 @@ namespace gui
         {
             layout.resized();
 
-            layout.place(envGen, 1, 0, 4, 1);
-
-            layout.place(atk, 1, 1, 1, 1);
-			layout.place(dcy, 2, 1, 1, 1);
-			layout.place(sus, 3, 1, 1, 1);
-			layout.place(rls, 4, 1, 1, 1);
+            layout.place(smooth, 1, 1, 1, 1, false);
         }
 
+        void timerCallback() override
+        {}
+
     protected:
-        EnvGenComp envGen;
-        Knob atk, dcy, sus, rls;
+        Knob smooth;
     };
 }

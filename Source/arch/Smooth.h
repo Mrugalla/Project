@@ -17,8 +17,7 @@ namespace smooth
 
 		/* buffer, numSamples */
 		void operator()(Float*, int) noexcept;
-
-	protected:
+		
 		Float curVal;
 	};
 	
@@ -59,9 +58,8 @@ namespace smooth
 		Float operator()(Float) noexcept;
 
 		void setX(Float) noexcept;
-
-	protected:
-		Float a0, b1, y1, eps, startVal;
+		
+		Float a0, b1, y1, startVal;
 
 		Float processSample(Float) noexcept;
 	};
@@ -78,13 +76,15 @@ namespace smooth
 		void operator()(Float*, Float*, int) noexcept;
 
 		/* buffer, val, numSamples */
-		void operator()(Float*, Float, int) noexcept;
+		bool operator()(Float*, Float, int) noexcept;
 
 		/* buffer, numSamples */
-		void operator()(Float*, int) noexcept;
+		bool operator()(Float*, int) noexcept;
 
 	protected:
 		Block<Float> block;
 		Lowpass<Float> lowpass;
+		Float cur, dest;
+		bool smoothing;
 	};
 }

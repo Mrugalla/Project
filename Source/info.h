@@ -2,7 +2,7 @@
 
 -------------------------------------------------------------------
 
-Welcome to DEFAULT PROJECT!
+Welcome to DEFAULT PROJECT TEMPLATE!
 
 This project contains my vision of a default JUCE VST plugin project. I made this so I can get started trying new ideas
 and finishing projects way faster than from a projucer-made template.
@@ -15,19 +15,29 @@ HOW TO USE:
 2. In Project.jucer
 	2.1 Rename plugin name
 	2.2 Define unique plugin ID
-	2.3 Configurate the pre processor definitions
-3. Code DSP in processBlockCustom
+	2.3 Configure the pre processor definitions
+3. Code DSP in processBlockCustom and processBlockDownsampled
 4. Code GUI in lowlevel.cpp/h
+5. Write a new text for welcome.txt
 5. Ship it!
 
-------------------------------------------------------------------- 
+-------------------------------------------------------------------
 
 TO DO:
 
-make toast component
-	use for formulaparser error messages
+doesnt draw the stereo config button's text on init
+
+lock button over textbox of knob sometimes when interface smol
+
+rename ButtonState::UnityGain to ButtonState::Linked
+
+add layout function that paints a rectangle or something
+	with a descriptive text to the topLeft
+
+scroll/draggable buttons must also have click function
 
 Formulaparser
+	send toast on error
 	wide when has focus
 	randomize button should postfix>>infix and infix>>string
 
@@ -65,8 +75,6 @@ Colours
 	figure out natural hue steps
 	if chosen white modulations not visible anymore
 	some dark colours make it too dark
-	when changing colours
-		default cursor needs update
 
 highlevel
 	"remove dc offset" switch (steep highpass)
@@ -125,10 +133,6 @@ All Params
 Oversampler
 	make less cpu demanding (FFT?)
 
-FirstTimeAction(s)
-	thing that only makes lookuptables when the plugin is started the first time
-	tutorials
-
 HighLevel UI Elements
 	undo/redo buttons
 	sidechain activated?
@@ -136,6 +140,11 @@ HighLevel UI Elements
 -------------------------------------------------------------------
 
 FEATURE REQUESTS:
+
+Manta 2
+	autogain
+	automatically finding kick's fundamental frequency
+	keytrack
 
 show total time spent with mrugalla plugins
 

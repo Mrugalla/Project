@@ -2,6 +2,8 @@
 #include <cmath>
 #include <juce_audio_basics/juce_audio_basics.h>
 
+#include <complex>
+
 namespace smooth
 {
 	using SIMD = juce::FloatVectorOperations;
@@ -12,14 +14,13 @@ namespace smooth
 	Block<Float>::Block(float startVal) :
 		curVal(startVal)
 	{
-		
 	}
 	
 	template<typename Float>
 	void Block<Float>::operator()(Float* bufferOut, Float* bufferIn, int numSamples) noexcept
 	{
 		auto x = static_cast<Float>(0);
-		auto inc = 1.f / static_cast<Float>(numSamples);
+		const auto inc = 1.f / static_cast<Float>(numSamples);
 		
 		for (auto s = 0; s < numSamples; ++s, x += inc)
 		{
@@ -33,12 +34,9 @@ namespace smooth
 	}
 	
 	template<typename Float>
-	void Block<Float>::operator()(Float* buffer, Float val, int numSamples) noexcept
+	void Block<Float>::operator()(Float* buffer, Float dest, int numSamples) noexcept
 	{
-		if (curVal == val)
-			return operator()(buffer, numSamples);
-		
-		const auto dist = val - curVal;
+		const auto dist = dest - curVal;
 		const auto inc = dist / static_cast<Float>(numSamples);
 		
 		for (auto s = 0; s < numSamples; ++s)
@@ -108,7 +106,6 @@ namespace smooth
 	{
 		a0 = other.a0;
 		b1 = other.b1;
-		eps = other.eps;
 	}
 
 	template<typename Float>
@@ -116,7 +113,6 @@ namespace smooth
 		a0(static_cast<Float>(1)),
 		b1(static_cast<Float>(0)),
 		y1(_startVal),
-		eps(static_cast<Float>(0)),
 		startVal(_startVal)
 	{}
 
@@ -126,7 +122,6 @@ namespace smooth
 		a0 = static_cast<Float>(1);
 		b1 = static_cast<Float>(0);
 		y1 = startVal;
-		eps = static_cast<Float>(0);
 	}
 
 	template<typename Float>
@@ -161,7 +156,6 @@ namespace smooth
 	{
 		a0 = static_cast<Float>(1) - x;
 		b1 = x;
-		eps = a0 * static_cast<Float>(1.5);
 	}
 
 	template struct Lowpass<float>;
@@ -178,8 +172,32 @@ namespace smooth
 	template<typename Float>
 	Smooth<Float>::Smooth(float startVal) :
 		block(startVal),
-		lowpass(startVal)
+		lowpass(startVal),
+		cur(startVal),
+		dest(startVal),
+		smoothing(false)
 	{
+	}
+
+	template<typename Float>
+	bool Smooth<Float>::operator()(Float* bufferOut, Float _dest, int numSamples) noexcept
+	{
+		dest = _dest;
+		
+		if (!smoothing && cur == dest)
+			return false;
+		
+		smoothing = true;
+		block(bufferOut, dest, numSamples);
+		lowpass(bufferOut, numSamples);
+		
+		cur = bufferOut[numSamples - 1];
+		if (bufferOut[0] == cur)
+		{
+			smoothing = false;
+			cur = dest;
+		}
+		return smoothing;
 	}
 
 	template<typename Float>
@@ -188,19 +206,24 @@ namespace smooth
 		block(bufferOut, bufferIn, numSamples);
 		lowpass(bufferOut, numSamples);
 	}
-	
+
 	template<typename Float>
-	void Smooth<Float>::operator()(Float* buffer, Float val, int numSamples) noexcept
+	bool Smooth<Float>::operator()(Float* bufferOut, int numSamples) noexcept
 	{
-		block(buffer, val, numSamples);
-		lowpass(buffer, numSamples);
-	}
-	
-	template<typename Float>
-	void Smooth<Float>::operator()(Float* buffer, int numSamples) noexcept
-	{
-		block(buffer, numSamples);
-		lowpass(buffer, numSamples);
+		if (!smoothing && cur == dest)
+			return false;
+		
+		smoothing = true;
+		block(bufferOut, numSamples);
+		lowpass(bufferOut, numSamples);
+		
+		cur = bufferOut[numSamples - 1];
+		if (bufferOut[0] == cur)
+		{
+			smoothing = false;
+			cur = dest;
+		}
+		return smoothing;
 	}
 	
 	template struct Smooth<float>;

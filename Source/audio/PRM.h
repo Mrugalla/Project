@@ -6,7 +6,7 @@ namespace audio
 	struct PRM
 	{
 		/* startVal */
-		PRM(float);
+		PRM(float = 0.f);
 
 		/*Fs, blockSize, smoothLenMs */
 		void prepare(float, int, float);
@@ -22,5 +22,6 @@ namespace audio
 
 		Smooth smooth;
 		std::vector<float> buf;
+		bool smoothing;
 	};
 }

@@ -33,13 +33,21 @@ namespace gui
         pluginTitle(utils, JucePlugin_Name),
 
         lowLevel(utils),
+#if PPDHasTuningEditor
         tuningEditor(utils),
-        highLevel(utils, &lowLevel, &tuningEditor),
+#endif
+        highLevel(utils, &lowLevel
+#if PPDHasTuningEditor
+            , &tuningEditor   
+#endif
+        ),
 
         contextMenuKnobs(utils),
         contextMenuButtons(utils),
 
         editorKnobs(utils),
+
+        toast(utils),
 
         bypassed(false),
         shadr(utils, *this)
@@ -72,7 +80,9 @@ namespace gui
         addAndMakeVisible(lowLevel);
         addAndMakeVisible(highLevel);
 
+#if PPDHasTuningEditor
         addAndMakeVisible(tuningEditor);
+#endif
 
         highLevel.init();
 
@@ -80,6 +90,8 @@ namespace gui
         addAndMakeVisible(contextMenuButtons);
 
         addChildComponent(editorKnobs);
+		
+        addChildComponent(toast);
 
         updateBgImage(false);
 
@@ -120,9 +132,10 @@ namespace gui
         layout.place(lowLevel, 1, 1, 1, 1, false);
         layout.place(highLevel, 0, 0, 1, 2, false);
         
+#if PPDHasTuningEditor
         {
             const auto bnds = lowLevel.getBounds().toFloat();
-
+			
             tuningEditor.defineBounds
             (
                 bnds.withX(static_cast<float>(getRight())),
@@ -131,6 +144,7 @@ namespace gui
 
             tuningEditor.updateBounds();
         }
+#endif
 
         tooltip.setBounds(layout.bottom().toNearestInt());
 
@@ -141,6 +155,17 @@ namespace gui
             bgImage = bgImage.rescaled(lowLevel.getWidth(), getHeight(), Graphics::ResamplingQuality::lowResamplingQuality);
         else
             updateBgImage(true);
+		
+        const auto user = utils.audioProcessor.props.getUserSettings();
+        const auto firstTime = user->getBoolValue("firstTimeUwU", true);
+        if (firstTime)
+        {
+            const auto toastStr = String::fromUTF8(BinaryData::welcome_txt, BinaryData::welcome_txtSize);
+            notify(EvtType::Toast, &toastStr);
+        }
+		
+		if(toast.isVisible())
+            toast.updateBounds();
 
         saveBounds();
     }
@@ -187,11 +212,11 @@ namespace gui
                 auto user = props->getUserSettings();
                 if (user != nullptr)
                 {
-                    auto file = user->getFile();
-                    file = file.getParentDirectory();
+                    const auto& file = user->getFile();
+                    const auto nFile = file.getParentDirectory();
                     const auto findFiles = File::TypesOfFileToFind::findFiles;
                     const auto wildCard = "*.png";
-                    for (auto f : file.findChildFiles(findFiles, true, wildCard))
+                    for (const auto& f : nFile.findChildFiles(findFiles, true, wildCard))
                     {
                         if (f.getFileName() == "bgImage.png")
                         {
@@ -213,19 +238,18 @@ namespace gui
         if (width == 0 || height == 0)
             return;
         
-        makeBGSpace(bgImage, utils.thicc, width, height);
+        makeBGBlurredCurves(bgImage, utils.thicc, width, height);
 
         if (props != nullptr)
         {
             auto user = props->getUserSettings();
             if (user != nullptr)
             {
-				auto file = user->getFile();
-				file = file.getParentDirectory();
-				file = file.getChildFile("bgImage.png");
-                if (file.exists())
-                    file.deleteFile();
-                juce::FileOutputStream stream(file);
+				const auto& file = user->getFile();
+				const auto nFile = file.getParentDirectory().getChildFile("bgImage.png");
+				if (nFile.exists())
+                    nFile.deleteFile();
+                juce::FileOutputStream stream(nFile);
                 juce::PNGImageFormat pngWriter;
                 pngWriter.writeImageToStream(bgImage, stream);
             }

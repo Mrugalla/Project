@@ -18,13 +18,14 @@ namespace gui
         onPaint([](Knob&, Graphics&) {}),
         getInfo([](int) { return ""; }),
         label(u, _name),
-        dragXY(),
+        dragXY(), lastPos(),
         knobBounds(),
         values(),
         comps(),
         states(),
         hidesCursor(true),
         locked(false),
+		dragMode(DragMode::Vertical),
         activeCursor(_cursorType)
     {
         setInterceptsMouseClicks(true, true);
@@ -45,7 +46,8 @@ namespace gui
 
     void Knob::init(std::vector<int>&& distX, std::vector<int>&& distY)
     {
-        layout.init(
+        layout.init
+        (
             distX,
             distY
         );
@@ -88,6 +90,7 @@ namespace gui
                 mouse.position.x,
                 mouse.position.y
             );
+            lastPos = getPosition().toFloat();
 
             onDown(*this);
         }
@@ -102,6 +105,11 @@ namespace gui
             if (hidesCursor)
                 hideCursor();
 			
+            const auto nPosition = getPosition().toFloat();
+            const auto posShift = nPosition - lastPos;
+            lastPos = nPosition;
+
+			dragXY -= posShift;
             auto dragOffset = mouse.position - dragXY;
             auto shiftDown = mouse.mods.isShiftDown();
             onDrag(*this, dragOffset, shiftDown);
@@ -113,7 +121,7 @@ namespace gui
     {
         onUp(*this, mouse);
 
-        if (hidesCursor)
+        if(hidesCursor)
 			if(mouse.mouseWasDraggedSinceMouseDown())
                 showCursor(*this);
     }
@@ -200,7 +208,7 @@ namespace gui
                         radius + k.knobBounds.getY()
                     );
 
-                    const auto col = Colours::c(ColourID::Interact);
+                    auto col = Colours::c(ColourID::Txt);
 
                     if (hasMeter)
                     {
@@ -255,7 +263,7 @@ namespace gui
                             -AngleWidth, AngleWidth,
                             true
                         );
-                        auto stroke2 = strokeType;
+                        Stroke stroke2 = strokeType;
                         stroke2.setStrokeThickness(radDif);
                         g.strokePath(arcInline, stroke2);
                     };
@@ -289,7 +297,7 @@ namespace gui
                                 0.f, biasAngle,
                                 true
                             );
-                            auto bStroke = strokeType;
+                            Stroke bStroke = strokeType;
                             bStroke.setStrokeThickness(radDif);
 
                             g.strokePath(biasPath, bStroke);
@@ -310,6 +318,8 @@ namespace gui
                             g.strokePath(modPath, strokeType);
                         }
                     };
+
+                    col = Colours::c(ColourID::Interact);
 					
                     { // paint tick
                         const auto tickLine = LineF::fromStartAndAngle(centre, radius, valAngle);
@@ -336,7 +346,7 @@ namespace gui
                     if (modulatable)
                     {
                         layout.place(*k.comps[ModDial], 1, 1, 1, 1, true);
-                        layout.place(*k.comps[LockButton], 2.f, 1.5f, 1.f, 1.f, true);
+                        layout.place(*k.comps[LockButton], 1.5f, 1.5f, 1.5f, 1.5f, true);
                     }
                 };
 
@@ -348,102 +358,241 @@ namespace gui
             }
         }
 
-        namespace vertSlidr
+        namespace slidr
         {
-            static void create(Knob& k, bool modulatable, bool hasMeter)
+            static void create(Knob& k, bool modulatable, bool hasMeter, bool vertical)
             {
-                k.onPaint = [modulatable, hasMeter](Knob& k, Graphics& g)
+                k.onPaint = [modulatable, hasMeter, vertical](Knob& k, Graphics& g)
                 {
+                    enum { X, Y };
 					// remember to implement hasMeter
                     const auto& bounds = k.knobBounds;
 					const auto thicc = k.utils.thicc;
 					const auto thicc2 = thicc * 2.f;
 					const auto thicc4 = thicc * 4.f;
-                    const auto x = bounds.getX();
-					const auto y = bounds.getY();
-					const auto w = bounds.getWidth();
-					const auto h = bounds.getHeight();
-                    const auto btm = bounds.getBottom();
-                    const PointF centre
-                    (
-                        x + w * .5f,
-                        y + h * .5f
-                    );
+                    const float xy[2] = { bounds.getX(), bounds.getY() };
+					const float wh[2] = { bounds.getWidth(), bounds.getHeight() };
+					
+					const float btm[2] = { xy[X] + wh[X], xy[Y] + wh[Y]};
+                    const float centre[2] =
+                    {
+                        xy[X] + wh[X] * .5f,
+                        xy[Y] + wh[Y] * .5f
+                    };
 
-                    const auto values = k.values;
+                    const auto values = k.values.data();
                     const auto val = values[Value];
-                    const auto valHeight = val * h;
-					const auto valY = btm - valHeight;
-
                     auto col = Colours::c(ColourID::Interact);
                     g.setColour(col);
-					
-                    const auto line0X = centre.x - thicc;
-                    const auto line1X = centre.x + thicc2;
-                    { // paint lines
-                        const auto lineY0 = y;
-                        const auto lineY1 = btm;
-                        g.drawLine({ line0X, lineY0, line0X, lineY1 }, thicc);
-                        g.drawLine({ line1X, lineY0,  line1X, lineY1 }, thicc2);
-                    }
-					
-					if(modulatable)
-                    { // paint modulation
-                        const auto maxModDepth = values[MaxModDepth];
-						const auto mmdHeight = maxModDepth * h;
-						const auto mmdY = juce::jlimit(y, btm, valY - mmdHeight);
-						
-                        col = Colours::c(ColourID::Mod);
-                        g.setColour(col);
-						g.drawLine({ line0X, valY, line0X, mmdY }, thicc);
+                    
+                    if (vertical)
+                    {
+                        const auto valLength = val * wh[Y];
+                        const auto valXY = btm[Y] - valLength;
 
-						const auto valMod = values[ValMod];
-						const auto valModHeight = valMod * h;
-						const auto valModY = juce::jlimit(y, btm, btm - valModHeight);
-                        g.drawLine({ line0X, valModY, line1X, valModY }, thicc2);
-						
-						const auto bias = values[ModBias];
-						const auto biasHeight = bias * h;
-                        const auto biasX = line1X;
-                        const auto biasY0 = centre.y;
-						const auto biasY1 = btm - biasHeight;
-                        col = Colours::c(ColourID::Bias);
-                        g.setColour(col);
-						g.drawLine({ biasX, biasY0, biasX, biasY1 }, thicc2);
+                        const auto line0X = centre[X] - thicc;
+                        const auto line1X = centre[X] + thicc2;
+                        const auto line0Y = xy[Y];
+                        const auto line1Y = btm[Y];
+                        { // paint lines
+
+                            g.drawLine({ line0X, line0Y, line0X, line1Y }, thicc);
+                            g.drawLine({ line1X, line0Y,  line1X, line1Y }, thicc2);
+                        }
+
+                        if (modulatable)
+                        { // paint modulation
+                            const auto maxModDepth = values[MaxModDepth];
+                            const auto mmdLength = maxModDepth * wh[Y];
+                            const auto mmdY = juce::jlimit(xy[Y], btm[Y], valXY - mmdLength);
+
+                            col = Colours::c(ColourID::Mod);
+                            g.setColour(col);
+                            g.drawLine({ line0X, valXY, line0X, mmdY }, thicc);
+
+                            const auto valMod = values[ValMod];
+                            const auto valModHeight = valMod * wh[Y];
+                            const auto valModY = juce::jlimit(xy[Y], btm[Y], btm[Y] - valModHeight);
+                            g.drawLine({ line0X, valModY, line1X, valModY }, thicc2);
+
+                            const auto bias = values[ModBias];
+                            const auto biasHeight = bias * wh[Y];
+                            const auto biasX = line1X;
+                            const auto biasY0 = centre[Y];
+                            const auto biasY1 = btm[Y] - biasHeight;
+                            col = Colours::c(ColourID::Bias);
+                            g.setColour(col);
+                            g.drawLine({ biasX, biasY0, biasX, biasY1 }, thicc2);
+                        }
+
+                        { // paint tick
+                            col = Colours::c(ColourID::Bg);
+                            g.setColour(col);
+                            g.drawLine({ line0X, valXY, line1X, valXY }, thicc4);
+                            col = Colours::c(ColourID::Interact);
+                            g.setColour(col);
+                            g.drawLine({ line0X, valXY, line1X, valXY }, thicc2);
+                        }
                     }
-					
-                    { // paint tick
-                        col = Colours::c(ColourID::Bg);
-						g.setColour(col);
-                        g.drawLine({ line0X, valY, line1X, valY }, thicc4);
-                        col = Colours::c(ColourID::Interact);
-						g.setColour(col);
-						g.drawLine({ line0X, valY, line1X, valY }, thicc2);
-					}
+                    else
+                    {
+						const auto valLength = val * wh[X];
+						const auto valXY = xy[X] + valLength;
+
+						const auto line0X = xy[X];
+						const auto line1X = btm[X];
+						const auto line0Y = centre[Y] - thicc;
+						const auto line1Y = centre[Y] + thicc2;
+						{ // paint lines
+
+							g.drawLine({ line0X, line0Y, line1X, line0Y }, thicc);
+							g.drawLine({ line0X, line1Y, line1X, line1Y }, thicc2);
+						}
+
+						if (modulatable)
+						{ // paint modulation
+							const auto maxModDepth = values[MaxModDepth];
+							const auto mmdLength = maxModDepth * wh[X];
+							const auto mmdX = juce::jlimit(xy[X], btm[X], valXY + mmdLength);
+
+							col = Colours::c(ColourID::Mod);
+							g.setColour(col);
+							g.drawLine({ valXY, line0Y, mmdX, line0Y }, thicc);
+
+							const auto valMod = values[ValMod];
+                            const auto valModLength = valMod * wh[X];
+							const auto valModX = juce::jlimit(xy[X], btm[X], xy[X] + valModLength);
+							g.drawLine({ valModX, line0Y, valModX, line1Y }, thicc2);
+
+							const auto bias = values[ModBias];
+							const auto biasLength = bias * wh[X];
+							const auto biasX0 = centre[X];
+							const auto biasX1 = xy[X] + biasLength;
+							const auto biasY = line1Y;
+							col = Colours::c(ColourID::Bias);
+							g.setColour(col);
+							g.drawLine({ biasX0, biasY, biasX1, biasY }, thicc2);
+						}
+
+                        { // paint tick
+                            col = Colours::c(ColourID::Bg);
+                            g.setColour(col);
+                            g.drawLine({ valXY, line0Y, valXY, line1Y }, thicc4);
+                            col = Colours::c(ColourID::Interact);
+                            g.setColour(col);
+                            g.drawLine({ valXY, line0Y, valXY, line1Y }, thicc);
+                        }
+                    }
                 };
 
-                k.onResize = [modulatable](Knob& k)
+                k.onResize = [modulatable, vertical](Knob& k)
                 {
                     const auto thicc = k.utils.thicc;
                     auto& layout = k.layout;
 
-                    k.knobBounds = layout(0, 1, 1, 1, false).reduced(thicc);
-                    layout.place(k.label, 0, 3, 1, 1, false);
-                    if (modulatable)
+                    if (vertical)
                     {
-                        layout.place(*k.comps[LockButton], 0, 0, 1, 1, true);
-                        layout.place(*k.comps[ModDial], 0, 2, 1, 1, true);
+                        k.knobBounds = layout(0, 1, 1, 1, false).reduced(thicc);
+                        layout.place(k.label, 0, 3, 1, 1, false);
+                        if (modulatable)
+                        {
+                            layout.place(*k.comps[LockButton], 0, 0, 1, 1, true);
+                            layout.place(*k.comps[ModDial], 0, 2, 1, 1, true);
+                        }
                     }
-                        
+                    else
+                    {
+						k.knobBounds = layout(2, 0, 1, 1, false).reduced(thicc);
+						layout.place(k.label, 0, 0, 1, 1, false);
+						if (modulatable)
+						{
+							layout.place(*k.comps[LockButton], 3, 0, 1, 1, true);
+							layout.place(*k.comps[ModDial], 1, 0, 1, 1, true);
+						}
+                    }  
                 };
 
-                k.init
-                (
-                    { 1 },
-                    { 3, 13, 3, 3 }
-                );
+                if(vertical)
+                    k.init
+                    (
+                        { 1 },
+                        { 3, 13, 3, 3 }
+                    );
+                else
+                    k.init
+                    (
+                        { 3, 3, 13, 3 },
+                        { 1 }
+                    );
             }
         }
+
+        namespace knot
+        {
+            static std::function<void(Knob&, Graphics&)> paint()
+            {
+                return [](Knob& k, Graphics& g)
+                {
+                    const auto thicc = k.getUtils().thicc;
+                    const Stroke strokeType(thicc, Stroke::JointStyle::curved, Stroke::EndCapStyle::butt);
+                    const auto radius = k.knobBounds.getWidth() * .5f;
+                    
+                    const PointF centre
+                    (
+                        radius + k.knobBounds.getX(),
+                        radius + k.knobBounds.getY()
+                    );
+
+                    auto col = Colours::c(ColourID::Bg);
+
+                    g.fillEllipse(k.knobBounds);
+                    
+                    
+                    col = Colours::c(ColourID::Interact);
+                    g.setColour(col);
+
+                    const auto startAngle = PiHalf;
+
+                    Path arcs;
+                    for (auto i = 0.f; i < 3.f; ++i)
+                    {
+                        const auto rad = radius - thicc * i;
+                        const auto angle = startAngle + i * Pi;
+
+                        arcs.addCentredArc
+                        (
+							centre.x,
+                            centre.y,
+							rad,
+                            rad,
+                            angle,
+							0.f,
+							Pi,
+							true
+                        );
+                    }
+					
+                    g.strokePath(arcs, strokeType);
+                };
+            }
+
+            static void create(Knob& k)
+            {
+                k.onPaint = paint();
+
+                k.onResize = [](Knob& k)
+                {
+                    k.knobBounds = k.getLocalBounds().toFloat().reduced(k.utils.thicc);
+                };
+            }
+        }
+    }
+
+    bool isKnobLooksTypeModulatable(Knob::LooksType lt) noexcept
+    {
+		return lt == Knob::LooksType::Default
+			|| lt == Knob::LooksType::VerticalSlider
+			|| lt == Knob::LooksType::HorizontalSlider;
     }
 
     // PARAMETER CREATION FREE FUNCS
@@ -457,7 +606,11 @@ namespace gui
         switch (looksType)
         {
         case Knob::LooksType::VerticalSlider:
-            looks::vertSlidr::create(knob, false, false);
+            looks::slidr::create(knob, false, false, true);
+            break;
+		case Knob::LooksType::HorizontalSlider:
+			looks::slidr::create(knob, false, false, false);
+			knob.dragMode = Knob::DragMode::Horizontal;
             break;
         default:
             looks::def::create(knob, false, false);
@@ -489,7 +642,8 @@ namespace gui
 
             const auto speed = 1.f / k.getUtils().getDragSpeed();
 
-            const auto newValue = juce::jlimit(0.f, 1.f, param->load() - dragOffset.y * speed);
+            const auto dragVal = k.dragMode == Knob::DragMode::Vertical ? -dragOffset.y : dragOffset.x;
+            const auto newValue = juce::jlimit(0.f, 1.f, param->load() + dragVal * speed);
             param->store(newValue);
             k.values[0] = newValue;
 
@@ -559,7 +713,14 @@ namespace gui
         switch (looksType)
         {
         case Knob::LooksType::VerticalSlider:
-            looks::vertSlidr::create(knob, modulatable, hasMeter);
+            looks::slidr::create(knob, modulatable, hasMeter, true);
+            break;
+        case Knob::LooksType::HorizontalSlider:
+            looks::slidr::create(knob, modulatable, hasMeter, false);
+            knob.dragMode = Knob::DragMode::Horizontal;
+            break;
+        case Knob::LooksType::Knot:
+            looks::knot::create(knob);
             break;
         default:
             looks::def::create(knob, modulatable, hasMeter);
@@ -622,10 +783,11 @@ namespace gui
 
             const auto speed = 1.f / k.getUtils().getDragSpeed();
 
-            for (auto& pID : pIDs)
+            for (const auto pID : pIDs)
             {
                 auto param = k.getUtils().getParam(pID);
-                const auto newValue = juce::jlimit(0.f, 1.f, param->getValue() - dragOffset.y * speed);
+				const auto dragVal = k.dragMode == Knob::DragMode::Vertical ? -dragOffset.y : dragOffset.x;
+                const auto newValue = juce::jlimit(0.f, 1.f, param->getValue() + dragVal * speed);
                 param->setValueNotifyingHost(newValue);
             }
 
@@ -767,6 +929,8 @@ namespace gui
 
         knob.comps.reserve(looks::NumComps);
 
+        modulatable = modulatable && isKnobLooksTypeModulatable(looksType);
+		
         if (modulatable)
         {
             auto modDial = std::make_unique<Knob>(knob.getUtils(), "M", "Drag this to modulate the macro's modulation depth.", CursorType::Mod);
@@ -890,7 +1054,7 @@ namespace gui
                 {
                     auto& lck = *lockButton;
 
-                    makeTextButton(lck, "L", true);
+                    makeSymbolButton(lck, ButtonSymbol::Lock, 1);
 
                     lck.onClick.push_back([pIDs](Button& btn, const Mouse&)
                     {
@@ -912,6 +1076,243 @@ namespace gui
         knob.startTimerHz(PPDFPSKnobs);
     }
 
+    void makeParameter(Knob& knob, PID pIDHorizontal, PID pIDVertical)
+    {
+		makeParameter(knob, std::vector<PID>{ pIDHorizontal }, std::vector<PID>{ pIDVertical });
+    }
+
+    void makeParameter(Knob& knob, const std::vector<PID>& pIDHorizontal, PID pIDVertical)
+    {
+        makeParameter(knob, pIDHorizontal, std::vector<PID>{ pIDVertical });
+    }
+
+    void makeParameter(Knob& knob, const std::vector<PID>& pIDsHorizontal, const std::vector<PID>& pIDsVertical)
+    {
+        looks::knot::create(knob);
+
+        knob.getInfo = [pIDsHorizontal](int i)
+        {
+            if (i == 0)
+            {
+                String idsStr;
+                for (auto pid : pIDsHorizontal)
+                    idsStr += toString(pid) + "\n";
+                return idsStr;
+            }
+
+            return String();
+        };
+
+        auto mainPID = pIDsHorizontal[0];
+
+        knob.setTooltip(param::toTooltip(mainPID));
+
+        auto& utils = knob.getUtils();
+        auto mainParam = utils.getParam(mainPID);
+
+        knob.setLocked(mainParam->isLocked());
+
+        knob.onEnter = [mainParam](Knob& k)
+        {
+            k.label.setText(mainParam->getCurrentValueAsText());
+            k.label.repaint();
+        };
+
+        knob.onExit = [](Knob& k)
+        {
+            k.label.setText(k.getName());
+            k.label.repaint();
+        };
+
+        knob.onDown = [pIDsHorizontal, pIDsVertical, mainParam](Knob& k)
+        {
+            for (auto pID : pIDsHorizontal)
+            {
+                auto param = k.getUtils().getParam(pID);
+                if (!param->isInGesture())
+                    param->beginGesture();
+            }
+            for (auto pID : pIDsVertical)
+            {
+				auto param = k.getUtils().getParam(pID);
+				if (!param->isInGesture())
+					param->beginGesture();
+            }
+
+            k.label.setText(mainParam->getCurrentValueAsText());
+            k.label.repaint();
+        };
+
+        knob.onDrag = [pIDsHorizontal, pIDsVertical, mainParam](Knob& k, PointF& dragOffset, bool shiftDown)
+        {
+            if (shiftDown)
+                dragOffset *= SensitiveDrag;
+
+            const auto speed = 1.f / k.getUtils().getDragSpeed();
+
+            for (const auto pID : pIDsHorizontal)
+            {
+                auto param = k.getUtils().getParam(pID);
+                const auto dragVal = dragOffset.x;
+                const auto newValue = juce::jlimit(0.f, 1.f, param->getValue() + dragVal * speed);
+                param->setValueNotifyingHost(newValue);
+            }
+            for (const auto pID : pIDsVertical)
+            {
+                auto param = k.getUtils().getParam(pID);
+                const auto dragVal = -dragOffset.y;
+                const auto newValue = juce::jlimit(0.f, 1.f, param->getValue() + dragVal * speed);
+                param->setValueNotifyingHost(newValue);
+            }
+
+            k.label.setText(mainParam->getCurrentValueAsText());
+            k.label.repaint();
+
+            k.notify(EvtType::ParametrDragged, &k);
+        };
+
+        knob.onUp = [pIDsHorizontal, pIDsVertical, mainParam](Knob& k, const Mouse& mouse)
+        {
+            if (mouse.mods.isLeftButtonDown())
+            {
+                if (!mouse.mouseWasDraggedSinceMouseDown())
+                {
+                    if (mouse.mods.isAltDown())
+                    {
+                        for (auto& pID : pIDsHorizontal)
+                        {
+                            auto param = k.getUtils().getParam(pID);
+                            param->setValueNotifyingHost(param->getDefaultValue());
+                        }
+						for (auto& pID : pIDsVertical)
+						{
+							auto param = k.getUtils().getParam(pID);
+							param->setValueNotifyingHost(param->getDefaultValue());
+						}
+                    }
+                    else if (mouse.mods.isCtrlDown())
+                    {
+                        k.utils.getEventSystem().notify(EvtType::EnterParametrValue, &k);
+                    }
+                }
+                
+                for (auto pID : pIDsHorizontal)
+                {
+                    auto param = k.getUtils().getParam(pID);
+                    param->endGesture();
+                }
+				for (auto pID : pIDsVertical)
+				{
+					auto param = k.getUtils().getParam(pID);
+					param->endGesture();
+				}
+            }
+            else if (mouse.mods.isRightButtonDown())
+                if (!mouse.mouseWasDraggedSinceMouseDown())
+                    if (mouse.mods.isAltDown())
+                    {
+                        for (auto pID : pIDsHorizontal)
+                        {
+                            auto param = k.getUtils().getParam(pID);
+                            param->setValueWithGesture(param->getDefaultValue());
+                        }
+                        for (auto pID : pIDsVertical)
+                        {
+							auto param = k.getUtils().getParam(pID);
+							param->setValueWithGesture(param->getDefaultValue());
+						}
+                    }
+                        
+                    else
+                        k.notify(EvtType::ParametrRightClicked, &k);
+
+            k.label.setText(mainParam->getCurrentValueAsText());
+            k.label.repaint();
+        };
+
+        knob.onWheel = [pIDsVertical, mainParam](Knob& k)
+        {
+            for (auto pID : pIDsVertical)
+            {
+                auto param = k.getUtils().getParam(pID);
+                const auto& range = param->range;
+                const auto interval = range.interval;
+                if (interval > 0.f)
+                {
+                    const auto nStep = interval / range.getRange().getLength();
+                    k.dragXY.setY(k.dragXY.y > 0.f ? nStep : -nStep);
+                    auto newValue = juce::jlimit(0.f, 1.f, param->getValue() + k.dragXY.y);
+                    newValue = range.convertTo0to1(range.snapToLegalValue(range.convertFrom0to1(newValue)));
+                    param->setValueWithGesture(newValue);
+                }
+                else
+                {
+                    const auto newValue = juce::jlimit(0.f, 1.f, param->getValue() + k.dragXY.y);
+                    param->setValueWithGesture(newValue);
+                }
+            }
+
+            k.label.setText(mainParam->getCurrentValueAsText());
+            k.label.repaint();
+        };
+
+        knob.onDoubleClick = [pIDsHorizontal, pIDsVertical, mainParam](Knob& k)
+        {
+            for (auto pID : pIDsHorizontal)
+            {
+                auto param = k.getUtils().getParam(pID);
+                if (param->isInGesture())
+                    return;
+
+                const auto dVal = param->getDefaultValue();
+                param->setValueWithGesture(dVal);
+            }
+			for (auto pID : pIDsVertical)
+			{
+				auto param = k.getUtils().getParam(pID);
+                if (param->isInGesture())
+                    return;
+
+                const auto dVal = param->getDefaultValue();
+                param->setValueWithGesture(dVal);
+            }
+
+            k.label.setText(mainParam->getCurrentValueAsText());
+            k.label.repaint();
+
+            k.notify(EvtType::ParametrDragged, &k);
+        };
+
+        knob.values.reserve(looks::NumValues);
+        auto& values = knob.values;
+
+        values.emplace_back(mainParam->getValue());
+
+        knob.onTimer = [mainParam](Knob& k)
+        {
+            bool shallRepaint = false;
+
+            const auto lckd = mainParam->isLocked();
+            if (k.locked != lckd)
+                k.setLocked(lckd);
+
+            const auto vn = mainParam->getValue();
+            auto& vals = k.values;
+
+            if (vals[looks::Value] != vn)
+            {
+                vals[looks::Value] = vn;
+                shallRepaint = true;
+            }
+
+            return shallRepaint;
+        };
+
+        knob.comps.reserve(looks::NumComps);
+
+        knob.startTimerHz(PPDFPSKnobs);
+    }
+	
     // CONTEXT MENU
 
     Notify ContextMenuKnobs::makeNotify2(ContextMenuKnobs& popUp)

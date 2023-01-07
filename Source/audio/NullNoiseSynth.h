@@ -4,33 +4,61 @@
 #include <juce_events/juce_events.h>
 
 #include <cmath>
+#include "WHead.h"
+
+
 
 namespace audio
 {
-	struct NullNoiseSynth :
-		public juce::HighResolutionTimer
+	struct NullSynth
 	{
 		using File = juce::File;
 		using UniqueStream = std::unique_ptr<juce::FileInputStream>;
 		using SpecLoc = File::SpecialLocationType;
+		
+		NullSynth() :
+			noise()
+		{
+			noise.reserve(1 << 17);
+			UniqueStream inputStream(File::getSpecialLocation(SpecLoc::currentApplicationFile).createInputStream());
+			auto& stream = *inputStream;
 
-		NullNoiseSynth();
+			while (!stream.isExhausted())
+			{
+				auto smpl = stream.readFloat();
+				if (!std::isnan(smpl) && !std::isinf(smpl) && smpl != 0.f)
+				{
+					while (smpl < -1.f || smpl > 1.f)
+						smpl *= .5f;
+					noise.push_back(smpl);
+				}
+			}
+		}
 
-		~NullNoiseSynth();
+		void prepare(int blockSize)
+		{
+			wHead.prepare(blockSize, static_cast<int>(noise.size()));
+		}
 
-		/* samples, numChannels, numSamples */
-		void operator()(float**, int, int) noexcept;
+		void operator()(float** samples, int numChannels, int numSamples) noexcept
+		{
+			wHead(numSamples);
 
-		/* samples, numSamples */
-		void operator()(float*, int) noexcept;
+			for (auto ch = 0; ch < numChannels; ++ch)
+			{
+				auto smpls = samples[ch];
 
-	protected:
-		UniqueStream inputStream;
-		std::vector<int> validPos;
+				for (auto s = 0; s < numSamples; ++s)
+				{
+					const auto w = wHead[s];
+
+					smpls[s] = noise[w];
+				}
+			}
+		}
+		
+		WHead wHead;
 		std::vector<float> noise;
-		int writeHead, readHead;
-
-		void hiResTimerCallback() override;
 	};
 }
 
@@ -40,4 +68,5 @@ this synth makes crappy noise from data that is used in a wrong way.
 it's a fun side project. contributions are welcome
 
 todo: save and load buffer indexes after first opened plugin
+
 */

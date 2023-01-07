@@ -15,8 +15,12 @@ namespace gui
         using OnTimer = std::function<bool(Knob&)>;
         using OnPaint = std::function<void(Knob&, Graphics&)>;
         using GetInfo = std::function<String(int)>;
+		
+		enum class DragMode { Vertical, Horizontal, Both, NumDragModes };
+        static constexpr int NumDragModes = static_cast<int>(DragMode::NumDragModes);
 
-        Knob(Utils&, const String & /*name*/ = "", const String & /*tooltip*/ = "", CursorType = CursorType::Interact);
+        /* utils, name, tooltip, cursorType */
+        Knob(Utils&, const String& = "", const String& = "", CursorType = CursorType::Interact);
 
         ~Knob();
 
@@ -51,21 +55,26 @@ namespace gui
         OnPaint onPaint;
         GetInfo getInfo;
         Label label;
-        PointF dragXY;
+        PointF dragXY, lastPos;
         BoundsF knobBounds;
         std::vector<float> values;
         std::vector<std::unique_ptr<Comp>> comps;
         std::vector<int> states;
         bool hidesCursor, locked;
+        DragMode dragMode;
         CursorType activeCursor;
 
         enum class LooksType
         {
             Default,
             VerticalSlider,
+            HorizontalSlider,
+			Knot,
             NumTypes
         };
     };
+	
+    bool isKnobLooksTypeModulatable(Knob::LooksType) noexcept;
 
     /* knob, name, tooltip, pseudo-parameter, looksType */
     void makePseudoParameter(Knob&, const String&, String&&, std::atomic<float>*, Knob::LooksType = Knob::LooksType::Default);
@@ -75,6 +84,15 @@ namespace gui
 
     /* knob, pIDs, name, modulatable, meter, looksType */
 	void makeParameter(Knob&, const std::vector<PID>&, const String&, bool = true, const std::atomic<float>* = nullptr, Knob::LooksType = Knob::LooksType::Default);
+
+    /* knob, pIDHorizontal, pIDVertical */
+    void makeParameter(Knob&, PID, PID);
+
+    /* knob, pIDHorizontal, pIDVertical */
+    void makeParameter(Knob&, const std::vector<PID>&, PID);
+
+	/* knob, pIDsHorizontal, pIDsVertical */
+    void makeParameter(Knob&, const std::vector<PID>&, const std::vector<PID>&);
 
 	struct ContextMenuKnobs :
 		public ContextMenu

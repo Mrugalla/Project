@@ -188,9 +188,15 @@ namespace gui
 		return isQuad ? maxQuadIn(nBounds) : nBounds;
 	}
 
-	float Layout::getX(int i) const noexcept { return rX[i]; }
+	float Layout::getX(int i) const noexcept
+	{
+		return rX[i];
+	}
 
-	float Layout::getY(int i) const noexcept { return rY[i]; }
+	float Layout::getY(int i) const noexcept
+	{
+		return rY[i];
+	}
 
 	float Layout::getX(float i) const noexcept
 	{
@@ -221,13 +227,13 @@ namespace gui
 	template<typename X>
 	float Layout::getW(X i) const noexcept
 	{
-		return getX(i + static_cast<X>(1)) - getX(i);
+		return static_cast<float>(getX(i + static_cast<X>(1)) - getX(i));
 	}
 
 	template<typename Y>
 	float Layout::getH(Y i) const noexcept
 	{
-		return getY(i + static_cast<Y>(1)) - getY(i);
+		return static_cast<float>(getY(i + static_cast<Y>(1)) - getY(i));
 	}
 
 	template<typename X, typename Y>
@@ -291,7 +297,7 @@ namespace gui
 	}
 
 	void drawRectEdges(Graphics& g, const BoundsF& bounds,
-		float edgeWidth, float edgeHeight, Stroke st)
+		float edgeWidth, float edgeHeight, const Stroke& st)
 	{
 		const auto x = bounds.getX();
 		const auto y = bounds.getY();
@@ -324,7 +330,7 @@ namespace gui
 	}
 
 	void drawRectEdges(Graphics& g, const BoundsF& bounds,
-		float edgeWidth, Stroke st)
+		float edgeWidth, const Stroke& st)
 	{
 		drawRectEdges(g, bounds, edgeWidth, edgeWidth, st);
 	}
@@ -375,7 +381,7 @@ namespace gui
 				Point{-0, -1}, Point{-0, -0}
 			});
 
-		std::array<float, 3> rgb;
+		std::array<float, 3> rgb = { 0.f, 0.f, 0.f };
 		enum { R, G, B };
 
 		Image::BitmapData bitmap(img, Image::BitmapData::ReadWriteMode::readWrite);
@@ -421,6 +427,11 @@ namespace gui
 	template LineF Layout::getLine<PointF, Point>(PointF, Point) const noexcept;
 	template LineF Layout::getLine<Point, PointF>(Point, PointF) const noexcept;
 	template LineF Layout::getLine<PointF, PointF>(PointF, PointF) const noexcept;
+
+	template float Layout::getW<int>(int) const noexcept;
+	template float Layout::getW<float>(float) const noexcept;
+	template float Layout::getH<int>(int) const noexcept;
+	template float Layout::getH<float>(float) const noexcept;
 
 	template LineF Layout::getLine<int, int>(int, int, int, int) const noexcept;
 	template LineF Layout::getLine<int, float>(int, float, int, float) const noexcept;

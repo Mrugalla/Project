@@ -4,7 +4,8 @@ namespace audio
 {
 	PRM::PRM(float startVal) :
 		smooth(startVal),
-		buf()
+		buf(),
+		smoothing(false)
 	{}
 
 	void PRM::prepare(float Fs, int blockSize, float smoothLenMs)
@@ -15,13 +16,13 @@ namespace audio
 
 	float* PRM::operator()(float value, int numSamples) noexcept
 	{
-		smooth(buf.data(), value, numSamples);
+		smoothing = smooth(buf.data(), value, numSamples);
 		return buf.data();
 	}
 
 	float* PRM::operator()(int numSamples) noexcept
 	{
-		smooth(buf.data(), numSamples);
+		smoothing = smooth(buf.data(), numSamples);
 		return buf.data();
 	}
 

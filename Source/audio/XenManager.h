@@ -52,7 +52,7 @@ namespace audio
 		void prepare(float, int);
 
 		/* samples, numChannels, numSamples */
-		void operator()(float**, int, int) noexcept;
+		void operator()(float* const*, int, int) noexcept;
 
 		std::atomic<float> pitch, gain;
 		std::atomic<bool> noteOn;

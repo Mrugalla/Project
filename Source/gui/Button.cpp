@@ -53,7 +53,7 @@ namespace gui
 		lockButton = std::make_unique<Button>(utils, "Click here to lock this parameter.");
 		addAndMakeVisible(*lockButton);
 
-		makeTextButton(*lockButton, "L", true);
+		makeSymbolButton(*lockButton, ButtonSymbol::Lock, 1);
 
 		lockButton->onClick.push_back([&parent = *this](Button& btn, const Mouse&)
 		{
@@ -127,7 +127,7 @@ namespace gui
 			}
 		});
 
-		onTimer.push_back([this](Button&)
+		onTimer.push_back([this](Button& btn)
 		{
 			bool shallRepaint = false;
 
@@ -137,7 +137,7 @@ namespace gui
 			if (locked != lckd)
 			{
 				locked = lckd;
-				label.textCID = locked ? ColourID::Inactive : ColourID::Interact;
+				btn.setAlpha(1.f - (locked ? .8f : 0.f));
 				shallRepaint = true;
 			}
 
@@ -157,6 +157,10 @@ namespace gui
 			if (shallRepaint)
 				repaintWithChildren(this);
 		});
+
+		const auto& mainParam = *utils.getParam(pID[0]);
+
+		toggleState = static_cast<int>(std::round(mainParam.getValueDenorm() - mainParam.range.start));
 
 		setTooltip(param::toTooltip(pID[0]));
 
@@ -272,6 +276,32 @@ namespace gui
 		};
 	}
 
+	namespace
+	{
+		static void paintActiveToggleState(Graphics& g, const BoundsF& area, bool withToggle, int tsBtn, int tsTarget, float thicc)
+		{
+			Stroke stroke(thicc, Stroke::JointStyle::curved, Stroke::EndCapStyle::rounded);
+			auto minDimen = std::min(area.getWidth(), area.getHeight());
+
+			if (withToggle && tsBtn == tsTarget)
+			{
+				g.setColour(Colours::c(ColourID::Interact));
+				drawRectEdges(g, area, minDimen * .25f, stroke);
+			}
+		}
+
+		static void paintHoverState(Graphics& g, const BoundsF& bounds, const Button& btn, bool isDown, float thicc)
+		{
+			g.setColour(Colours::c(ColourID::Hover));
+			if (btn.isMouseOver())
+			{
+				g.fillRoundedRectangle(bounds, thicc);
+				if (isDown)
+					g.fillRoundedRectangle(bounds, thicc);
+			}
+		}
+	}
+
 	void makeTextButton(Button& b, const String& txt, bool withToggle, int targetToggleState)
 	{
 		b.enableLabel(txt);
@@ -294,16 +324,9 @@ namespace gui
 			g.setColour(col);
 			g.fillRoundedRectangle(area, thicc);
 
-			g.setColour(Colours::c(ColourID::Hover));
-			if (withToggle && button.toggleState == targetToggleState)
-				g.fillRoundedRectangle(area, thicc);
+			paintActiveToggleState(g, area, withToggle, button.toggleState, targetToggleState, thicc);
 
-			if (button.isMouseOver())
-			{
-				g.fillRoundedRectangle(area, thicc);
-				if (isDown)
-					g.fillRoundedRectangle(area, thicc);
-			}
+			paintHoverState(g, area, button, isDown, thicc);
 		});
 	}
 
@@ -329,16 +352,9 @@ namespace gui
 			g.setColour(col);
 			g.fillRoundedRectangle(area, thicc);
 
-			g.setColour(Colours::c(ColourID::Hover));
-			if (withToggle && button.toggleState == targetToggleState)
-				g.fillRoundedRectangle(area, thicc);
+			paintActiveToggleState(g, area, withToggle, button.toggleState, targetToggleState, thicc);
 
-			if (button.isMouseOver())
-			{
-				g.fillRoundedRectangle(area, thicc);
-				if (isDown)
-					g.fillRoundedRectangle(area, thicc);
-			}
+			paintHoverState(g, area, button, isDown, thicc);
 		});
 	}
 	
@@ -376,17 +392,10 @@ namespace gui
 
 			g.setColour(col);
 			g.fillRoundedRectangle(bounds, thicc);
+			
+			paintActiveToggleState(g, bounds, withToggle, button.toggleState, targetToggleState, thicc);
 
-			g.setColour(Colours::c(ColourID::Hover));
-			if (withToggle && button.toggleState == targetToggleState)
-				g.fillRoundedRectangle(bounds, thicc);
-
-			if (button.isMouseOver())
-			{
-				g.fillRoundedRectangle(bounds, thicc);
-				if (isDown)
-					g.fillRoundedRectangle(bounds, thicc);
-			}
+			paintHoverState(g, bounds, button, isDown, thicc);
 
 			bool abortable = symbol == ButtonSymbol::Settings || symbol == ButtonSymbol::TuningFork;
 			if (abortable && button.toggleState == 1 || symbol == ButtonSymbol::Abort)
@@ -397,7 +406,7 @@ namespace gui
 
 			if (symbol == ButtonSymbol::Polarity)
 			{
-				const auto thicc3 = thicc * 3.f;
+				const auto thicc3 = thicc * Tau;
 
 				bounds = maxQuadIn(bounds).reduced(thicc3);
 				g.drawEllipse(bounds, thicc);
@@ -638,7 +647,7 @@ namespace gui
 					}
 				}
 			}
-			else if (symbol == ButtonSymbol::ModDepthLock)
+			else if (symbol == ButtonSymbol::Lock)
 			{
 				const auto thicc3 = thicc * 3.f;
 
@@ -884,6 +893,127 @@ namespace gui
 				auto y4 = y + h;
 				PointF pt4(x4, y4);
 				g.drawLine({ pt3, pt4 }, thicc);
+			}
+			else if (symbol == ButtonSymbol::Legato)
+			{
+				const auto thicc3 = thicc * 3.f;
+				bounds = maxQuadIn(bounds).reduced(thicc3);
+
+				Stroke stroke(thicc, Stroke::JointStyle::beveled, Stroke::EndCapStyle::butt);
+
+				const auto x = bounds.getX();
+				const auto y = bounds.getY();
+				const auto w = bounds.getWidth();
+				const auto h = bounds.getHeight();
+				
+				const auto xStartR = .1f;
+				const auto xEndR = .7f;
+				const auto xRangeR = xEndR - xStartR;
+
+				auto bowStartX = x + w * xStartR;
+				auto bowStartY = y + h * .3f;
+				auto bowControlX = x + w * xRangeR * .5f;
+				auto bowControlY = y - w * .2f;
+				auto bowEndX = x + w * xEndR;
+				auto bowEndY = y + h * .1f;
+
+				Path bow;
+				bow.startNewSubPath(bowStartX, bowStartY);
+				bow.quadraticTo(bowControlX, bowControlY, bowEndX, bowEndY);
+				g.strokePath(bow, stroke);
+				
+				const auto bowXDist = bowEndX - bowStartX;
+				const auto bowYDist = bowEndY - bowStartY;
+				const auto yOff = w * .1f;
+				const auto ellipseWidth = thicc3;
+				const auto ellipseRad = thicc3 * .5f;
+				const auto lineLen = w * .4f;
+
+				for (auto i = 0.f; i < 2.f; ++i)
+				{
+					const auto ellipseX = bowStartX + i * bowXDist;
+					const auto ellipseY = bowStartY + i * bowYDist + yOff;
+					g.fillEllipse(ellipseX, ellipseY, ellipseWidth, ellipseWidth);
+					
+					const auto lineStartX = ellipseX;
+					const auto lineStartY = ellipseY + ellipseRad;
+					const auto lineEndX = ellipseX;
+					const auto lineEndY = lineStartY + lineLen;
+					g.drawLine({ lineStartX, lineStartY, lineEndX, lineEndY }, thicc);
+				}
+			}
+			else if (symbol == ButtonSymbol::TempoSync)
+			{
+				const auto thicc3 = thicc * 3.f;
+				bounds = maxQuadIn(bounds).reduced(thicc3);
+				Stroke stroke(thicc, Stroke::JointStyle::beveled, Stroke::EndCapStyle::butt);
+
+				const auto x = bounds.getX();
+				const auto y = bounds.getY();
+				const auto w = bounds.getWidth();
+				
+				const auto circleW = w * .2f;
+				const auto circleX = x + w * .3f;
+				const auto circleY = y + w - circleW;
+
+				g.fillEllipse(circleX, circleY, circleW, circleW);
+				
+				const auto lineX = circleX + circleW - thicc * .5f;
+				const auto lineY0 = y;
+				const auto lineY1 = circleY + circleW * .5f;
+				
+				g.drawLine(lineX, lineY0, lineX, lineY1, thicc);
+
+				const auto arcX0 = lineX;
+				const auto arcY0 = lineY0;
+				const auto arcX2 = lineX + w * .2f;
+				const auto arcY2 = lineY0 + w * .3f;
+				const auto arcX1 = lineX + w * .3f;
+				const auto arcY1 = lineY0 + w * .1f;
+
+				Path arc;
+				arc.startNewSubPath(arcX0, arcY0);
+				arc.cubicTo(arcX0, arcY0, arcX1, arcY1, arcX2, arcY2);
+				g.strokePath(arc, stroke);
+			}
+			else if (symbol == ButtonSymbol::InvertADSR)
+			{
+				const auto thicc3 = thicc * 3.f;
+				bounds = maxQuadIn(bounds).reduced(thicc3);
+				Stroke stroke(thicc, Stroke::JointStyle::beveled, Stroke::EndCapStyle::butt);
+
+				const auto x = bounds.getX();
+				const auto y = bounds.getY();
+				const auto w = bounds.getWidth();
+				
+				const auto btm = y + w * .5f;
+				const auto right = x + w;
+				Path adsrCurve;
+				
+				auto inverted = static_cast<float>(button.toggleState);
+				
+				const auto x1 = x + w * .2f;
+				const auto x2 = x + w * .7f;
+				
+				const auto ySus = y + w * .25f;
+
+				const auto y1 = btm + inverted * (y - btm);
+				const auto y2 = y + inverted * (btm - y);
+				
+				const auto xControl1 = x + w * .1f;
+				const auto yControl1 = ySus + w * (inverted * .3f - .15f);
+
+				const auto xControl2 = x + w * .5f;
+				const auto yControl2 = ySus;
+
+				const auto xControl3 = x + w * .9f;
+				const auto yControl3 = ySus;
+
+				adsrCurve.startNewSubPath(x, y1);
+				adsrCurve.quadraticTo({ xControl1, yControl1 }, { x1, y2 });
+				adsrCurve.quadraticTo({ xControl2, yControl2 }, { x2, ySus });
+				adsrCurve.quadraticTo({ xControl3, yControl3 }, { right, y1 });
+				g.strokePath(adsrCurve, stroke);
 			}
 		});
 

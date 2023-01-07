@@ -14,8 +14,7 @@
 #include "audio/Oversampling.h"
 #include "audio/Meter.h"
 
-#include "audio/EnvelopeGenerator.h"
-
+#include "audio/PRM.h"
 #include "audio/AudioUtils.h"
 
 namespace audio
@@ -31,14 +30,15 @@ namespace audio
         using AppProps = juce::ApplicationProperties;
 
         ProcessorBackEnd();
+		~ProcessorBackEnd();
 
-        const juce::String getName() const override;
+        const String getName() const override;
         double getTailLengthSeconds() const override;
         int getNumPrograms() override;
         int getCurrentProgram() override;
         void setCurrentProgram(int) override;
-        const juce::String getProgramName(int) override;
-        void changeProgramName(int, const juce::String&) override;
+        const String getProgramName(int) override;
+        void changeProgramName(int, const String&) override;
         bool isBusesLayoutSupported(const BusesLayout&) const override;
         AppProps* getProps() noexcept;
         bool canAddBus(bool) const override;
@@ -53,6 +53,7 @@ namespace audio
 
         juce::AudioProcessor::BusesProperties makeBusesProperties();
 
+        PlayHeadPos playHeadPos;
         AppProps props;
         ProcessSuspender sus;
 
@@ -67,7 +68,9 @@ namespace audio
 #endif
         Meters meters;
         MIDIVoices midiVoices;
+#if PPDHasTuningEditor
         TuningEditorSynth tuningEditorSynth;
+#endif
 
         void forcePrepareToPlay();
 
@@ -93,12 +96,14 @@ namespace audio
         void prepareToPlay(double, int) override;
 
         void processBlock(AudioBuffer&, juce::MidiBuffer&) override;
+
+        void processBlockBypassed(AudioBuffer&, juce::MidiBuffer&) override;
         
         /* samples, numChannels, numSamples, midi, samplesSC, numChannelsSC */
-        void processBlockPreUpscaled(float**, int numChannels, int numSamples, juce::MidiBuffer& midi) noexcept;
+        void processBlockPreUpscaled(float* const*, int numChannels, int numSamples, juce::MidiBuffer& midi) noexcept;
 
         /* samples, numChannels, numSamples, samplesSC, numChannelsSC */
-        void processBlockUpsampled(float**, int, int
+        void processBlockUpsampled(float* const*, int, int
 #if PPDHasSidechain
             , float**, int
 #endif
@@ -118,6 +123,6 @@ namespace audio
 
         juce::AudioProcessorEditor* createEditor() override;
 
-        EnvGenMIDI envGenMIDI;
+        PRM smoothTest;
     };
 }

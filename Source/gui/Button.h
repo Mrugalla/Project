@@ -93,13 +93,16 @@ namespace gui
 		Random,
 		Abort,
 		SwapParamModDepth,
-		ModDepthLock,
+		Lock,
 		Save,
 		Load,
 		Remove,
 		TuningFork,
 		Lookahead,
 		Img,
+		Legato,
+		TempoSync,
+		InvertADSR,
 		NumSymbols
 	};
 
@@ -108,6 +111,7 @@ namespace gui
 	/* button, symbol, targetToggleState */
 	void makeSymbolButton(Button&, ButtonSymbol, int = 1);
 
+	/* button, text */
 	void makeToggleButton(Button&, const String&);
 
 	/* button, pIDs, symbol, withToggle */
