@@ -84,6 +84,15 @@ namespace audio
 		/* type, frequency fc [0, .5[, q-factor q [1, 160..] */
 		void setFc(Type, float, float) noexcept;
 
+		/* frequency fc [0, .5[, q-factor q [1, 160..] */
+		void setFcBP(float, float) noexcept;
+
+		/* frequency fc [0, .5[, q-factor q [1, 160..] */ // doesn't work yet
+		void setFcLP(float, float) noexcept;
+		
+		/* frequency fc [0, .5[, q-factor q [1, 160..] */ // doesn't work yet
+		void setFcHP(float, float) noexcept;
+
 		void copy(const IIR&) noexcept;
 
 		float operator()(float) noexcept;

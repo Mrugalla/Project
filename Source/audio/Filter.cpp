@@ -205,62 +205,73 @@ namespace audio
 
 	void IIR::setFc(Type type, float fc, float q) noexcept
 	{
-		if (type == Type::LP)
+		switch (type)
 		{
-
+		case Type::LP: return setFcLP(fc, q);
+		case Type::HP: return setFcHP(fc, q);
+		case Type::BP: return setFcBP(fc, q);
+		case Type::BR: return;
+		case Type::AP: return;
+		case Type::LS: return;
+		case Type::HS: return;
+		case Type::Notch: return;
+		default: return; // type == Type::Bell
 		}
-		else if (type == Type::HP)
-		{
+	}
 
-		}
-		else if (type == Type::BP)
-		{
-			const auto omega = Tau * fc;
-			cosOmega = -2.f * std::cos(omega);
-			const auto sinOmega = std::sin(omega);
-			alpha = sinOmega / (2.f * q);
-			const auto scale = 1.f + (q / 2.f);
+	void IIR::setFcBP(float fc, float q) noexcept
+	{
+		const auto omega = Tau * fc;
+		cosOmega = -2.f * std::cos(omega);
+		const auto sinOmega = std::sin(omega);
+		alpha = sinOmega / (2.f * q);
+		const auto scale = 1.f + (q / 2.f);
 
-			a0 = alpha;
-			a1 = 0.f;
-			a2 = -alpha;
+		a0 = alpha * scale;
+		a1 = 0.f;
+		a2 = -alpha * scale;
 
-			b1 = cosOmega;
-			b2 = 1.f - alpha;
+		b1 = cosOmega;
+		b2 = 1.f - alpha;
 
-			b0 = 1.f + alpha;
-			const auto b0Inv = 1.f / b0;
+		b0 = 1.f + alpha;
+		const auto b0Inv = 1.f / b0;
 
-			a0 *= b0Inv * scale;
-			a1 *= b0Inv * scale;
-			a2 *= b0Inv * scale;
-			b1 *= b0Inv;
-			b2 *= b0Inv;
-		}
-		else if (type == Type::BR)
-		{
+		a0 *= b0Inv;
+		a1 *= b0Inv;
+		a2 *= b0Inv;
+		b1 *= b0Inv;
+		b2 *= b0Inv;
+	}
+	
+	void IIR::setFcLP(float, float) noexcept
+	{
+		
+	}
+	
+	void IIR::setFcHP(float fc, float q) noexcept
+	{
+		const auto omega = Tau * fc;
+		cosOmega = -2.f * std::cos(omega);
+		const auto sinOmega = std::sin(omega);
+		alpha = sinOmega / (2.f * q);
+		const auto scale = 1.f + (q / 2.f);
 
-		}
-		else if (type == Type::AP)
-		{
+		a0 = (1.f + alpha) * scale;
+		a1 = -2.f * cosOmega * scale;
+		a2 = (1.f - alpha) * scale;
 
-		}
-		else if (type == Type::LS)
-		{
+		b1 = -2.f * cosOmega;
+		b2 = 1.f - alpha;
 
-		}
-		else if (type == Type::HS)
-		{
+		b0 = 1.f + alpha;
+		const auto b0Inv = 1.f / b0;
 
-		}
-		else if (type == Type::Notch)
-		{
-
-		}
-		else // type == Type::Bell
-		{
-
-		}
+		a0 *= b0Inv;
+		a1 *= b0Inv;
+		a2 *= b0Inv;
+		b1 *= b0Inv;
+		b2 *= b0Inv;
 	}
 
 	void IIR::copy(const IIR& other) noexcept

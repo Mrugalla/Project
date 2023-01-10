@@ -17,6 +17,8 @@
 #include "audio/PRM.h"
 #include "audio/AudioUtils.h"
 
+#include "audio/Filter.h"
+
 namespace audio
 {
     using MacroProcessor = param::MacroProcessor;
@@ -123,6 +125,7 @@ namespace audio
 
         juce::AudioProcessorEditor* createEditor() override;
 
-        PRM smoothTest;
+        std::vector<IIR> filter;
+        PRM cutoffSmooth, qSmooth;
     };
 }

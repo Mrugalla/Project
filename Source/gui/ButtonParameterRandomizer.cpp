@@ -91,7 +91,7 @@ namespace gui
     String ButtonParameterRandomizer::makeTooltip()
     {
         Random rand;
-        static constexpr float count = 228.f;
+        static constexpr float count = 254.f;
         const auto v = static_cast<int>(std::round(rand.nextFloat() * count));
         switch (v)
         {
@@ -324,6 +324,31 @@ namespace gui
         case 226: return "Hold shift as you click this button to randomize sensitively.";
 		case 227: return "Did you know you can hold shift to randomize sensitively?";
 		case 228: return "If you hold shift while clicking on this button, it will randomize sensitively.";
+        case 229: return "Mirror, mirror on the wall, who is the best producer of them all?";
+        case 230: return "Shake things up and see where the music takes you!";
+        case 231: return "Feeling stuck? Let chance be your guide.";
+        case 232: return "Why make choices when the computer can do it for you?";
+        case 233: return "Who needs a muse when you have a randomizer button?";
+        case 234: return "Go ahead, live dangerously and randomize all.";
+        case 235: return "Feeling uninspired? Let randomization be your DJ.";
+        case 236: return "Unlock the secrets of the universe with the press of a button.";
+		case 237: return "Are you ready for a mind-bending musical experience?";
+		case 238: return "The randomize button holds the key to unlocking your true potential.";
+		case 239: return "Unleash the power of the unknown with a press of the button.";
+		case 240: return "Do you dare to uncover the hidden melodies within your music?";
+		case 241: return "The randomize button is your gateway to a new dimension of sound.";
+        case 243: return "I don't get high of drugs. I get high of randomization.";
+        case 244: return "Randomization, like, totally changes your perspective, man.";
+        case 245: return "The randomize button, like, totally expands your mind and stuff.";
+        case 246: return "In the mood for some sonic wilderness?";
+		case 247: return "Because man-made melodies are so last season, press randomize for a fresh natural sound.";
+		case 248: return "Ready to add a little sparkle to your music?";
+		case 249: return "Why play it safe when you can be a little naughty?";
+		case 250: return "Creating music is like catching a dream.";
+        case 251: return "Every note is a door to an alternate reality.";
+		case 252: return "You never know what you will find if you dive deep enough into the sound.";
+		case 253: return "Music is a journey that starts where words end.";
+		case 254: return "Every chord is a story waiting to be told.";
         default: "Are you sure?";
         }
         return "You are not supposed to read this message!";

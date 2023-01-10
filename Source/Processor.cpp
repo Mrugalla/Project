@@ -1,6 +1,8 @@
 #include "Processor.h"
 #include "Editor.h"
 
+#include "arch/Conversion.h"
+
 namespace audio
 {
     juce::AudioProcessorEditor* Processor::createEditor()
@@ -230,7 +232,10 @@ namespace audio
     // PROCESSOR
 
     Processor::Processor() :
-        ProcessorBackEnd()
+        ProcessorBackEnd(),
+        filter(),
+        cutoffSmooth(.1f),
+        qSmooth(1.f)
 	{
     }
 
@@ -258,7 +263,11 @@ namespace audio
 		tuningEditorSynth.prepare(sampleRateF, maxBlockSize);
 #endif
 
-        smoothTest.prepare(sampleRateUpF, blockSizeUp, 20.f);
+        filter.resize(2);
+        for (auto& f : filter)
+            f.clear();
+        cutoffSmooth.prepare(sampleRateUpF, blockSizeUp, 20.f);
+		qSmooth.prepare(sampleRateUpF, blockSizeUp, 20.f);
 
 		const auto latencyInt = static_cast<int>(latency);
         dryWetMix.prepare(sampleRateF, maxBlockSize, latencyInt);
@@ -478,15 +487,48 @@ namespace audio
 #endif
     ) noexcept
     {
-		auto val = params[PID::SmoothTest]->getValMod();
-        auto valBuf = smoothTest(val, numSamples);
+		const auto cutoffVal = params[PID::FilterCutoff]->getValModDenorm();
+        const auto qVal = params[PID::FilterQ]->getValModDenorm();
+        const auto filterSmoothUpsampler = params[PID::FilterSmoothUpsampler]->getValModDenorm();
+        
+        const auto cutoffHz = xenManager.noteToFreqHzWithWrap(cutoffVal);
+        const auto cutoffFc = freqHzInFc(cutoffHz, (float)oversampler.getFsUp());
 
-        if (smoothTest.smoothing)
+        auto fcBuf = cutoffSmooth(cutoffFc, numSamples);
+        auto qBuf = qSmooth(qVal, numSamples);
+        
+		bool filterSmoothing = cutoffSmooth.smoothing || qSmooth.smoothing;
+        
+        if (filterSmoothing)
+        {
+            if (!cutoffSmooth.smoothing)
+                SIMD::fill(fcBuf, cutoffFc, numSamples);
+			if (!qSmooth.smoothing)
+				SIMD::fill(qBuf, qVal, numSamples);
+
             for (auto ch = 0; ch < numChannels; ++ch)
-                SIMD::copy(samples[ch], valBuf, numSamples);
+            {
+                auto smpls = samples[ch];
+                auto& fltr = filter[ch];
+
+                for (auto s = 0; s < numSamples; ++s)
+                {
+                    fltr.setFcBP(fcBuf[s], qBuf[s]);
+                    smpls[s] = fltr(smpls[s]);
+                }
+            }
+        }
         else
             for (auto ch = 0; ch < numChannels; ++ch)
-                SIMD::fill(samples[ch], val, numSamples);
+            {
+				auto smpls = samples[ch];
+                auto& fltr = filter[ch];
+                
+                fltr.setFcBP(cutoffFc, qVal);
+                
+                for (auto s = 0; s < numSamples; ++s)
+                    smpls[s] = fltr(smpls[s]);
+            }
     }
 
     void Processor::releaseResources() {}

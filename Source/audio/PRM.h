@@ -6,7 +6,7 @@ namespace audio
 	struct PRM
 	{
 		/* startVal */
-		PRM(float = 0.f);
+		PRM(float);
 
 		/*Fs, blockSize, smoothLenMs */
 		void prepare(float, int, float);

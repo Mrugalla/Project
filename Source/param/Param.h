@@ -62,7 +62,9 @@ namespace param
 		Power,
 
 		// low level parameters
-		SmoothTest,
+		FilterCutoff,
+		FilterQ,
+		FilterSmoothUpsampler,
 
 		NumParams
 	};

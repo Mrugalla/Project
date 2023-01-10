@@ -71,7 +71,9 @@ namespace param
 		case PID::Power: return "Power";
 
 		// LOW LEVEL PARAMS:
-		case PID::SmoothTest: return "Smooth Test";
+		case PID::FilterCutoff: return "Filter Cutoff";
+		case PID::FilterQ: return "Filter Q";
+		case PID::FilterSmoothUpsampler: return "Filter Smooth Upsampler";
 
 		default: return "Invalid Parameter Name";
 		}
@@ -1251,7 +1253,7 @@ namespace param
 
 	Params::Params(AudioProcessor& audioProcessor, State& _state
 #if PPDHasTuningEditor
-		, const Xen&
+		, const Xen& xen
 #endif
 	) :
 		params(),
@@ -1311,7 +1313,9 @@ namespace param
 		}
 
 		// LOW LEVEL PARAMS:
-		params.push_back(makeParam(PID::SmoothTest, state, 0.f));
+		params.push_back(makeParamPitch(PID::FilterCutoff, state, 35.f, makeRange::stepped(0.f, 127.f), xen));
+		params.push_back(makeParam(PID::FilterQ, state, 40.f, makeRange::withCentre(1.f, 80.f, 12.f), Unit::Q));
+		params.push_back(makeParam(PID::FilterSmoothUpsampler, state, 0.f, makeRange::stepped(0.f, 12.f), Unit::Custom));
 		// LOW LEVEL PARAMS END
 
 		for (auto param : params)

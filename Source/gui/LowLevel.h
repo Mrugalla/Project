@@ -11,14 +11,22 @@ namespace gui
         LowLevel(Utils& u) :
             Comp(u, "", CursorType::Default),
 			Timer(),
-            smooth(u)
+            cutoff(u),
+            q(u),
+            quality(u)
         {
-            makeParameter(smooth, PID::SmoothTest, "Smooth");
-            addAndMakeVisible(smooth);
+            makeParameter(cutoff, PID::FilterCutoff, "Cutoff");
+            addAndMakeVisible(cutoff);
+
+			makeParameter(q, PID::FilterQ, "Q");
+			addAndMakeVisible(q);
+
+			makeParameter(quality, PID::FilterSmoothUpsampler, "Quality");
+			addAndMakeVisible(quality);
             
             layout.init
             (
-                { 1, 2, 1 },
+                { 1, 13, 13, 13, 1 },
                 { 1, 2, 1 }
             );
         }
@@ -31,13 +39,15 @@ namespace gui
         {
             layout.resized();
 
-            layout.place(smooth, 1, 1, 1, 1, false);
+            layout.place(cutoff, 1, 1, 1, 1, false);
+			layout.place(q, 2, 1, 1, 1, false);
+			layout.place(quality, 3, 1, 1, 1, false);
         }
 
         void timerCallback() override
         {}
 
     protected:
-        Knob smooth;
+        Knob cutoff, q, quality;
     };
 }
