@@ -67,8 +67,8 @@ namespace smooth
 	template<typename Float>
 	struct Smooth
 	{
-		/*smoothLenMs, Fs*/
-		void makeFromDecayInMs(Float, Float);
+		/* smoothLenMs, Fs, */
+		void makeFromDecayInMs(Float, Float) noexcept;
 
 		Smooth(float /*startVal*/ = 0.f);
 

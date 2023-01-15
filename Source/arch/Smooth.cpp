@@ -164,7 +164,7 @@ namespace smooth
 	// Smooth
 
 	template<typename Float>
-	void Smooth<Float>::makeFromDecayInMs(Float smoothLenMs, Float Fs)
+	void Smooth<Float>::makeFromDecayInMs(Float smoothLenMs, Float Fs) noexcept
 	{
 		lowpass.makeFromDecayInMs(smoothLenMs, Fs);
 	}
@@ -214,6 +214,7 @@ namespace smooth
 			return false;
 		
 		smoothing = true;
+		
 		block(bufferOut, numSamples);
 		lowpass(bufferOut, numSamples);
 		

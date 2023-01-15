@@ -8,7 +8,7 @@ namespace audio
 		/* startVal */
 		PRM(float);
 
-		/*Fs, blockSize, smoothLenMs */
+		/* Fs, blockSize, smoothLenMs */
 		void prepare(float, int, float);
 
 		/* value, numSamples */

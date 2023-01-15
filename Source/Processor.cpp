@@ -69,7 +69,7 @@ namespace audio
 
             props.setStorageParameters(options);
         }
-
+        
         {
             playHeadPos.bpm = 120.;
             playHeadPos.ppqPosition = 0.;
@@ -489,7 +489,9 @@ namespace audio
     {
 		const auto cutoffVal = params[PID::FilterCutoff]->getValModDenorm();
         const auto qVal = params[PID::FilterQ]->getValModDenorm();
-        const auto filterSmoothUpsampler = params[PID::FilterSmoothUpsampler]->getValModDenorm();
+        
+        const auto upsamplingOrder = static_cast<int>(std::round(params[PID::FilterSmoothUpsampler]->getValModDenorm()));
+        const auto upsamplingFactor = 1 << upsamplingOrder;
         
         const auto cutoffHz = xenManager.noteToFreqHzWithWrap(cutoffVal);
         const auto cutoffFc = freqHzInFc(cutoffHz, (float)oversampler.getFsUp());
@@ -511,9 +513,13 @@ namespace audio
                 auto smpls = samples[ch];
                 auto& fltr = filter[ch];
 
-                for (auto s = 0; s < numSamples; ++s)
+                fltr.setFcBP(fcBuf[0], qBuf[0]);
+                smpls[0] = fltr(smpls[0]);
+                
+                for (auto s = 1; s < numSamples; ++s)
                 {
-                    fltr.setFcBP(fcBuf[s], qBuf[s]);
+					if (s % upsamplingFactor == 0)
+						fltr.setFcBP(fcBuf[s], qBuf[s]);
                     smpls[s] = fltr(smpls[s]);
                 }
             }
@@ -523,8 +529,6 @@ namespace audio
             {
 				auto smpls = samples[ch];
                 auto& fltr = filter[ch];
-                
-                fltr.setFcBP(cutoffFc, qVal);
                 
                 for (auto s = 0; s < numSamples; ++s)
                     smpls[s] = fltr(smpls[s]);
